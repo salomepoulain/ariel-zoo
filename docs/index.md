@@ -1,6 +1,6 @@
 :layout: landing
 
-# Ariel Documentation
+# ARIEL - A Robot Evolution Framework
 
 ![Ariel Logo](resources/ariel_logo.svg)
 
@@ -25,7 +25,7 @@ Get started below, or explore the full documentation for more details.
 
 ## Installation Information
 
-See the [installation guide](installation_guide.md) for more details.
+See the [installation guide](source/installation_guide.md) for more details.
 
 ---
 
@@ -50,6 +50,3 @@ Copyright (c) 2025, Ariel.
 All rights reserved.
 
 ---
-
-> **TODO**  
-> - Add sections on robots, evolution, and robot evolution

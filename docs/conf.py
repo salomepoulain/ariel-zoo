@@ -32,7 +32,7 @@ autosectionlabel_prefix_document = True
 templates_path = ["_templates"]
 # html_title =
 # html_logo =
-# html_favicon =
+html_favicon = "resources/ariel_favicon.ico"
 
 # --------- MYST --------- #
 myst_enable_extensions = [
