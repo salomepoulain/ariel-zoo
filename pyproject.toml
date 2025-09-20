@@ -42,6 +42,7 @@ docs = [
   "linkify-it-py>=2.0.3",
   "myst-parser>=3.0.1",
   "nbsphinx>=0.9.7",
+  "nox>=2025.5.1",
   "pandoc>=2.4",
   "pypandoc>=1.15",
   "shibuya>=2025.8.16",

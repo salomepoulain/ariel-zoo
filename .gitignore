@@ -12,6 +12,7 @@ MUJOCO_LOG.TXT
 ariel_header.svg
 # Docs
 docs/apidocs/
+docs/autoapi
 ### PYTHON ######################################################################
 # Byte-compiled / optimized / DLL files
 __pycache__/

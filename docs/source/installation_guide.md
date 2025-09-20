@@ -17,22 +17,22 @@ ARIEL contains and requires many other libraries to function properly, and avoid
 
 1. Install `uv` (if not already installed):
 
-    ```bash
-    pip install uv
-    ```
+```bash
+pip install uv
+```
 
 2. Install ariel:
-    ```bash
-    uv add ariel
-    ```
+```bash
+uv add ariel
+```
 
 3. Install all dependencies and activate venv.
 If you installed ARIEL using `uv add` all packages should be installed, but if any were not installed this step should fix it.
 
 Run the following command to have uv create a virtual environment, double check that all dependencies are installed and install any if they are missing.
-    ```bash
-    uv sync
-    ```
+```bash
+uv sync
+```
 
 You can activate the uv virtual environment the same way you would activate a normal one using `.\.venv\Scripts\activate`
 
@@ -54,9 +54,9 @@ You can activate the uv virtual environment the same way you would activate a no
 
 2. Install ariel:
 
-    ```bash
-    pip install ariel
-    ```
+```bash
+pip install ariel
+```
 
 Pip is much less strict with dependencies than uv, so packages might conflict or might not be installed. You will need to fix the missing dependencies manually, if any arise.
 
