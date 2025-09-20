@@ -282,7 +282,7 @@ def save_graph_as_json(
     if save_file is None:
         return
 
-    data = json_graph.node_link_data(graph, edges="edges")
+    data = json_graph.node_link_data(graph, edges="edges")  # pyright: ignore[reportDeprecated]
     json_string = json.dumps(data, indent=4)
 
     with Path(save_file).open("w", encoding="utf-8") as f:
