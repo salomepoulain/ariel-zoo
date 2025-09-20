@@ -31,7 +31,7 @@ autosectionlabel_prefix_document = True
 # --------- SHIBUYA --------- #
 templates_path = ["_templates"]
 # html_title =
-# html_logo =
+# html_logo = 
 html_favicon = "resources/ariel_favicon.ico"
 
 # --------- MYST --------- #
