@@ -14,7 +14,7 @@
   
 * [vscode containers tut](https://code.visualstudio.com/docs/devcontainers/tutorial)
 
----
+--- -->
 ## Installation and Running
 
 This project uses [uv](https://docs.astral.sh/uv/).
@@ -27,7 +27,7 @@ uv sync
 uv run examples/0_render_single_frame.py
 ```
 
-## TODO: Installation
+<!-- ## TODO: Installation
 
 ## Notes
 
