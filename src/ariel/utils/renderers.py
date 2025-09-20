@@ -154,7 +154,11 @@ def tracking_video_renderer(
     video_recorder : VideoRecorder | None, optional
         The video recorder to use, by default None
     tracking_distance : float, optional
-        Distance from the core module for camera positioning, by default 1.5.0
+        Distance from the core module for camera positioning, by default 1.5
+    tracking_angle : float, optional
+        Angle relative to the robot that the camera will be recording from.
+        By default 135, meaning the robot will walk to the left. If set to 0
+        the robot will walk towards the camera.
     """
     # Get video recorder
     if video_recorder is None:
