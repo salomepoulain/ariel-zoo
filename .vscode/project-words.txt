@@ -305,6 +305,7 @@ gnupg
 gprof
 Graphviz
 Grégoire
+Grigoriadis
 Guszti
 hammerspoon
 hasattr
@@ -349,6 +350,7 @@ inheritability
 iniconfig
 INP
 inproceedings
+Ioannis
 ipynb
 ipython
 isdigit
@@ -408,6 +410,7 @@ layoutdefault
 LBKT
 LBRC
 LCTRL
+lerp
 LFT
 LGUI
 liamrwilkins
@@ -480,6 +483,7 @@ mcr
 mdit
 mdurl
 MESHBVH
+meshgrid
 meshname
 metaheuristic
 metahuristic
