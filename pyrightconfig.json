@@ -5,7 +5,9 @@
     "exclude": [
         ".venv",
         ".git",
-        ".typings"
+        ".typings",
+        "_build",
+        "_autoapi"
     ],
     "stubPath": ".typings",
     // -------------------------------------------------------------------- //
