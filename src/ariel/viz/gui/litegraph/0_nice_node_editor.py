@@ -61,4 +61,5 @@ def page() -> None:
     ui.label().bind_text_from(data, "age", backward=lambda a: f"Age: {int(a)}")
 
 
-ui.run()
+if __name__ == "__main__":
+    ui.run()

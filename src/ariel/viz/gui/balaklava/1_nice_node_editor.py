@@ -84,4 +84,5 @@ def page() -> None:
     ui.button("Clear", on_click=pad.clear)
 
 
-ui.run()
+if __name__ == "__main__":
+    ui.run()

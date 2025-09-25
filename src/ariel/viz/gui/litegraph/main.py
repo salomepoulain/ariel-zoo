@@ -28,4 +28,5 @@ def page() -> None:
         ui.html(canvas)
 
 
-ui.run()
+if __name__ == "__main__":
+    ui.run()

@@ -46,4 +46,5 @@ def page() -> None:
     editor = Editor()
 
 
-ui.run()
+if __name__ == "__main__":
+    ui.run()
