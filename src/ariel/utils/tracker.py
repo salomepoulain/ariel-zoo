@@ -40,5 +40,3 @@ class Tracker:
         for idx, obj in enumerate(self.to_track):
             for attr in self.observable_attributes:
                 self.history[attr][idx].append(getattr(obj, attr).copy())
-                self.history[attr][idx].append(getattr(obj, attr).copy())
-                self.history[attr][idx].append(getattr(obj, attr).copy())
