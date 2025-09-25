@@ -50,16 +50,6 @@ def single_frame_renderer(
     # Reset state and time of simulation
     mujoco.mj_resetData(model, data)
 
-    # # Edit camera parameters
-    # camera = mujoco.MjvCamera()
-    # camera.azimuth = 90
-    # camera.elevation = -90
-    # model.camera = camera
-
-    # model.cam_orthographic = 1
-    # model.cam_fovy = 5
-    # model.cam_pos = [0, 0, 1]
-
     # Call rendering engine
     msg = f"Rendering single frame with [bold blue] {steps} [/bold blue] steps."
     console.log(f"[bold yellow] --> {msg} [/bold yellow]")
