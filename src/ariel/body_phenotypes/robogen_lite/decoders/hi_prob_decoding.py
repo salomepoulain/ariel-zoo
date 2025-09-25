@@ -1,23 +1,21 @@
 """Highest-probability-decoding algorithm for ARIEL-robots.
 
-Notes
+Note
 -----
-    * Graphs are represented as directed graphs (DiGraph) using NetworkX.
-    * Graphs are saved as [JSON](1).
+* Graphs are represented as directed graphs (DiGraph) using NetworkX.
+* Graphs are saved as JSON [1]_.
 
 References
 ----------
-    [1]: https://networkx.org/documentation/stable/reference/readwrite/generated/networkx.readwrite.json_graph.tree_data.html#networkx.readwrite.json_graph.tree_data
-    [2]: https://docs.astral.sh/ruff/rules/quoted-annotation/
-
+.. [1] `NetworkX JSON Graph <https://networkx.org/documentation/stable/reference/readwrite/generated/networkx.readwrite.json_graph.tree_data.html#networkx.readwrite.json_graph.tree_data>`_
 Todo
 ----
-    [ ] for loops to be replaced with vectorized operations
-    [ ] DiGraph positioning use cartesian coordinates instead of spring layout
-    [ ] Should probably move the graph functions to a separate script
+    - [ ] for loops to be replaced with vectorized operations
+    - [ ] DiGraph positioning use cartesian coordinates instead of spring layout
+    - [ ] Should probably move the graph functions to a separate script
 """
 
-# Evaluate type annotations in a deferred manner (2)
+# Evaluate type annotations in a deferred manner (ruff: UP037)
 from __future__ import annotations
 
 # Standard library
@@ -84,11 +82,11 @@ class HighProbabilityDecoder:
 
         Parameters
         ----------
-        type_probability_space : npt.NDArray[np.float32]
+        type_probability_space
             Probability space for module types.
-        connection_probability_space : npt.NDArray[np.float32]
+        connection_probability_space
             Probability space for connections between modules.
-        rotation_probability_space : npt.NDArray[np.float32]
+        rotation_probability_space
             Probability space for module rotations.
 
         Returns
