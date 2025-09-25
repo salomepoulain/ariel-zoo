@@ -407,7 +407,7 @@ def visualize_tree_from_graph(
     root: int = 0,
     save_file: Path | str | None = None,
     config: VisualizationConfig | None = None,
-) -> nx.DiGraph:
+) -> None:
     """Visualize a robot graph as a tree structure.
 
     Parameters
@@ -447,5 +447,3 @@ def visualize_tree_from_graph(
         plt.savefig(str(save_file), dpi=DPI)  # type: ignore[misc]
 
     plt.show()  # type: ignore[misc]
-
-    return tree
