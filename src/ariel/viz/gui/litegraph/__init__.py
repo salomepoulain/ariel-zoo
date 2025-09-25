@@ -1,1 +1,1 @@
-"""Robogen Lite."""
+"""Litegraph-based GUI."""

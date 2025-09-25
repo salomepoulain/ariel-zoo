@@ -1,3 +1,5 @@
+"""TODO(jmdm): description of script."""
+
 from typing import Dict, Optional
 
 from nicegui import ui

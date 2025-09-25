@@ -1,8 +1,5 @@
 """TODO(jmdm): description of script.
 
-Date:       2025-07-08
-Status:     Completed ✅
-
 Todo:
 ----
     [ ] ".rotate" as superclass method?
@@ -38,7 +35,7 @@ class BrickModule(Module):
 
     def __init__(self, index: int) -> None:
         """Initialize the brick module.
-        
+
         Parameters
         ----------
         index : int

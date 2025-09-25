@@ -1,31 +1,4 @@
-"""TODO(jmdm): description of script.
-
-Author:     jmdm
-Date:       yyyy-mm-dd
-Py Ver:     3.12
-OS:         macOS  Sequoia 15.3.1
-Hardware:   M4 Pro
-
-Status:     In progress ⚙️
-Status:     Paused ⏸️
-Status:     Completed ✅
-Status:     Incomplete ❌
-Status:     Broken ⚠️
-Status:     To Improve ⬆️
-
-Notes
------
-    *
-
-References
-----------
-    [1]
-
-Todo
-----
-    [ ]
-
-"""
+"""TODO(jmdm): description of script."""
 
 # Standard library
 from collections.abc import Callable
@@ -74,7 +47,11 @@ LiteGraph.wrapFunctionAsNode("ec/sum", sum, ["Number", "Number"], "Number")
 def page() -> None:
     ui.add_head_html(head_html)
 
-    with ui.card().classes("fixed_center").style("style='width:100%; height:100%'"):
+    with (
+        ui.card()
+        .classes("fixed_center")
+        .style("style='width:100%; height:100%'")
+    ):
         ui.html(canvas)
         ui.run_javascript(register_new_nodes)
         ui.run_javascript(html_code)

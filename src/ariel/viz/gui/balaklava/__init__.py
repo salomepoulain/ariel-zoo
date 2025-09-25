@@ -1,1 +1,1 @@
-"""Robogen Lite."""
+"""Baklavka-based GUI."""

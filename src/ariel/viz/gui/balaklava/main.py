@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+"""TODO(jmdm): description of script."""
+
 from baklava import Editor
 from nicegui import ui
 

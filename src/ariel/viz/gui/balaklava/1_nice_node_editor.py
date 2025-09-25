@@ -1,31 +1,4 @@
-"""TODO(jmdm): description of script.
-
-Author:     jmdm
-Date:       yyyy-mm-dd
-Py Ver:     3.12
-OS:         macOS  Sequoia 15.3.1
-Hardware:   M4 Pro
-
-Status:     In progress ⚙️
-Status:     Paused ⏸️
-Status:     Completed ✅
-Status:     Incomplete ❌
-Status:     Broken ⚠️
-Status:     To Improve ⬆️
-
-Notes
------
-    *
-
-References
-----------
-    [1]
-
-Todo
-----
-    [ ]
-
-"""
+"""TODO(jmdm): description of script."""
 
 # Standard library
 from collections.abc import Callable
