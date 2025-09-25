@@ -32,7 +32,7 @@ from ariel.body_phenotypes.robogen_lite.decoders.hi_prob_decoding import (
     save_graph_as_json,
 )
 from ariel.body_phenotypes.robogen_lite.modules.core import CoreModule
-from ariel.simulation.environments import AmphitheatreTerrainWorld
+from ariel.simulation.environments import SimpleFlatWorld
 from ariel.utils.renderers import single_frame_renderer
 
 if TYPE_CHECKING:
@@ -109,7 +109,7 @@ def run(
     viz_options.flags[mujoco.mjtVisFlag.mjVIS_BODYBVH] = True
 
     # MuJoCo basics
-    world = AmphitheatreTerrainWorld()
+    world = SimpleFlatWorld()
 
     # Set random colors for geoms
     for i in range(len(robot.spec.geoms)):
