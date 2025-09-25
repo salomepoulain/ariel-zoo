@@ -24,6 +24,7 @@ analyzer
 anyio
 Aorus
 apdisk
+apidocs
 apng
 ARCHS
 argcomplete
@@ -36,6 +37,7 @@ astropy
 asyncio
 aurelia
 autoapi
+autoapisummary
 autobuild
 AUTOCONNECT
 autodoc
@@ -224,13 +226,16 @@ eeef
 ehthumbs
 eiben
 Eiben
+elif
 encryptable
+endfor
 engineio
 ENT
 enummember
 env
 EOF
 epath
+equalto
 errmsg
 errorlens
 esbenp
@@ -395,6 +400,7 @@ keywordstyle
 KGM
 Kief
 kiwisolver
+klass
 KOMA
 Kornatowski
 KSCAN
@@ -596,6 +602,7 @@ optuna
 orjson
 osmesa
 outdir
+pandoc
 pathlib
 pathspec
 pawlik
@@ -700,6 +707,7 @@ Rect
 reexport
 refquat
 refurb
+rejectattr
 rel
 repitition
 reviung
@@ -737,6 +745,7 @@ SDFITER
 sdist
 seanwu
 SEL
+selectattr
 selectby
 sessionmaker
 setattr
@@ -788,6 +797,8 @@ stringstyle
 stubgen
 stuurman
 Stuurman
+subpackages
+Subpackages
 suptitle
 Svargotter
 svelteflow
@@ -819,6 +830,7 @@ timemachine
 timestep
 Timmis
 titlesec
+titlesonly
 toctree
 tol
 tolif
