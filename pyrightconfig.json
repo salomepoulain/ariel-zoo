@@ -8,14 +8,12 @@
         ".typings"
     ],
     "stubPath": ".typings",
-    // TODO: make the following `ignore` mujoco specific?
+    // -------------------------------------------------------------------- //
+    // TODO: MuJoCo
     "reportArgumentType": false,
-    // TODO: make the following `ignore` mujoco specific?
     "reportUnknownMemberType": false,
-    // TODO: make the following `ignore` mujoco specific?
     "reportAttributeAccessIssue": false,
-    // TODO: make the following `ignore` mujoco specific?
     "reportUnknownVariableType": false,
-    // TODO: make the following `ignore` mujoco/PIL specific?
-    "reportUnknownArgumentType": false
+    "reportUnknownArgumentType": false // + PIL
+    // -------------------------------------------------------------------- //
 }
