@@ -31,7 +31,7 @@ class BrickModule(Module):
     """Brick module specifications."""
 
     index: int | None = None
-    module_type: str = ModuleType.BRICK
+    module_type: ModuleType = ModuleType.BRICK
 
     def __init__(self, index: int) -> None:
         """Initialize the brick module.
