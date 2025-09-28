@@ -253,11 +253,10 @@ def main() -> None:
         tracker=tracker,
     )
 
-    experiment(robot=core, controller=ctrl, mode="frame")
+    experiment(robot=core, controller=ctrl, mode="launcher")
 
     # show_xpos_history(tracker.history["xpos"][0])
 
 
 if __name__ == "__main__":
-    for i in range(1000):
-        main()
+    main()

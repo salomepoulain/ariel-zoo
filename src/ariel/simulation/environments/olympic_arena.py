@@ -9,7 +9,6 @@ import numpy as np
 from ariel.simulation.environments import BaseWorld
 from ariel.utils.noise_gen import PerlinNoise
 
-# Global constants
 USE_DEGREES = False
 TERRAIN_COLOR = [0.460, 0.362, 0.216, 1.0]
 
