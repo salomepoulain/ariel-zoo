@@ -77,8 +77,9 @@ to_track = [data.bind(geom) for geom in geoms if "core" in geom.name]
     - `[x, y, z]` : 3D position of the core body frame  
     - `[qw, qx, qy, qz]` : Orientation quaternion of the core  
   - **Hinge joints (bricks)**: `[angle]` for each hinge, representing the rotation angle in radians  
-
+  
   Actuator inputs and states are *not* stored here (see `data.ctrl` and `data.act` instead).
+
 - `qvel`: Velocity state vector. Holds the current velocity of each actuator. 
 - `qacc`: Acceleration state vector
 <!--- `qDeriv`: Position derivatives
