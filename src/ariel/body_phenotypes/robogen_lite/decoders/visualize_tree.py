@@ -405,6 +405,7 @@ def _draw_edge_labels(tree: nx.DiGraph, pos: dict[int, tuple[float, float]],
 def visualize_tree_from_graph(
     graph: nx.Graph,
     root: int = 0,
+    title: str = '',
     save_file: Path | str | None = None,
     config: VisualizationConfig | None = None,
 ) -> None:
@@ -443,6 +444,8 @@ def visualize_tree_from_graph(
     plt.tight_layout()
     plt.axis("equal")  # type: ignore[misc]
 
+    plt.title(title)
+    
     if save_file:
         plt.savefig(str(save_file), dpi=DPI)  # type: ignore[misc]
 

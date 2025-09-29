@@ -21,5 +21,5 @@
     "ruff.path": [
         "/home/vscode/.local/bin/ruff"
     ],
-    "workbench.iconTheme": "material-icon-theme",
+    "workbench.iconTheme": "vscode-ristretto-icons",
 }
