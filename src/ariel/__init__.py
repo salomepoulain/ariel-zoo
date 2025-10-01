@@ -1,7 +1,6 @@
 """ARIEL."""
 
 # Standard library
-import os
 from pathlib import Path
 
 # Third-party libraries
@@ -12,7 +11,6 @@ from rich.traceback import install
 # --- DATA SETUP --- #
 CWD = Path.cwd()
 DATA = Path(CWD / "__data__")
-DATA.mkdir(exist_ok=True)
 
 # --- TERMINAL OUTPUT SETUP --- #
 install()
