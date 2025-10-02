@@ -1,19 +1,19 @@
-"""TODO(jmdm): description of script."""
+"""Module for generating Perlin noise using NumPy."""
 
 # Standard library
 from dataclasses import dataclass
 
 # Third-party libraries
-import matplotlib.pyplot as plt
 import numpy as np
 import numpy.typing as npt
 
-# Local libraries
 # Global constants
-# Global functions
-# Warning Control
-# Type Checking
+float_precision = np.float64
+int_precision = np.int32
+
 # Type Aliases
+type NpArray = npt.NDArray[np.float64]
+type NpIntArray = npt.NDArray[np.int32]
 
 
 @dataclass
@@ -21,46 +21,46 @@ class PerlinNoise:
     """
     Vectorized Perlin noise (2D) using NumPy only.
 
-    Parameters
-    ----------
-    seed : int | None
-        Random seed for reproducibility.
+    Examples
+    --------
+    >>> noise = PerlinNoise(seed=1234)
+    >>> width, height = 256, 256
+    >>> scale = 50.0
+    >>> grid = noise.as_grid(width, height, scale=scale, normalize=True)
     """
 
     seed: int | None = None
 
     def __post_init__(self) -> None:
         """Initialize the Perlin noise generator."""
-        rng = np.random.default_rng(self.seed)
-
         # Permutation table (size 256, repeated) for hashing lattice coordinates
-        p = np.arange(256, dtype=np.int32)
+        rng = np.random.default_rng(self.seed)
+        p = np.arange(256)
         rng.shuffle(p)
+
         # Duplicate list: len == 512 for safe wrap
-        self._perm: np.ndarray = np.concatenate([p, p]).astype(np.int32)
+        self._perm = np.concatenate([p, p])
 
         # 8 gradient directions (unit vectors)
-        angles = np.linspace(0, 2 * np.pi, 8, endpoint=False, dtype=np.float32)
+        angles = np.linspace(0, 2 * np.pi, 8, endpoint=False)
 
         # Gradient lookup table
-        self._grad_lut: np.ndarray = np.stack(
+        self._grad_lut = np.stack(
             [np.cos(angles), np.sin(angles)],
             axis=-1,
-        ).astype(np.float32)
-
-    # ---------- internal helpers (vectorized) ----------
+        )
 
     @staticmethod
-    def _fade(t: npt.NDArray[np.float32]) -> npt.NDArray[np.float32]:
+    def _fade(t: NpArray) -> NpArray:
         # 6t^5 - 15t^4 + 10t^3 (smoothstep^3), stable & vectorized
         #   https://www.wikiwand.com/en/articles/Smoothstep
-        return ((6 * t - 15) * t + 10) * (t * t * t)
+        return np.array(((6 * t - 15) * t + 10) * (t * t * t))
 
     @staticmethod
-    def _lerp(a: np.ndarray, b: np.ndarray, t: np.ndarray) -> np.ndarray:
+    def _lerp(a: NpArray, b: NpArray, t: NpArray) -> NpArray:
         return a + t * (b - a)
 
-    def _hash2(self, xi: np.ndarray, yi: np.ndarray) -> np.ndarray:
+    def _hash2(self, xi: NpIntArray, yi: NpIntArray) -> NpIntArray:
         """
         Hash (xi, yi) -> [0, 255] via permutation table, vectorized.
 
@@ -80,7 +80,7 @@ class PerlinNoise:
         yi &= 255
         return self._perm[(self._perm[xi] + yi) & 255]
 
-    def _grad_at_corner(self, xi: np.ndarray, yi: np.ndarray) -> np.ndarray:
+    def _grad_at_corner(self, xi: NpIntArray, yi: NpIntArray) -> NpArray:
         """
         Lookup 2D unit gradient vector at integer lattice corner (xi, yi).
 
@@ -113,11 +113,11 @@ class PerlinNoise:
 
         Parameters
         ----------
-        width : int
-        height : int
-        scale : float
+        width
+        height
+        scale
             The number of pixels per noise unit. Larger -> smoother noise.
-        normalize : bool
+        normalize
             If True, map result from [-1, 1] to [0, 1].
 
         Raises
@@ -182,21 +182,3 @@ class PerlinNoise:
             nxy = nxy * 0.5 + 0.5
 
         return nxy.astype(np.float32, copy=False)
-
-
-if __name__ == "__main__":
-    # Create noise generator
-    noise = PerlinNoise(seed=1234)
-
-    # Generate a grid of noise
-    width, height = 256, 256
-    scale = 50.0
-    grid = noise.as_grid(width, height, scale=scale, normalize=True)
-
-    # Plot the noise
-    plt.figure(figsize=(6, 6))
-    plt.imshow(grid, cmap="gray", origin="upper")
-    plt.colorbar(label="Noise Value")
-    plt.title(f"Perlin Noise ({width}x{height}, scale={scale})")
-    plt.tight_layout()
-    plt.show()
