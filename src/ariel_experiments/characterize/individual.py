@@ -1,0 +1,299 @@
+# Standard library
+import json
+from hashlib import sha256
+from pathlib import Path
+
+# Third-party libraries
+import numpy as np
+from networkx import DiGraph
+from rich.console import Console
+
+# Local libraries
+from ariel.body_phenotypes.robogen_lite.modules.brick import BRICK_MASS
+from ariel.body_phenotypes.robogen_lite.modules.core import CORE_MASS
+from ariel.body_phenotypes.robogen_lite.modules.hinge import (
+    ROTOR_MASS,
+    STATOR_MASS,
+)
+
+# Global constants
+SCRIPT_NAME = __file__.split("/")[-1][:-3]
+CWD = Path.cwd()
+DATA = Path(CWD / "__data__" / SCRIPT_NAME)
+DATA.mkdir(exist_ok=True)
+SEED = 42
+
+# Global functions
+console = Console()
+RNG = np.random.default_rng(SEED)
+
+# Type checking
+
+# Type Aliases
+
+
+def analyze_module_counts(individual: DiGraph) -> dict[str, int]:
+    """
+    Count different module types and edges in a directed graph individual.
+
+    Parameters
+    ----------
+    individual : DiGraph
+        A directed graph where nodes have a 'type' attribute indicating
+        module type.
+
+    Returns
+    -------
+    dict[str, int]
+        Dictionary with counts for 'core', 'brick', 'hinge', 'none',
+        'edges', and 'not-none' modules.
+
+    Raises
+    ------
+    AssertionError
+        If the number of core modules is not exactly 1.
+
+    Notes
+    -----
+    - The 'not-none' count is the sum of core, brick, and hinge modules
+    - Function assumes all nodes have a 'type' attribute in their data
+    """
+    counts: dict[str, int] = {
+        "core": sum(
+            data["type"] == "CORE" for _, data in individual.nodes(data=True)
+        ),
+        "brick": sum(
+            data["type"] == "BRICK" for _, data in individual.nodes(data=True)
+        ),
+        "hinge": sum(
+            data["type"] == "HINGE" for _, data in individual.nodes(data=True)
+        ),
+        "none": sum(
+            data["type"] == "NONE" for _, data in individual.nodes(data=True)
+        ),
+        "edges": len(individual.edges()),
+    }
+    counts["not-none"] = counts["core"] + counts["brick"] + counts["hinge"]
+    assert counts["core"] == 1
+    return counts
+
+
+def analyze_mass(individual: DiGraph) -> dict[str, float]:
+    """
+    Calculate the total mass of a modular robot individual.
+
+    Parameters
+    ----------
+    individual : DiGraph
+        A directed graph representing the modular robot structure.
+
+    Returns
+    -------
+    dict[str, float]
+        Dictionary containing the total mass with key "mass".
+
+    Notes
+    -----
+    - Mass calculation uses predefined constants: CORE_MASS, BRICK_MASS,
+      ROTOR_MASS, and STATOR_MASS
+    - Hinge mass is computed as sum of rotor and stator masses
+    - Depends on analyze_module_counts() to get component counts
+    """
+    counts = analyze_module_counts(individual)
+    core_mass = counts["core"] * CORE_MASS
+    brick_tot_mass = counts["brick"] * BRICK_MASS
+    hinge_tot_mass = counts["hinge"] * (ROTOR_MASS + STATOR_MASS)
+    total_mass = core_mass + brick_tot_mass + hinge_tot_mass
+    return {"mass": total_mass}
+
+
+def analyze_json_hash(individual: DiGraph) -> dict[str, str]:
+    """
+    Compute a canonical hash for a directed graph based on its structure.
+
+    Parameters
+    ----------
+    individual : DiGraph
+        A NetworkX directed graph to analyze and hash.
+
+    Returns
+    -------
+    dict[str, str]
+        Dictionary containing the computed hash with key 'hash' and the
+        hexadecimal hash string as value.
+
+    Notes
+    -----
+    - Creates a canonical representation by sorting nodes and edges to
+      ensure consistent hashing regardless of insertion order
+    - Uses SHA-256 algorithm for cryptographic hash generation
+    - Node and edge attributes are included in the hash computation
+    """
+    # Way to fingerprint non canonical graph.
+    nodes = sorted([(n, dict(individual.nodes[n])) for n in individual.nodes()])
+    edges = sorted([
+        (u, v, dict(individual.edges[u, v])) for u, v in individual.edges()
+    ])
+    canonical = {"nodes": nodes, "edges": edges}
+    hash_string = sha256(
+        json.dumps(canonical, sort_keys=True).encode("utf-8"),
+    ).hexdigest()
+    return {"hash": hash_string}
+
+
+def analyze_json_hash_no_id(individual: DiGraph) -> dict[str, str]:
+    """
+    Generate a canonical hash for a directed graph excluding node identifiers.
+
+    Parameters
+    ----------
+    individual : DiGraph
+        A NetworkX directed graph with node and edge data attributes.
+
+    Returns
+    -------
+    dict[str, str]
+        Dictionary containing the computed hash under the 'hash' key.
+
+    Notes
+    -----
+    - Sorts nodes and edges by their JSON representation to ensure
+      deterministic hashing regardless of graph traversal order
+    - Uses SHA-256 algorithm for hash computation
+    - Node IDs are excluded from the canonical representation, only node
+      and edge data attributes are considered
+    """
+    nodes = sorted([dict(data) for _, data in individual.nodes(data=True)], key=lambda d: json.dumps(d, sort_keys=True))
+    edges = sorted([dict(data) for _, _, data in individual.edges(data=True)], key=lambda d: json.dumps(d, sort_keys=True))
+    canonical = {"nodes": nodes, "edges": edges}
+    hash_string = sha256(
+        json.dumps(canonical, sort_keys=True).encode("utf-8"),
+    ).hexdigest()
+    return {"hash": hash_string}
+
+# -----------------------------------------------------------------
+# TODO: @savio @sara
+
+def analyze_branching(individual: DiGraph) -> dict[str, float]:
+    """
+    Measures the level of branching in the robot's morphology (M1).
+
+    Calculation Method: The specific formula for 'Branching' (M1) is not detailed in this source material,
+    but it is noted that this descriptor ranges in value from 0 to 1 [1].
+    This descriptor is positively correlated with the 'Number of Limbs' [2].
+    """
+    return {"branching": 0.0}
+
+
+def analyze_number_of_limbs(individual: DiGraph) -> dict[str, float]:
+    """
+    Measures the number of effective limbs attached to the robot (M2).
+
+    Calculation Method: The specific formula for 'Number of Limbs' (M2) is not detailed in this source material,
+    but it is noted that this descriptor ranges in value from 0 to 1 [1].
+    It is used to assess the tendency for morphologies to have few limbs [2, 3].
+    """
+    return {"number_of_limbs": 0.0}
+
+
+def analyze_length_of_limbs(individual: DiGraph) -> dict[str, float]:
+    """
+    Measures the relative length of the limbs (M3).
+
+    Calculation Method: The measure 'Length of Limbs' (E or M3) is defined by the following equation
+    (used, for example, in the S3 fitness function as a penalty) [4]:
+
+    E = { e / e_max, if m >= 3
+        { 0, otherwise
+
+    Where 'm' is the total number of modules in the body, 'e' is the number of modules
+    which have two of their faces attached to other modules (excluding the core-component),
+    and 'e_max' is the maximum amount of modules that a body with 'm' modules could have
+    with two attached faces, calculated as m - 2 [4].
+    A higher value suggests fewer, longer limbs, as it rewards maximizing the length relative to body size [2, 3].
+    This descriptor ranges in value from 0 to 1 [1].
+    """
+    return {"length_of_limbs": 0.0}
+
+
+def analyze_coverage(individual: DiGraph) -> dict[str, float]:
+    """
+    Measures how much of the morphology space is covered (M4).
+
+    Calculation Method: The specific formula for 'Coverage' (M4) is not detailed in this source material,
+    but it is noted that this descriptor ranges in value from 0 to 1 [1].
+    Morphologies similar to snakes (like those predominant under S1 fitness) tended to have high coverage,
+    covering the whole body area [5].
+    """
+    return {"coverage": 0.0}
+
+
+def analyze_joints(individual: DiGraph) -> dict[str, float]:
+    """
+    Measures the number of effective joints in the morphology (M5).
+
+    Calculation Method: This descriptor was reformulated for the study.
+    The concept of an effective joint is defined by a joint module that is attached to any other module type [1].
+    (Previously, attachment was required to be specifically to the core-component or a structural brick [1, 6].)
+    This reformulation was done because robots were often observed developing limbs purely formed by a sequence of joints [1].
+    The descriptor ranges in value from 0 to 1 [1].
+    """
+    return {"joints": 0.0}
+
+
+def analyze_proportion(individual: DiGraph) -> dict[str, float]:
+    """
+    Measures the proportionality or balance of the robot's shape (M6).
+
+    Calculation Method: The specific formula for 'Proportion' (M6) is not detailed in this source material,
+    but it is noted that this descriptor ranges in value from 0 to 1 [1].
+    Proportion was observed to drop drastically for fitness S1, which was dominated by single-limb, disproportional robots [5].
+    """
+    return {"proportion": 0.0}
+
+
+def analyze_symmetry(individual: DiGraph) -> dict[str, float]:
+    """
+    Measures the symmetry of the robot's structure (M7).
+
+    Calculation Method: The specific formula for 'Symmetry' (M7) is not detailed in this source material,
+    but it is noted that this descriptor ranges in value from 0 to 1 [1].
+    Symmetry tended to be higher when a penalty for long limbs (S3 fitness) was applied [7].
+    The results suggest that higher symmetry is correlated with lower average speed [8].
+    """
+    return {"symmetry": 0.0}
+
+
+def analyze_size(individual: DiGraph) -> dict[str, float]:
+    """
+    Measures the overall size of the robot's morphology (M8).
+
+    Calculation Method: The specific formula for 'Size' (M8) is not detailed in this source material,
+    but it is noted that this descriptor ranges in value from 0 to 1 [1].
+    All behavior-oriented searches tended to explore larger Size, as a large body can more easily produce a large displacement for high speed [5].
+    """
+    return {"size": 0.0}
+
+
+def analyze_sensors(individual: DiGraph) -> dict[str, float]:
+    """
+    Measures the ratio of sensors to available slots in the morphology (M9).
+
+    Calculation Method: This is a new descriptor introduced in the study [1]. It is defined by the equation [9]:
+
+    C = { c / c_max, if c_max > 0
+        { 0, otherwise
+
+    Where 'c' is the number of sensors in the morphology, and 'c_max' is the number of free slots in the morphology [9].
+    The descriptor ranges in value from 0 to 1 [1].
+    """
+    return {"sensors": 0.0}
+
+
+if __name__ == "__main__":
+    from ariel_experiments.utils.initialize import generate_random_individual
+    
+    graph = generate_random_individual()
+    console.print('not none:', analyze_module_counts(graph)["not-none"])
+    
+    #feel free to test and expand here

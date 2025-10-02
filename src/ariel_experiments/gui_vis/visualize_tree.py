@@ -1,26 +1,44 @@
-import networkx as nx
-import matplotlib.pyplot as plt
-import numpy as np
+# Standard library
 import operator
-from dataclasses import dataclass
-from typing import Any
+from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
+# Third-party libraries
+import matplotlib.pyplot as plt
+import networkx as nx
+import numpy as np
+from rich.console import Console
+
+# Global constants
+SCRIPT_NAME = __file__.split("/")[-1][:-3]
+CWD = Path.cwd()
+DATA = Path(CWD / "__data__" / SCRIPT_NAME)
+DATA.mkdir(exist_ok=True)
+SEED = 42
+
+# Global functions
+console = Console()
+RNG = np.random.default_rng(SEED)
 DPI = 300
 
 
 class FaceDirection(Enum):
-    FRONT = 0
-    LEFT = 90
-    RIGHT = 135
-    BACK = 180
-    BOTTOM = 270
-    TOP = 360
+    """used for spatial positioning for final drawing."""
+
+    FRONT = 1
+    LEFT = 2
+    BOTTOM = 3
+    RIGHT = 4
+    TOP = 5
+    BACK = 6
 
 
 @dataclass
 class NodeConfig:
+    """template for node config poltting."""
+
     color: str
     shape: str
     label_color: str
@@ -31,6 +49,8 @@ class NodeConfig:
 
 @dataclass
 class EdgeConfig:
+    """template for edge config poltting."""
+
     width: int
     color: str
     style: str
@@ -39,6 +59,8 @@ class EdgeConfig:
 
 @dataclass
 class VisualizationConfig:
+    """config for plotting."""
+
     figure_size: tuple[int, int] = (20, 15)
     level_spacing: float = 4.0
     node_spacing: float = 6.0
@@ -49,12 +71,31 @@ class VisualizationConfig:
     font_size_edges: int = 12
 
 
-def get_face_angle(face: str) -> int:
-    """Convert face direction to angle for spatial ordering."""
-    try:
-        return FaceDirection[face].value
-    except KeyError:
-        return 999
+# TODO: to be changed ??????
+@dataclass
+class NodeEdgeConfigs:
+    """chosen values for the node and edge visualization using configs."""
+
+    node_configs: dict[str, NodeConfig] = field(
+        default_factory=lambda: {
+            "CORE": NodeConfig("blue", "H", "white"),
+            "BRICK": NodeConfig("green", "s", "white"),
+            "HINGE": NodeConfig("white", "o", "black", linewidth=3),
+            "NONE": NodeConfig("gray", "v", "white"),
+            "UNKNOWN": NodeConfig("gray", "v", "white"),
+        },
+    )
+    edge_configs: dict[str, EdgeConfig] = field(
+        default_factory=lambda: {
+            "TOP": EdgeConfig(6, "darkgray", "solid", 1.0),
+            "BOTTOM": EdgeConfig(6, "darkgray", "dotted", 1.0),
+            "LEFT": EdgeConfig(2, "darkgray", "solid", 0.8),
+            "RIGHT": EdgeConfig(2, "darkgray", "solid", 0.8),
+            "FRONT": EdgeConfig(3, "black", "solid", 1.0),
+            "BACK": EdgeConfig(2, "darkgray", "solid", 0.8),
+            "UNKNOWN": EdgeConfig(2, "darkgray", "solid", 0.8),
+        },
+    )
 
 
 def _extract_spanning_tree(graph: nx.Graph, root: int) -> nx.DiGraph:
@@ -87,12 +128,14 @@ def _extract_spanning_tree(graph: nx.Graph, root: int) -> nx.DiGraph:
 
         for neighbor in graph.neighbors(current):
             if neighbor not in visited:
-                edge_data: dict[str, Any] = graph.get_edge_data(current, neighbor)
+                edge_data: dict[str, Any] = graph.get_edge_data(
+                    current, neighbor,
+                )
                 face: str = edge_data.get("face", "UNKNOWN")
-                angle: int = get_face_angle(face)
+                angle: int = FaceDirection[face].value
                 potential_children.append((current, neighbor, edge_data, angle))
 
-        potential_children.sort(key=lambda x: x[3])
+        potential_children.sort(key=operator.itemgetter(3))
 
         for parent, child, edge_data, _ in potential_children:
             if child not in visited:
@@ -104,8 +147,14 @@ def _extract_spanning_tree(graph: nx.Graph, root: int) -> nx.DiGraph:
     return tree
 
 
-def _position_level(tree: nx.DiGraph, nodes: list[int], pos: dict[int, tuple[float, float]],
-                  level: int, root: int, config: VisualizationConfig) -> dict[int, tuple[float, float]]:
+def _position_level(
+    tree: nx.DiGraph,
+    nodes: list[int],
+    pos: dict[int, tuple[float, float]],
+    level: int,
+    root: int,
+    config: VisualizationConfig,
+) -> dict[int, tuple[float, float]]:
     """Position nodes in a specific level.
 
     Parameters
@@ -130,16 +179,22 @@ def _position_level(tree: nx.DiGraph, nodes: list[int], pos: dict[int, tuple[flo
     """
     parent_children: dict[int, list[int]] = {}
     for node in nodes:
-        parents: list[int] = list(tree.predecessors(node))
-        if parents:
+        if (parents := list(tree.predecessors(node))):
             parent: int = parents[0]
             parent_children.setdefault(parent, []).append(node)
 
     for parent, children in parent_children.items():
         children_with_faces: list[tuple[int, int]] = [
-            (child, get_face_angle(
-                tree.get_edge_data(parent, child, {}).get("face", "UNKNOWN")
-            ))
+            (
+                child,
+                FaceDirection[
+                    (
+                        tree.get_edge_data(parent, child, {}).get(
+                            "face", "UNKNOWN",
+                        )
+                    )
+                ].value,
+            )
             for child in children
         ]
         children_with_faces.sort(key=operator.itemgetter(1))
@@ -154,8 +209,9 @@ def _position_level(tree: nx.DiGraph, nodes: list[int], pos: dict[int, tuple[flo
     )
 
     total_children: int = len(all_children)
-    total_width: float = (total_children - 1) * config.node_spacing \
-        if total_children > 1 else 0
+    total_width: float = (
+        (total_children - 1) * config.node_spacing if total_children > 1 else 0
+    )
 
     current_x: float = -total_width / 2
     y_level: float = pos[root][1] - level * config.level_spacing
@@ -169,7 +225,9 @@ def _position_level(tree: nx.DiGraph, nodes: list[int], pos: dict[int, tuple[flo
     return level_pos
 
 
-def _create_tree_layout(tree: nx.DiGraph, root: int, config: VisualizationConfig) -> dict[int, tuple[float, float]]:
+def _create_tree_layout(
+    tree: nx.DiGraph, root: int, config: VisualizationConfig,
+) -> dict[int, tuple[float, float]]:
     """Create spatial layout for the tree.
 
     Parameters
@@ -196,38 +254,11 @@ def _create_tree_layout(tree: nx.DiGraph, root: int, config: VisualizationConfig
     pos[root] = (0, 0)
 
     for level in sorted(level_nodes.keys())[1:]:
-        pos.update(_position_level(tree, level_nodes[level], pos, level, root, config))
+        pos.update(
+            _position_level(tree, level_nodes[level], pos, level, root, config),
+        )
 
     return pos
-
-
-def _get_node_edge_configs() -> tuple[dict[str, NodeConfig], dict[str, EdgeConfig]]:
-    """Get node and edge configuration dictionaries.
-
-    Returns
-    -------
-    tuple[dict[str, NodeConfig], dict[str, EdgeConfig]]
-        Node and edge configuration dictionaries
-    """
-    node_configs: dict[str, NodeConfig] = {
-        "CORE": NodeConfig("blue", "H", "white"),
-        "BRICK": NodeConfig("green", "s", "white"),
-        "HINGE": NodeConfig("white", "o", "black", linewidth=3),
-        "NONE": NodeConfig("gray", "v", "white"),
-        "UNKNOWN": NodeConfig("gray", "v", "white"),
-    }
-
-    edge_configs: dict[str, EdgeConfig] = {
-        "TOP": EdgeConfig(6, "darkgray", "solid", 1.0),
-        "BOTTOM": EdgeConfig(6, "darkgray", "dotted", 1.0),
-        "LEFT": EdgeConfig(2, "red", "solid", 0.8),
-        "RIGHT": EdgeConfig(2, "green", "solid", 0.8),
-        "FRONT": EdgeConfig(2, "black", "solid", 1.0),
-        "BACK": EdgeConfig(2, "darkgray", "solid", 0.8),
-        "UNKNOWN": EdgeConfig(2, "darkgray", "solid", 0.8),
-    }
-
-    return node_configs, edge_configs
 
 
 def _create_node_labels(
@@ -245,12 +276,16 @@ def _create_node_labels(
     tuple[dict[int, str], dict[str, list[int]]]
         Node labels and nodes grouped by type
     """
-    node_types: dict[int, str] = dict(nx.get_node_attributes(tree, "type"))  # type: ignore
-    node_rotations: dict[int, str] = dict(nx.get_node_attributes(tree, "rotation"))  # type: ignore
-    node_configs, _ = _get_node_edge_configs()
+    node_types: dict[int, str] = dict(nx.get_node_attributes(tree, "type"))
+    node_rotations: dict[int, str] = dict(
+        nx.get_node_attributes(tree, "rotation"),
+    )
+    node_configs = NodeEdgeConfigs().node_configs
 
     node_labels: dict[int, str] = {}
-    nodes_by_type: dict[str, list[int]] = {node_type: [] for node_type in node_configs.keys()}
+    nodes_by_type: dict[str, list[int]] = {
+        node_type: [] for node_type in node_configs
+    }
 
     for node in tree.nodes():
         node_type: str = node_types.get(node, "UNKNOWN")
@@ -265,8 +300,11 @@ def _create_node_labels(
     return node_labels, nodes_by_type
 
 
-def _draw_rotation_arrows(tree: nx.DiGraph, pos: dict[int, tuple[float, float]],
-                        config: VisualizationConfig) -> None:
+def _draw_rotation_arrows(
+    tree: nx.DiGraph,
+    pos: dict[int, tuple[float, float]],
+    config: VisualizationConfig,
+) -> None:
     """Draw rotation arrows for nodes.
 
     Parameters
@@ -278,7 +316,7 @@ def _draw_rotation_arrows(tree: nx.DiGraph, pos: dict[int, tuple[float, float]],
     config : VisualizationConfig
         Visualization configuration
     """
-    node_rotations: dict[int, str] = nx.get_node_attributes(tree, "rotation") # type: ignore[misc]
+    node_rotations: dict[int, str] = nx.get_node_attributes(tree, "rotation")  # type: ignore[misc]
 
     for node in tree.nodes():
         if node not in pos:
@@ -295,16 +333,28 @@ def _draw_rotation_arrows(tree: nx.DiGraph, pos: dict[int, tuple[float, float]],
 
         dx: float = config.arrow_length * np.cos(angle_rad)
         dy: float = config.arrow_length * np.sin(angle_rad)
-        plt.arrow(x - dx/2, y - dy/2, dx, dy, # type: ignore[misc]
-                 head_width=config.arrow_head_width,
-                 head_length=config.arrow_head_length,
-                 fc="black", ec="black", alpha=0.9,
-                 zorder=1, linewidth=2)
+        plt.arrow(
+            x - dx / 2,
+            y - dy / 2,
+            dx,
+            dy,  # type: ignore[misc]
+            head_width=config.arrow_head_width,
+            head_length=config.arrow_head_length,
+            fc="black",
+            ec="black",
+            alpha=0.9,
+            zorder=1,
+            linewidth=2,
+        )
 
 
-def _draw_nodes(tree: nx.DiGraph, pos: dict[int, tuple[float, float]],
-               node_labels: dict[int, str], nodes_by_type: dict[str, list[int]],
-               config: VisualizationConfig) -> None:
+def _draw_nodes(
+    tree: nx.DiGraph,
+    pos: dict[int, tuple[float, float]],
+    node_labels: dict[int, str],
+    nodes_by_type: dict[str, list[int]],
+    config: VisualizationConfig,
+) -> None:
     """Draw all nodes grouped by type.
 
     Parameters
@@ -320,7 +370,7 @@ def _draw_nodes(tree: nx.DiGraph, pos: dict[int, tuple[float, float]],
     config : VisualizationConfig
         Visualization configuration
     """
-    node_configs, _ = _get_node_edge_configs()
+    node_configs = NodeEdgeConfigs().node_configs
 
     for node_type, node_config in node_configs.items():
         nodes: list[int] = nodes_by_type[node_type]
@@ -328,7 +378,9 @@ def _draw_nodes(tree: nx.DiGraph, pos: dict[int, tuple[float, float]],
             continue
 
         nx.draw_networkx_nodes(  # type: ignore[misc]
-            tree, pos, nodelist=nodes,
+            tree,
+            pos,
+            nodelist=nodes,
             node_color=node_config.color,
             node_shape=node_config.shape,
             node_size=node_config.node_size,
@@ -341,17 +393,17 @@ def _draw_nodes(tree: nx.DiGraph, pos: dict[int, tuple[float, float]],
             node: node_labels[node] for node in nodes
         }
 
-        nx.draw_networkx_labels(# type: ignore[misc]
-            tree, pos, labels=type_labels,
+        nx.draw_networkx_labels(  # type: ignore[misc]
+            tree,
+            pos,
+            labels=type_labels,
             font_size=config.font_size_labels,
             font_weight="bold",
             font_color=node_config.label_color,
         )
 
 
-def _draw_edges(
-    tree: nx.DiGraph, pos: dict[int, tuple[float, float]]
-) -> None:
+def _draw_edges(tree: nx.DiGraph, pos: dict[int, tuple[float, float]]) -> None:
     """Draw all edges grouped by face type.
 
     Parameters
@@ -361,7 +413,7 @@ def _draw_edges(
     pos : dict[int, tuple[float, float]]
         Node positions
     """
-    _, edge_configs = _get_node_edge_configs()
+    edge_configs = NodeEdgeConfigs().edge_configs
 
     edges_by_face: dict[str, list[tuple[int, int]]] = {}
     for u, v, data in tree.edges(data=True):
@@ -370,9 +422,13 @@ def _draw_edges(
 
     for face, edges in edges_by_face.items():
         if edges:
-            edge_config: EdgeConfig = edge_configs.get(face, edge_configs["UNKNOWN"])
-            nx.draw_networkx_edges( # type: ignore[misc]
-                tree, pos, edgelist=edges,
+            edge_config: EdgeConfig = edge_configs.get(
+                face, edge_configs["UNKNOWN"],
+            )
+            nx.draw_networkx_edges(  # type: ignore[misc]
+                tree,
+                pos,
+                edgelist=edges,
                 width=edge_config.width,
                 edge_color=edge_config.color,
                 style=edge_config.style,
@@ -380,8 +436,11 @@ def _draw_edges(
             )
 
 
-def _draw_edge_labels(tree: nx.DiGraph, pos: dict[int, tuple[float, float]],
-                    config: VisualizationConfig) -> None:
+def _draw_edge_labels(
+    tree: nx.DiGraph,
+    pos: dict[int, tuple[float, float]],
+    config: VisualizationConfig,
+) -> None:
     """Draw edge labels.
 
     Parameters
@@ -397,7 +456,9 @@ def _draw_edge_labels(tree: nx.DiGraph, pos: dict[int, tuple[float, float]],
         (u, v): data.get("face", "F?") for u, v, data in tree.edges(data=True)
     }
     nx.draw_networkx_edge_labels(  # type: ignore[misc]
-        tree, pos, edge_labels=edge_labels,
+        tree,
+        pos,
+        edge_labels=edge_labels,
         font_size=config.font_size_edges,
     )
 
@@ -405,7 +466,8 @@ def _draw_edge_labels(tree: nx.DiGraph, pos: dict[int, tuple[float, float]],
 def visualize_tree_from_graph(
     graph: nx.Graph,
     root: int = 0,
-    title: str = '',
+    *,
+    title: str = "",
     save_file: Path | str | None = None,
     config: VisualizationConfig | None = None,
 ) -> None:
@@ -430,7 +492,9 @@ def visualize_tree_from_graph(
     config = config or VisualizationConfig()
 
     tree: nx.DiGraph = _extract_spanning_tree(graph, root)
-    pos: dict[int, tuple[float, float]] = _create_tree_layout(tree, root, config)
+    pos: dict[int, tuple[float, float]] = _create_tree_layout(
+        tree, root, config,
+    )
 
     plt.figure(figsize=config.figure_size)  # type: ignore[misc]
 
@@ -442,11 +506,20 @@ def visualize_tree_from_graph(
     _draw_edge_labels(tree, pos, config)
 
     plt.tight_layout()
-    plt.axis("equal")  # type: ignore[misc]
+    # plt.axis("equal")  # type: ignore[misc]
 
     plt.title(title)
-    
+
     if save_file:
-        plt.savefig(str(save_file), dpi=DPI)  # type: ignore[misc]
+        path = DATA / Path(save_file)
+        console.log("saving file")
+        plt.savefig(str(path), dpi=DPI)  # type: ignore[misc]
 
     plt.show()  # type: ignore[misc]
+
+
+if __name__ == "__main__":
+    from ariel_experiments.utils.initialize import generate_random_individual
+
+    graph = generate_random_individual()
+    visualize_tree_from_graph(graph, save_file="test.png")
