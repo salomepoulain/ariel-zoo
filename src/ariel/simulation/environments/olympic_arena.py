@@ -131,7 +131,7 @@ class OlympicArena:
         # Apply mask so edges fade to 0 smoothly
         height = noise * mask
 
-        return np.clip(height, None, None)
+        return height
 
     def _build_spec(self) -> mujoco.MjSpec:
         spec = mujoco.MjSpec()
