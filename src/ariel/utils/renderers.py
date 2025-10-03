@@ -1,31 +1,22 @@
 """TODO(jmdm): description of script.
 
-Date:       2025-07-08
-Status:     In progress ⚙️
-
-Notes
------
-    *
-
 Todo:
 ----
     [ ] ".rotate" as superclass method?
     [ ] Better documentation
-
-References
-----------
-    [1]
-
 """
 
 # Standard library
 import math
+from pathlib import Path
 
 # Third-party libraries
 import mujoco
 from PIL import Image
 from rich.console import Console
 
+# Local libraries
+from ariel.utils.file_ops import generate_save_path
 from ariel.utils.video_recorder import VideoRecorder
 
 # Global functions
@@ -36,43 +27,55 @@ def single_frame_renderer(
     model: mujoco.MjModel,
     data: mujoco.MjData,
     steps: int = 10,
-) -> None:
-    """
-    Render a single frame of the simulation using MuJoCo's rendering engine.
+    *,
+    save: bool = False,
+    show: bool = False,
+    save_path: str | Path | None = None,
+    camera: mujoco.MjvCamera | None = None,
+    width: int = 480,
+    height: int = 640,
+) -> Image.Image:
+    # Reset state and time of simulation
+    mujoco.mj_resetData(model, data)
 
-    Parameters
-    ----------
-    model : mujoco.MjModel
-        The MuJoCo model to render.
-    data : mujoco.MjData
-        The MuJoCo data to render.
-    steps : int, optional
-        The number of simulation steps to take before rendering, by default 10
-    """
     # Enable joint visualization option:
     scene_option = mujoco.MjvOption()
     scene_option.flags[mujoco.mjtVisFlag.mjVIS_JOINT] = True
 
-    # Reset state and time of simulation
-    mujoco.mj_resetData(model, data)
-
     # Call rendering engine
-    msg = f"Rendering single frame with [bold blue] {steps} [/bold blue] steps."
-    console.log(f"[bold yellow] --> {msg} [/bold yellow]")
-    with mujoco.Renderer(model) as renderer:
+    with mujoco.Renderer(
+        model,
+        width=width,
+        height=height,
+    ) as renderer:
         # Move simulation forward one iteration/step
         mujoco.mj_step(model, data, nstep=steps)
 
         # Update rendering engine
-        renderer.update_scene(data, scene_option=scene_option)
+        renderer.update_scene(
+            data,
+            scene_option=scene_option,
+            camera=camera or mujoco.MjvCamera(),
+        )
 
         # Generate frame using rendering engine
         frame = renderer.render()
 
         # Convert frame into an image which can be shown
-        img = Image.fromarray(frame)
+        img: Image.Image = Image.fromarray(frame)
+
+    # Save image locally
+    if save is True:
+        if save_path is None:
+            save_path = generate_save_path(file_path="img.png")
+        img.save(save_path, format="png")
+
+    # Show image
+    if show is True:
         img.show()
-    console.log("[bold green] --> Rendering done![/bold green]")
+
+    # Return image
+    return img
 
 
 def video_renderer(
@@ -132,13 +135,14 @@ def video_renderer(
     console.log(video_recorder.frame_count)
     video_recorder.release()
 
+
 def tracking_video_renderer(
     model: mujoco.MjModel,
     data: mujoco.MjData,
     duration: float = 10.0,
     video_recorder: VideoRecorder | None = None,
     tracking_distance: float = 1.5,
-    tracking_angle : float = 135
+    tracking_angle: float = 135,
 ) -> None:
     """
     Render a video of the simulation with camera tracking the "core" module.
@@ -173,8 +177,12 @@ def tracking_video_renderer(
 
     # Find the core body ID for tracking
     try:
-        core_body_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "robot-core")
-        print(f"Tracking core body ID: {core_body_id}")
+        core_body_id = mujoco.mj_name2id(
+            model,
+            mujoco.mjtObj.mjOBJ_BODY,
+            "robot-core",
+        )
+        console.log(f"Tracking core body ID: {core_body_id}")
     except ValueError:
         # Fallback: try to find any body with "core" in the name
         core_body_id = None
@@ -183,11 +191,15 @@ def tracking_video_renderer(
             if body_name and "core" in body_name:
                 core_body_id = i
                 break
-    
+
     if core_body_id is None:
-        console.log("[bold red] --> Warning: No core body found for tracking. Using default camera.[/bold red]")
+        console.log(
+            "[bold red] --> Warning: No core body found for tracking. Using default camera.[/bold red]",
+        )
     else:
-        console.log(f"[bold blue] --> Tracking core body with ID: {core_body_id}[/bold blue]")
+        console.log(
+            f"[bold blue] --> Tracking core body with ID: {core_body_id}[/bold blue]",
+        )
 
     # Calculate steps per frame to avoid single iterations
     options = mujoco.MjOption()
@@ -210,9 +222,13 @@ def tracking_video_renderer(
             camera.distance = tracking_distance
             camera.azimuth = tracking_angle  # Angle around the target
             camera.elevation = -30.0  # Angle above/below the target
-            
+
             # Update the renderer's camera
-            renderer.update_scene(data, scene_option=scene_option, camera=camera)
+            renderer.update_scene(
+                data,
+                scene_option=scene_option,
+                camera=camera,
+            )
         else:
             # Use default camera
             renderer.update_scene(data, scene_option=scene_option)
@@ -223,7 +239,11 @@ def tracking_video_renderer(
 
             # Update rendering engine with tracking camera
             if core_body_id is not None:
-                renderer.update_scene(data, scene_option=scene_option, camera=camera)
+                renderer.update_scene(
+                    data,
+                    scene_option=scene_option,
+                    camera=camera,
+                )
             else:
                 renderer.update_scene(data, scene_option=scene_option)
 
@@ -231,5 +251,7 @@ def tracking_video_renderer(
             video_recorder.write(frame=renderer.render())
 
     # Exit (and save locally) the generated video
-    console.log(f"[bold green] --> Tracking video rendered with {video_recorder.frame_count} frames[/bold green]")
+    console.log(
+        f"[bold green] --> Tracking video rendered with {video_recorder.frame_count} frames[/bold green]"
+    )
     video_recorder.release()
