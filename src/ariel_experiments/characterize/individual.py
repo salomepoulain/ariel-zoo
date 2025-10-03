@@ -1,11 +1,13 @@
+from __future__ import annotations
+
 # Standard library
 import json
 from hashlib import sha256
 from pathlib import Path
+from typing import TYPE_CHECKING, Protocol, TypeVar
 
 # Third-party libraries
 import numpy as np
-from networkx import DiGraph
 from rich.console import Console
 
 # Local libraries
@@ -15,6 +17,9 @@ from ariel.body_phenotypes.robogen_lite.modules.hinge import (
     ROTOR_MASS,
     STATOR_MASS,
 )
+
+if TYPE_CHECKING:
+    from networkx import DiGraph
 
 # Global constants
 SCRIPT_NAME = __file__.split("/")[-1][:-3]
@@ -27,12 +32,38 @@ SEED = 42
 console = Console()
 RNG = np.random.default_rng(SEED)
 
-# Type checking
 
-# Type Aliases
+# Type Aliases and TypeVars
+T = TypeVar("T")
+
+# Concrete value aliases (don't use TypeVar for concrete aliases)
+NumericProperty = int | float
+NonNumProperty = str | bool | list | tuple | dict | set
+GraphProperty = NumericProperty | NonNumProperty
+
+# Index of a graph in the population
+type GraphIndex = int
+type IndexMappings = list[GraphIndex]
+
+# Derived property can be a value or list of indexes
+DerivedProperty = GraphProperty | IndexMappings
+
+# name aliases
+type GraphPropertyName = str
+type DerivedPropertyName = str
+
+# Generic mapping when values are homogeneous (use NamedGraphPropertiesT[T])
+NamedGraphPropertiesT = dict[GraphPropertyName, T]
+# Backwards-compatible mixed container
+type NamedGraphProperties = dict[GraphPropertyName, GraphProperty]
 
 
-def analyze_module_counts(individual: DiGraph) -> dict[str, int]:
+# Generic analyzer Protocol: callable that returns dict[str, T]
+class PropertyAnalyzer(Protocol[T]):
+    def __call__(self, individual: DiGraph) -> NamedGraphPropertiesT[T]: ...
+
+
+def analyze_module_counts(individual: DiGraph) -> NamedGraphPropertiesT[int]:
     """
     Count different module types and edges in a directed graph individual.
 
@@ -58,7 +89,7 @@ def analyze_module_counts(individual: DiGraph) -> dict[str, int]:
     - The 'not-none' count is the sum of core, brick, and hinge modules
     - Function assumes all nodes have a 'type' attribute in their data
     """
-    counts: dict[str, int] = {
+    result: dict[str, int] = {
         "core": sum(
             data["type"] == "CORE" for _, data in individual.nodes(data=True)
         ),
@@ -73,12 +104,11 @@ def analyze_module_counts(individual: DiGraph) -> dict[str, int]:
         ),
         "edges": len(individual.edges()),
     }
-    counts["not-none"] = counts["core"] + counts["brick"] + counts["hinge"]
-    assert counts["core"] == 1
-    return counts
+    result["not-none"] = result["core"] + result["brick"] + result["hinge"]
+    return result
 
 
-def analyze_mass(individual: DiGraph) -> dict[str, float]:
+def analyze_mass(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     """
     Calculate the total mass of a modular robot individual.
 
@@ -107,7 +137,7 @@ def analyze_mass(individual: DiGraph) -> dict[str, float]:
     return {"mass": total_mass}
 
 
-def analyze_json_hash(individual: DiGraph) -> dict[str, str]:
+def analyze_json_hash(individual: DiGraph) -> NamedGraphPropertiesT[str]:
     """
     Compute a canonical hash for a directed graph based on its structure.
 
@@ -129,7 +159,6 @@ def analyze_json_hash(individual: DiGraph) -> dict[str, str]:
     - Uses SHA-256 algorithm for cryptographic hash generation
     - Node and edge attributes are included in the hash computation
     """
-    # Way to fingerprint non canonical graph.
     nodes = sorted([(n, dict(individual.nodes[n])) for n in individual.nodes()])
     edges = sorted([
         (u, v, dict(individual.edges[u, v])) for u, v in individual.edges()
@@ -141,7 +170,7 @@ def analyze_json_hash(individual: DiGraph) -> dict[str, str]:
     return {"hash": hash_string}
 
 
-def analyze_json_hash_no_id(individual: DiGraph) -> dict[str, str]:
+def analyze_json_hash_no_id(individual: DiGraph) -> NamedGraphPropertiesT[str]:
     """
     Generate a canonical hash for a directed graph excluding node identifiers.
 
@@ -163,18 +192,26 @@ def analyze_json_hash_no_id(individual: DiGraph) -> dict[str, str]:
     - Node IDs are excluded from the canonical representation, only node
       and edge data attributes are considered
     """
-    nodes = sorted([dict(data) for _, data in individual.nodes(data=True)], key=lambda d: json.dumps(d, sort_keys=True))
-    edges = sorted([dict(data) for _, _, data in individual.edges(data=True)], key=lambda d: json.dumps(d, sort_keys=True))
+    nodes = sorted(
+        [dict(data) for _, data in individual.nodes(data=True)],
+        key=lambda d: json.dumps(d, sort_keys=True),
+    )
+    edges = sorted(
+        [dict(data) for _, _, data in individual.edges(data=True)],
+        key=lambda d: json.dumps(d, sort_keys=True),
+    )
     canonical = {"nodes": nodes, "edges": edges}
     hash_string = sha256(
         json.dumps(canonical, sort_keys=True).encode("utf-8"),
     ).hexdigest()
-    return {"hash": hash_string}
+    return {"hash_no_id": hash_string}
+
 
 # -----------------------------------------------------------------
 # TODO: @savio @sara
 
-def analyze_branching(individual: DiGraph) -> dict[str, float]:
+
+def analyze_branching(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     """
     Measures the level of branching in the robot's morphology (M1).
 
@@ -185,7 +222,9 @@ def analyze_branching(individual: DiGraph) -> dict[str, float]:
     return {"branching": 0.0}
 
 
-def analyze_number_of_limbs(individual: DiGraph) -> dict[str, float]:
+def analyze_number_of_limbs(
+    individual: DiGraph,
+) -> NamedGraphPropertiesT[float]:
     """
     Measures the number of effective limbs attached to the robot (M2).
 
@@ -196,7 +235,9 @@ def analyze_number_of_limbs(individual: DiGraph) -> dict[str, float]:
     return {"number_of_limbs": 0.0}
 
 
-def analyze_length_of_limbs(individual: DiGraph) -> dict[str, float]:
+def analyze_length_of_limbs(
+    individual: DiGraph,
+) -> NamedGraphPropertiesT[float]:
     """
     Measures the relative length of the limbs (M3).
 
@@ -216,7 +257,7 @@ def analyze_length_of_limbs(individual: DiGraph) -> dict[str, float]:
     return {"length_of_limbs": 0.0}
 
 
-def analyze_coverage(individual: DiGraph) -> dict[str, float]:
+def analyze_coverage(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     """
     Measures how much of the morphology space is covered (M4).
 
@@ -228,7 +269,7 @@ def analyze_coverage(individual: DiGraph) -> dict[str, float]:
     return {"coverage": 0.0}
 
 
-def analyze_joints(individual: DiGraph) -> dict[str, float]:
+def analyze_joints(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     """
     Measures the number of effective joints in the morphology (M5).
 
@@ -241,7 +282,7 @@ def analyze_joints(individual: DiGraph) -> dict[str, float]:
     return {"joints": 0.0}
 
 
-def analyze_proportion(individual: DiGraph) -> dict[str, float]:
+def analyze_proportion(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     """
     Measures the proportionality or balance of the robot's shape (M6).
 
@@ -252,7 +293,7 @@ def analyze_proportion(individual: DiGraph) -> dict[str, float]:
     return {"proportion": 0.0}
 
 
-def analyze_symmetry(individual: DiGraph) -> dict[str, float]:
+def analyze_symmetry(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     """
     Measures the symmetry of the robot's structure (M7).
 
@@ -264,7 +305,7 @@ def analyze_symmetry(individual: DiGraph) -> dict[str, float]:
     return {"symmetry": 0.0}
 
 
-def analyze_size(individual: DiGraph) -> dict[str, float]:
+def analyze_size(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     """
     Measures the overall size of the robot's morphology (M8).
 
@@ -275,7 +316,7 @@ def analyze_size(individual: DiGraph) -> dict[str, float]:
     return {"size": 0.0}
 
 
-def analyze_sensors(individual: DiGraph) -> dict[str, float]:
+def analyze_sensors(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     """
     Measures the ratio of sensors to available slots in the morphology (M9).
 
@@ -292,8 +333,8 @@ def analyze_sensors(individual: DiGraph) -> dict[str, float]:
 
 if __name__ == "__main__":
     from ariel_experiments.utils.initialize import generate_random_individual
-    
+
     graph = generate_random_individual()
-    console.print('not none:', analyze_module_counts(graph)["not-none"])
-    
-    #feel free to test and expand here
+    console.print("not none:", analyze_module_counts(graph)["not-none"])
+
+    # feel free to test and expand here

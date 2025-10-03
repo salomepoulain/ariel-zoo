@@ -9,7 +9,7 @@ The final results will be to create this type of dictionary
 all_stats; CompletePopulationStats = {
     "degree": {
         "raw": [3, 2, 3, 5, 7],
-        "derived": {
+        "derived": {                # DerivedProperty
             "uniques": {
                 "3": {
                     "count": 2,
@@ -42,6 +42,11 @@ all_stats; CompletePopulationStats = {
     }
 }
 
+
+propertyAnalyzers work on 1 individual to give NamedProperty(s) per individual
+
+propertyDerivers work on 1 (or more) NamedProperty(s) to give DerivedProperty
+
 """
 
 
@@ -50,7 +55,7 @@ from collections import defaultdict
 from collections.abc import Callable, Sequence
 from os import cpu_count
 from pathlib import Path
-from typing import Any, TypedDict, cast
+from typing import Any, TypedDict, cast, TypeVar, Protocol
 
 # Third-party libraries
 import numpy as np
@@ -70,70 +75,138 @@ SEED = 42
 console = Console()
 RNG = np.random.default_rng(SEED)
 
-# Typing
-# A population is a sequence (list/tuple) of directed graphs (individuals)
-type Population = Sequence[DiGraph]
+# Type Aliases and TypeVars
+T = TypeVar("T")
+
+# Concrete value aliases (don't use TypeVar for concrete aliases)
+NumericProperty = int | float
+NonNumProperty = str | bool | list | tuple | dict | set
+GraphProperty = NumericProperty | NonNumProperty
 
 # Index of a graph in the population
 type GraphIndex = int
-
-# List of indexes to find individuals in a population
 type IndexMappings = list[GraphIndex]
 
-# Name of a property being analyzed (e.g., "mass", "degree")
+# Derived property can be a value or list of indexes
+DerivedProperty = GraphProperty | IndexMappings
+
+# name aliases
 type GraphPropertyName = str
-
-# Numeric property types (for stats)
-type NumericProperty = int | float
-
-# Non-numeric property types (for categorical or other data)
-type NonNumericProperty = str | bool | list | tuple | dict | set
-
-# Any property type (numeric or non-numeric)
-type GraphPropertyType = NumericProperty | NonNumericProperty
-
-# Result for one or more properties of a single individual graph
-type GraphPropertyResult = dict[GraphPropertyName, GraphPropertyType]
-
-# A function that analyzes a property from one individual graph
-type PropertyAnalyzer = Callable[[DiGraph], GraphPropertyResult]
-
-# List of one property value for all individuals in the population
-type EnsemblePropertyResults = list[GraphPropertyType]
-
-type DerivedPopulationProperties = dict[
-    DerivedPropertyName, DerivedPropertyResults,
-]
-
-type PopulationProperties = dict[
-    EnsemblePropertyResults, DerivedPopulationProperties | None
-]
-# Aggregated results for all individual graphs, grouped by property
-# (key: property name, value: PopulationProperties TypedDict)
-type CompletePopulationStats = dict[
-    GraphPropertyName, PopulationProperties | Optional[DerivedPopulationProperties],
-]
-
-
-# Name for a derived property (e.g., "mean", "uniques")
 type DerivedPropertyName = str
 
-# Results for derived properties (numeric or categorical stats)
-type DerivedPropertyResults = NumericPropertyStats | CategoricalStats
+# Generic mapping when values are homogeneous (use NamedGraphPropertiesT[T])
+NamedGraphPropertiesT = dict[GraphPropertyName, T]
+# Backwards-compatible mixed container
+type NamedGraphProperties = dict[GraphPropertyName, GraphProperty]
+type NamedDerivedProperties = dict[DerivedPropertyName, DerivedProperty]
 
-# Categorical stats: mapping from property value to Uniques TypedDict
-type CategoricalStats = dict[GraphPropertyType, Uniques]
+# Raw / derived population shapes
+type RawPopulationProperties = dict[GraphPropertyName, list[GraphProperty]]
+type DerivedPopulationProperties = dict[GraphPropertyName, NamedDerivedProperties]
+
+# end goal structure!
+class AnalyzedPopulation(TypedDict):
+    raw: RawPopulationProperties
+    derived: DerivedPopulationProperties
+    
+
+# Generic analyzer Protocol: callable that returns dict[str, T]
+class PropertyAnalyzer(Protocol[T]):
+    def __call__(self, individual: DiGraph) -> NamedGraphPropertiesT[T]:
+        ...
+
+# Deriver (non-generic here) — returns NamedDerivedProperties
+class PropertyDeriver(Protocol):
+    def __call__(
+        self,
+        named_props: NamedGraphProperties,
+        keys: GraphPropertyName | list[GraphPropertyName],
+    ) -> NamedDerivedProperties:
+        ...
 
 
 
-# Mapping from derived property name to its results
+# ----- property types: individual, population, derived -----
 
 
 
-# class PopulationProperties(TypedDict):
-#     """Everything known about a single property across the population."""
-#     raw: EnsemblePropertyResults
-#     derived: DerivedPopulationProperties | None
+# # NumericProperty = TypeVar("NumericProperty", int, float)
+# # NonNumProperty = TypeVar("NonNumProperty", str, bool, list, tuple, dict, set)
+# # GraphProperty = NumericProperty | NonNumProperty
+
+# # Index of a graph in the population
+
+
+
+# # ----- important structures -----
+
+# # end goal structure!
+# class AnalyzedPopulation(TypedDict):
+#     raw: RawPopulationProperties
+#     derived: DerivedPopulationProperties
+
+# type GraphIndex = int
+# type IndexMappings = list[GraphIndex]
+# type GraphPropertyName = str
+# type DerivedPropertyName = GraphPropertyName | str
+
+# GraphProperty = TypeVar("GraphProperty")
+# DerivedProperty = TypeVar("DerivedProperty")
+
+# # Derived properties across 1 individual
+# NamedGraphProperties = dict[
+#     GraphPropertyName, 
+#     GraphProperty
+# ]
+# # Derived properties calculated across 1 or more NamedGraphProperties.
+# NamedDerivedProperties = dict[
+#     DerivedPropertyName,
+#     DerivedProperty
+# ]
+
+# # Raw property values across the entire population from the analyzers,
+# RawPopulationProperties = dict[
+#     GraphPropertyName,
+#     list[GraphProperty],
+# ]
+# # DerivedProperties are not limited to 1 graph property, thus custom keys are allowed
+# DerivedPopulationProperties = dict[
+#     GraphPropertyName | str,
+#     NamedDerivedProperties
+# ]
+
+# # ----- functions -----
+
+# # A function that analyzes a property from one individual graph
+# # type PropertyAnalyzer = Callable[
+# #     [DiGraph], 
+# #     NamedGraphProperties
+# # ]
+# # # A function that analyzes 1 or more graph properties, to derive new ones
+# # type PropertyDeriver = Callable[
+# #     [NamedGraphProperties, GraphPropertyName | list[GraphPropertyName]], 
+# #     NamedDerivedProperties
+# # ]
+
+# # Generic analyzer: a callable that takes a DiGraph and returns a mapping
+# class PropertyAnalyzer(Protocol[GraphProperty]):
+#     def __call__(
+#         self, 
+#         individual: DiGraph
+#     ) -> NamedGraphProperties[GraphProperty]:
+#         ...
+
+# # Deriver (non-generic here for simplicity) — returns NamedDerivedProperties
+# class PropertyDeriver(Protocol[DerivedProperty]):
+#     def __call__(
+#         self,
+#         named_props: NamedGraphProperties,
+#         keys: GraphPropertyName | list[GraphPropertyName],
+#     ) -> NamedDerivedProperties:
+#         ...
+
+
+# Most common Derived Properties -------
 
 class NumericPropertyStats(TypedDict):
     count: int
@@ -146,241 +219,213 @@ class NumericPropertyStats(TypedDict):
     num_outliers: int
     outlier_indexes: IndexMappings
 
-class Uniques(TypedDict):
+class UniqueEntry(TypedDict):
     count: int
     indexes: IndexMappings
+Uniques = dict[GraphProperty, UniqueEntry]
+
+class MinFirstIdx(TypedDict):
+    indexes: IndexMappings
+
+class MaxFirstIdx(TypedDict):
+    indexes: IndexMappings
+    
+class BasicDerivedProperties(TypedDict):
+    numeric_stats: NumericPropertyStats | None
+    uniques: Uniques
+    min_first_idx: MinFirstIdx
+    max_first_idx: MaxFirstIdx
+    
+# ----------------------------------------
 
 
-def get_population_properties(
+# region PropertyDerivers
+
+def derive_numeric_summary(
+    value_list: list[GraphProperty],
+    *,
+    outlier_bound: float = 1.5,
+) -> NumericPropertyStats:
+    
+    
+    if not value_list:
+        raise ValueError("Input list is empty.")
+    first_type = type(value_list[0])
+    if not issubclass(first_type, (int, float)):
+        raise TypeError("All values must be numeric (int or float).")
+    
+    arr = np.array(value_list, dtype=float)
+    mean = float(arr.mean())
+    std = float(arr.std(ddof=1))
+    median = float(np.median(arr))
+    q1 = float(np.percentile(arr, 25))
+    q3 = float(np.percentile(arr, 75))
+    iqr = q3 - q1
+    lower = q1 - outlier_bound * iqr
+    upper = q3 + outlier_bound * iqr
+    outlier_indexes: IndexMappings = np.where((arr < lower) | (arr > upper))[0].tolist()
+
+    return NumericPropertyStats(
+        count=len(arr),
+        uniques=len(set(arr)),
+        mean=mean,
+        std=std,
+        median=median,
+        Q1=q1,
+        Q3=q3,
+        num_outliers=len(outlier_indexes),
+        outlier_indexes=outlier_indexes,
+    )
+
+def derive_uniques(value_list: list[GraphProperty]) -> Uniques:
+    index_dict = defaultdict(list)
+    for idx, h in enumerate(value_list):
+        try:
+            key = h
+            hash(key)
+        except Exception:
+            key = repr(h)
+        index_dict[key].append(idx)
+
+    uniques: Uniques = {}
+    for value, idxs in index_dict.items():
+        uniques[value] = UniqueEntry(count=len(idxs), indexes=idxs)
+
+    return uniques
+
+def derive_min_first_idx(value_list: list[GraphProperty]) -> MinFirstIdx:
+    """
+    Return indexes of the values sorted ascending (indexes in the order of increasing value).
+    Example:
+      values = [0,5,2,4] -> sorted values [0,2,4,5] -> return [0,2,3,1]
+    """
+    if not value_list:
+        return MinFirstIdx(indexes=[])
+
+    try:
+        sorted_indexes = sorted(range(len(value_list)), key=lambda i: (value_list[i], i))
+    except TypeError:
+        # Fallback for unorderable/mixed types: sort by stable string representation
+        sorted_indexes = sorted(range(len(value_list)), key=lambda i: (repr(value_list[i]), i))
+
+    return MinFirstIdx(indexes=sorted_indexes)
+
+
+def derive_max_first_idx(value_list: list[GraphProperty]) -> MaxFirstIdx:
+    """
+    Return indexes of the values sorted descending (indexes in the order of decreasing value).
+    """
+    if not value_list:
+        return MaxFirstIdx(indexes=[])
+
+    try:
+        sorted_indexes = sorted(range(len(value_list)), key=lambda i: (value_list[i], i), reverse=True)
+    except TypeError:
+        # Fallback for unorderable/mixed types: sort by stable string representation (reverse)
+        sorted_indexes = sorted(range(len(value_list)), key=lambda i: (repr(value_list[i]), i), reverse=True)
+
+    return MaxFirstIdx(indexes=sorted_indexes)
+
+def derive_basic_derived_properties(value_list: list[GraphProperty]) -> BasicDerivedProperties:
+    # uniques and index-based derived props always available
+    uniques = derive_uniques(value_list)
+    min_first_idx = derive_min_first_idx(value_list)
+    max_first_idx = derive_max_first_idx(value_list)
+
+    # numeric summary when possible
+    try:
+        numeric_stats = derive_numeric_summary(value_list)
+    except Exception:
+        numeric_stats = None
+
+    BasicDerivedProperties(
+        numeric_stats=numeric_stats,
+        uniques=uniques,
+        min_first_idx=min_first_idx,
+        max_first_idx=max_first_idx,
+    )
+
+
+# EndRegion
+
+
+def get_raw_population_properties(
     population: list[DiGraph],
     analyzers: list[PropertyAnalyzer],
     *,
     n_jobs: int = -1,
-) -> PopulationProperties:
+) -> RawPopulationProperties:
     """
-    Analyze all individuals in a population using multiple property analyzers.
-
+    Extract raw properties from a population of graphs using analyzers.
+    
     Parameters
     ----------
     population : list[DiGraph]
-        List of directed graphs representing individuals to analyze.
+        List of directed graphs to analyze for properties.
     analyzers : list[PropertyAnalyzer]
-        List of analyzer objects to apply to each individual.
+        List of analyzer objects to apply to each graph.
     n_jobs : int, default -1
-        Number of parallel jobs to run. -1 uses all available processors.
-
+        Number of parallel jobs for processing. -1 uses all processors.
+    
     Returns
     -------
-    PopulationProperties
-        Aggregated analysis results for the entire population.
-
+    RawPopulationProperties
+        Dictionary with extracted properties from all graphs and analyzers.
+    
     Notes
     -----
-    - Uses parallel processing when n_jobs != 1 for improved performance
-    - Each analyzer is applied to every individual in the population
-    - Results are automatically aggregated across all individuals and
-      analyzers
+    - Processing is parallelized across graphs when n_jobs != 1
+    - Each analyzer is applied to every graph in the population
+    - Results maintain correspondence between graphs and their properties
+    - Resuts per individual remain ordered as original population
     """
     if n_jobs == -1:
-        cpus = cpu_count()
-        n_jobs = cpus - 1 if cpus else 1
+        n_jobs = max(1, (cpu_count() or 1) - (cpu_count() // 4))
 
-    console.log(f"Using {n_jobs} cpu(s)")
-    console.log(f"Starting analysis of {len(population)} individuals...")
-
-    def _analyze(individual: DiGraph) -> PopulationProperties:
-        result: PopulationProperties = {}
+    def _analyze(individual: DiGraph) -> RawPopulationProperties:
+        result: RawPopulationProperties = {}
         for analyzer in analyzers:
             analyzer_result = analyzer(individual)
             for key, value in analyzer_result.items():
                 result.setdefault(key, []).append(value)
         return result
 
-    if n_jobs == 1:
-        results: list[PopulationProperties] = [
-            _analyze(ind)
-            for ind in track(population, description="Analyzing population")
-        ]
-    else:
-        parallel_results: Any = Parallel(n_jobs=n_jobs, batch_size="auto")(
-            delayed(_analyze)(ind)
-            for ind in track(population, description="Analyzing population")
-        )
-        results = cast("list[PopulationProperties]", parallel_results)
+    parallel_results: Any = Parallel(
+        n_jobs=n_jobs, batch_size="auto"
+    )(
+        delayed(_analyze)(ind)
+        for ind in track(population, description=f"Analyzing population (n_jobs={n_jobs})")
+    )
+    results = cast(list[RawPopulationProperties], parallel_results)
 
-    aggregated: PopulationProperties = defaultdict(list)
+    aggregated: RawPopulationProperties = defaultdict(list)
     for result in results:
-        for key, value in result.items():
-            aggregated[key].append(value)
+        for key, value_list in result.items():
+            aggregated[key].extend(value_list)
 
-    console.log("Analysis complete.")
-    return aggregated
+    return dict(aggregated)
 
 
-def analyze_population_metrics() -> None:
+
+
+# todo: just for each thing the derived thing
+# todo: might already be that get basic thingy...?
+# todo: its not.
+def get_derived_population_properties(analyzers):
     pass
 
 
-# def statistical_df_from_dict(
-#     properties_dict: dict[str, Any],
-#     keys: list[str] | None = None,
-#     save_file: Path | str | None = None,
-# ) -> pd.DataFrame:
-#     """
-#     For each key in properties_dict:
-#       - If numeric: mean, std, median, count, Q1, Q3, outlier indexes, num_outliers, uniques.
-#       - If non-numeric: key, count, uniques.
-#     Returns a DataFrame with correct dtypes.
-#     """
-#     if keys is None:
-#         keys = list(properties_dict)
-
-#     rows = []
-#     for key in keys:
-#         values = properties_dict[key]
-#         if not values:
-#             continue
-#         uniques = len(set(values))
-#         if isinstance(values[0], (float, int)):
-#             arr = np.asarray(values, dtype=float)
-#             mean = arr.mean()
-#             std = arr.std(ddof=1)
-#             median = np.median(arr)
-#             q1 = np.percentile(arr, 25)
-#             q3 = np.percentile(arr, 75)
-#             iqr = q3 - q1
-#             lower = q1 - 1.5 * iqr
-#             upper = q3 + 1.5 * iqr
-#             outlier_indexes = np.where((arr < lower) | (arr > upper))[
-#                 0
-#             ].tolist()
-#             row = {
-#                 "key": key,
-#                 "count": len(arr),
-#                 "uniques": int(uniques),
-#                 "mean": float(mean),
-#                 "std": float(std),
-#                 "median": float(median),
-#                 "Q1": float(q1),
-#                 "Q3": float(q3),
-#                 "num_outliers": len(outlier_indexes),
-#                 "outlier_indexes": outlier_indexes,
-#             }
-#         else:
-#             row = {
-#                 "key": key,
-#                 "count": len(values),
-#                 "uniques": int(uniques),
-#                 "mean": None,
-#                 "std": None,
-#                 "median": None,
-#                 "Q1": None,
-#                 "Q3": None,
-#                 "num_outliers": None,
-#                 "outlier_indexes": None,
-#             }
-#         rows.append(row)
-
-#     df = pd.DataFrame.from_records(rows)
-#     df = df.set_index("key")
-
-#     # Set dtypes explicitly
-#     df["count"] = df["count"].astype("Int64")
-#     df["uniques"] = df["uniques"].astype("Int64")
-#     for col in ["mean", "std", "median", "Q1", "Q3"]:
-#         df[col] = pd.to_numeric(df[col], errors="coerce")
-#     df["num_outliers"] = df["num_outliers"].astype("Int64")
-#     df["outlier_indexes"] = df["outlier_indexes"].astype(object)
-
-#     if save_file:
-#         df.to_csv(save_file)
-
-#     return df
+# todo: apply specified 
 
 
-def count_df_from_list(value_list: list[str]) -> pd.DataFrame:
-    """
-    TODO: add info_dict, and key, appends.
 
-    Returns a DataFrame with:
-      - index: hash value
-      - count: number of times the hash appears
-      - indexes: list of indexes in the original list where the hash appears.
-    """
-    index_dict = defaultdict(list)
-    for idx, h in enumerate(value_list):
-        index_dict[h].append(idx)
-
-    results = []
-    for h, idxs in index_dict.items():
-        results.append({
-            "value": h,
-            "count": len(idxs),
-            "indexes": idxs,
-        })
-
-    df = pd.DataFrame(results)
-    return df.set_index("value")
+def convert_to_df() -> None:
+    pass
 
 
-def summarize_numeric_properties(
-    properties_dict: dict[PropertyName, list[NumericProperty]],
-    properties: list[PropertyName] | None = None,
-    *,
-    outlier_bound: float = 1.5,
-) -> dict[str, NumericPropertyStats]:
-    summary: dict[str, NumericPropertyStats] = {}
+def save_df() -> None:
+    pass
 
-    # Filter keys if requested and ensure values are numeric
-    filtered_dict: dict[str, list[float]] = {}
-    for k, v in properties_dict.items():
-        if properties is not None and k not in properties:
-            continue
-        if not v:
-            continue
-        # Only include numeric lists
-        if isinstance(v[0], (int, float)):
-            filtered_dict[k] = [
-                float(x) for x in v
-            ]  # convert to float for consistency
-
-    for key, values in filtered_dict.items():
-        arr = np.array(values, dtype=float)
-        mean = float(arr.mean())
-        std = float(arr.std(ddof=1))
-        median = float(np.median(arr))
-        q1 = float(np.percentile(arr, 25))
-        q3 = float(np.percentile(arr, 75))
-        iqr = q3 - q1
-        lower = q1 - outlier_bound * iqr
-        upper = q3 + outlier_bound * iqr
-        outlier_indexes: IndexMappings = np.where(
-            (arr < lower) | (arr > upper),
-        )[0].tolist()
-
-        summary[key] = NumericPropertyStats(
-            count=len(arr),
-            uniques=len(set(values)),
-            mean=mean,
-            std=std,
-            median=median,
-            Q1=q1,
-            Q3=q3,
-            num_outliers=len(outlier_indexes),
-            outlier_indexes=outlier_indexes,
-        )
-
-    return summary
-
-
-def summarize_non_numeric_properties(
-    properties: dict[str, List[NonNumericProperty]],
-    keys: list[str] | None = None,
-) -> None:
-    """
-    Summarize non-numeric properties: count, uniques.
-    Returns a dict[PropertyName, dict[stats]].
-    """
 
 
 if __name__ == "__main__":
@@ -389,30 +434,44 @@ if __name__ == "__main__":
         analyze_mass,
         analyze_module_counts,
     )
-    from ariel_experiments.utils.initialize import generate_random_individual
+    from ariel_experiments.utils.initialize import generate_random_population_parallel
+    from time import perf_counter
+
+    # ----------------------------------------------
 
     population_size = 5
-    population = [generate_random_individual() for i in range(population_size)]
+    population = generate_random_population_parallel(population_size, n_jobs=1)
+
     individual_analyzers = [
         analyze_module_counts,
         analyze_mass,
         analyze_json_hash,
     ]
-    analyis_results = analyze_all_individuals(
+    raw_properties = get_raw_population_properties(
         population,
         individual_analyzers,
-        n_jobs=6,
     )
-    console.print(analyis_results)
+    
+    console.rule("raw properties:")
+    console.print(raw_properties)
+    
+    # ----------------------------------------------
 
-    console.rule("test speed")
+    console.rule("test analyze speed:")
 
-    big_population = [
-        generate_random_individual()
-        for _ in track(range(100_000), description="Generating big population")
-    ]
-    console.print("population initialized, running results now:")
-    _ = analyze_population(big_population, analyzers)
+    population_size = 100_000
+    population = generate_random_population_parallel(population_size)
+    
+    start = perf_counter()
+    raw_properties = get_raw_population_properties(
+        population,
+        individual_analyzers,
+    )
+    end = perf_counter()
+    console.print(f"population of size {population_size} took {end-start:.4f} seconds")
+
+    # ----------------------------------------------
+
 
     # all_individual_dict
     # population_results_dict
