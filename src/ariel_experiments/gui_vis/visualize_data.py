@@ -1,62 +1,37 @@
 # Standard library
-import json
-import os
-from collections import Counter, defaultdict
-from collections.abc import Callable
-from hashlib import sha256
+from collections import Counter
 from pathlib import Path
-from typing import Any, Never
-import collections.abc
+from typing import Any
 
 import matplotlib.pyplot as plt
 
 # Third-party libraries
 import numpy as np
-import pandas as pd
 import seaborn as sns
-from joblib import Parallel, delayed
 from matplotlib.ticker import PercentFormatter
-from networkx import DiGraph
 from rich.console import Console
-from rich.progress import track
-
-from ariel.body_phenotypes.robogen_lite.config import (
-    NUM_OF_FACES,
-    NUM_OF_ROTATIONS,
-    NUM_OF_TYPES_OF_MODULES,
-)
-from ariel.body_phenotypes.robogen_lite.decoders.hi_prob_decoding import (
-    HighProbabilityDecoder,
-)
-from ariel.body_phenotypes.robogen_lite.decoders.visualize_tree import (
-    visualize_tree_from_graph,
-)
 
 # Local libraries
-from ariel.body_phenotypes.robogen_lite.modules.brick import BRICK_MASS
-from ariel.body_phenotypes.robogen_lite.modules.core import CORE_MASS
-from ariel.body_phenotypes.robogen_lite.modules.hinge import (
-    ROTOR_MASS,
-    STATOR_MASS,
-)
 
 # Global constants
-SCRIPT_NAME = __file__.split("/")[-1][:-3]
+# SCRIPT_NAME = __file__.split("/")[-1][:-3]
 CWD = Path.cwd()
-DATA = Path(CWD / "__data__" / SCRIPT_NAME)
+DATA = Path(CWD / "__data__")
 DATA.mkdir(exist_ok=True)
 SEED = 42
+DPI=300
 
 # Global functions
 console = Console()
 RNG = np.random.default_rng(SEED)
 
 
-
-
-def create_boxplot_from_dict(
+def create_boxplot_from_raw(
     properties_dict: dict[str, Any],
     keys: list[str] | None = None,
+    *,
+    title: str | None = None,
+    save_file: Path | str | None = None,
 ) -> None:
     # If no keys provided, plot all except 'population'
     if keys is None:
@@ -69,18 +44,31 @@ def create_boxplot_from_dict(
             data.append(properties_dict[key])
             labels.append(key)
     # Create boxplot
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(10, 6), dpi=DPI)
     sns.boxplot(data=data)
     plt.xticks(ticks=range(len(labels)), labels=labels)
     plt.ylabel("Value")
-    plt.title("Boxplot of Robot Properties")
+    
+    if title:
+        plt.title(title)
+    else:
+        plt.title("Boxplot of Robot Properties")
+
+    if save_file:
+        path = DATA / Path(save_file)
+        console.log(f"saving file to {path}")
+        plt.savefig(path)    
+
     plt.show()
-    
-    
-def create_histogram_from_dict(
+
+
+def create_histogram_from_raw(
     properties_dict: dict[str, Any],
     keys: list[str] | None = None,
+    *,
     bins: int = 30,
+    title: str | None = None,
+    save_file: Path | str | None = None,
 ) -> None:
     """
     Draw a grouped histogram of the selected keys.
@@ -97,7 +85,7 @@ def create_histogram_from_dict(
     if all(isinstance(properties_dict[k][0], (int, float)) for k in valid_keys):
         # Plot all numeric keys together
         data = [properties_dict[k] for k in valid_keys]
-        plt.figure(figsize=(10, 6))
+        plt.figure(figsize=(10, 6), dpi=DPI)
         n, bins_, _patches = plt.hist(
             data,
             bins=bins,
@@ -113,11 +101,21 @@ def create_histogram_from_dict(
         plt.xlabel("Value")
         plt.ylabel("Frequency")
         plt.legend()
-        plt.title(
-            ", ".join(valid_keys)
-            if len(valid_keys) <= 3
-            else "Histogram of Robot Properties",
-        )
+
+        if title:
+            plt.title(title)
+        else:
+            plt.title(
+                ", ".join(valid_keys)
+                if len(valid_keys) <= 3
+                else "Histogram of Robot Properties",
+            )
+
+        if save_file:
+            path = DATA / Path(save_file)
+            console.log(f"saving file to {path}")
+            plt.savefig(path)
+        
         plt.show()
     else:
         # Plot string-valued keys separately
@@ -125,7 +123,7 @@ def create_histogram_from_dict(
             values = properties_dict[key]
             if not values:
                 continue
-            plt.figure(figsize=(10, 6))
+            plt.figure(figsize=(10, 6), dpi=DPI)
             if isinstance(values[0], str):
                 counts = Counter(values)
                 freqs = list(counts.values())
@@ -145,6 +143,17 @@ def create_histogram_from_dict(
                 )
                 plt.xlabel("Genotype frequency")
                 plt.ylabel("Number of unique genotypes")
-                plt.title(key)
+                
+                if title:
+                    plt.title(title)
+                else:
+                    plt.title(key)
+                
                 plt.legend()
+                
+                if save_file:
+                    path = DATA / Path(save_file)
+                    console.log(f"saving file to {path}")
+                    plt.savefig(path)
+                
                 plt.show()

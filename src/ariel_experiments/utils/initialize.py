@@ -24,10 +24,10 @@ from ariel.body_phenotypes.robogen_lite.decoders.hi_prob_decoding import (
 )
 
 # Global constants
-SCRIPT_NAME = __file__.split("/")[-1][:-3]
-CWD = Path.cwd()
-DATA = Path(CWD / "__data__" / SCRIPT_NAME)
-DATA.mkdir(exist_ok=True)
+# SCRIPT_NAME = __file__.split("/")[-1][:-3]
+# CWD = Path.cwd()
+# DATA = Path(CWD / "__data__" / SCRIPT_NAME)
+# DATA.mkdir(exist_ok=True)
 SEED = 42
 
 # Global functions
