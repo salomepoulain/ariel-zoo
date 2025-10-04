@@ -213,10 +213,10 @@ def analyze_json_hash_no_id(individual: DiGraph) -> NamedGraphPropertiesT[str]:
 
 def analyze_branching(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     """
-    Measures the level of branching in the robot's morphology (M1).
+    Measures the level of branching in the robot's morphology.
 
     Calculation Method: the number of modules that have 6 faces occupied/connected
-    devided by the number of possible amount of moduales with all their faces connected
+    devided by the number of possible modules with 6 faces connected
     based of the robot size.
 
     DO NOT GIVE A GRAPH WITH NONE TYPES!!!
@@ -234,7 +234,7 @@ def analyze_branching(individual: DiGraph) -> NamedGraphPropertiesT[float]:
             b +=1
     # a robot with less than 7 modules can never have a moduale with all their faces connected
     if m <7:
-        return 0
+        return {"branching": 0.0}
     # max possible modules that could have 6 connected faces
     bmax = int((m-2)/5)
      
@@ -258,22 +258,28 @@ def analyze_length_of_limbs(
     individual: DiGraph,
 ) -> NamedGraphPropertiesT[float]:
     """
-    Measures the relative length of the limbs (M3).
+    Measures the relative length of the limbs.
 
-    Calculation Method: The measure 'Length of Limbs' (E or M3) is defined by the following equation
-    (used, for example, in the S3 fitness function as a penalty) [4]:
-
-    E = { e / e_max, if m >= 3
-        { 0, otherwise
-
-    Where 'm' is the total number of modules in the body, 'e' is the number of modules
-    which have two of their faces attached to other modules (excluding the core-component),
-    and 'e_max' is the maximum amount of modules that a body with 'm' modules could have
-    with two attached faces, calculated as m - 2 [4].
-    A higher value suggests fewer, longer limbs, as it rewards maximizing the length relative to body size [2, 3].
-    This descriptor ranges in value from 0 to 1 [1].
+    Calculation Method: The number of components (excluding the core) that are only attached to two
+    other components devided by the total amount of componets-2 (the thoretical maximum amount of compentents attached to 2 others based of size)
     """
-    return {"length_of_limbs": 0.0}
+
+    e = 0
+    m = 0
+
+    for node in graph.nodes():
+        m += 1
+
+        # 5 means all faces are connected since their back should always be connected
+        if len(list(graph.successors(node))) == 1 and graph.nodes(data=True)[node]["type"] == "BRICK" or graph.nodes(data=True)[node]["type"] == "HINGE":
+            e +=1
+        
+    if m <3:
+        return {"length_of_limbs": 0.0}
+    emax = m-2
+    
+    
+    return {"length_of_limbs": e/emax}
 
 
 def analyze_coverage(individual: DiGraph) -> NamedGraphPropertiesT[float]:
