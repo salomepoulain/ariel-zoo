@@ -304,7 +304,21 @@ def analyze_joints(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     This reformulation was done because robots were often observed developing limbs purely formed by a sequence of joints [1].
     The descriptor ranges in value from 0 to 1 [1].
     """
-    return {"joints": 0.0}
+    j = 0
+    for node, data in individual.nodes(data=True):
+        if data.get("type") == "HINGE":
+            # we check all neighbors
+            neighbors = list(individual.predecessors(node)) + list(individual.successors(node))
+            for n in neighbors:
+                n_type = individual.nodes[n].get("type")
+                if n_type != "HINGE":
+                    j += 1
+                    break
+
+    jmax = sum(data.get("type") == "HINGE" for _, data in individual.nodes(data=True))
+    joints_ratio = j / jmax if jmax > 0 else 0.0
+    
+    return {"joints": joints_ratio}
 
 
 def analyze_proportion(individual: DiGraph) -> NamedGraphPropertiesT[float]:
