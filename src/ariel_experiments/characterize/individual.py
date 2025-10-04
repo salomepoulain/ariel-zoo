@@ -215,11 +215,30 @@ def analyze_branching(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     """
     Measures the level of branching in the robot's morphology (M1).
 
-    Calculation Method: The specific formula for 'Branching' (M1) is not detailed in this source material,
-    but it is noted that this descriptor ranges in value from 0 to 1 [1].
-    This descriptor is positively correlated with the 'Number of Limbs' [2].
+    Calculation Method: the number of modules that have 6 faces occupied/connected
+    devided by the number of possible amount of moduales with all their faces connected
+    based of the robot size.
+
+    DO NOT GIVE A GRAPH WITH NONE TYPES!!!
     """
-    return {"branching": 0.0}
+    b = 0
+    m = 0
+
+    for node in graph.nodes():
+        m += 1
+
+        # 5 means all faces are connected since their back should always be connected
+        if len(list(graph.successors(node))) == 5 and graph.nodes(data=True)[node]["type"] == "BRICK":
+            b +=1
+        if len(list(graph.successors(node))) == 6 and graph.nodes(data=True)[node]["type"] == "CORE":
+            b +=1
+    # a robot with less than 7 modules can never have a moduale with all their faces connected
+    if m <7:
+        return 0
+    # max possible modules that could have 6 connected faces
+    bmax = int((m-2)/5)
+     
+    return {"branching": b/bmax}
 
 
 def analyze_number_of_limbs(
