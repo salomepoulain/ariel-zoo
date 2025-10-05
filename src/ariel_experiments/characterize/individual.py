@@ -354,8 +354,45 @@ def analyze_symmetry(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     but it is noted that this descriptor ranges in value from 0 to 1 [1].
     Symmetry tended to be higher when a penalty for long limbs (S3 fitness) was applied [7].
     The results suggest that higher symmetry is correlated with lower average speed [8].
+    The main idea is to approximate the morphological symmetry comparing the sizes of the subtrees attached.
+    Formula used: symmetry = 1 - std(subtree_sizes) / max(subtree_sizes)
+
     """
-    return {"symmetry": 0.0}
+
+    # Find the core
+    core_nodes = [n for n, d in individual.nodes(data=True) if d.get("type") == "CORE"]
+    core = core_nodes[0]
+    # Find the neighbors
+    neighbors = list(individual.successors(core)) + list(individual.predecessors(core))
+    if len(neighbors) <= 1:
+        return {"symmetry": 0.0}
+    subtree_sizes = []
+    visited_global = set([core])
+    for n in neighbors:
+        queue = [n]
+        visited_local = set([core])
+        count = 0
+        while queue:
+            node = queue.pop()
+            if node in visited_local:
+                continue
+            visited_local.add(node)
+            visited_global.add(node)
+            count += 1
+            for succ in individual.successors(node):
+                if succ not in visited_local:
+                    queue.append(succ)
+        subtree_sizes.append(count)
+    if not subtree_sizes:
+        return {"symmetry": 0.0}
+    max_size = max(subtree_sizes)
+    if max_size == 0:
+        return {"symmetry": 0.0}
+
+    symmetry_value = 1 - (np.std(subtree_sizes) / max_size)
+    symmetry_value = float(np.clip(symmetry_value, 0.0, 1.0))
+
+    return {"symmetry": symmetry_value}
 
 
 def analyze_size(individual: DiGraph) -> NamedGraphPropertiesT[float]:
