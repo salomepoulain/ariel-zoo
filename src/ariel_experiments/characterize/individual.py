@@ -213,7 +213,7 @@ def analyze_json_hash_no_id(individual: DiGraph) -> NamedGraphPropertiesT[str]:
 
 def analyze_branching(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     """
-    Measures the level of branching in the robot's morphology.
+    Measures the relative level of branching in the robot's morphology.
 
     Calculation Method: the number of modules that have 6 faces occupied/connected
     devided by the number of possible modules with 6 faces connected
@@ -245,13 +245,25 @@ def analyze_number_of_limbs(
     individual: DiGraph,
 ) -> NamedGraphPropertiesT[float]:
     """
-    Measures the number of effective limbs attached to the robot (M2).
+    measures the number of limbs relative to its size
 
-    Calculation Method: The specific formula for 'Number of Limbs' (M2) is not detailed in this source material,
-    but it is noted that this descriptor ranges in value from 0 to 1 [1].
-    It is used to assess the tendency for morphologies to have few limbs [2, 3].
+    counts the number of limbs devided by the total possible limbs of a robot with m moduls
     """
-    return {"number_of_limbs": 0.0}
+    m = 0
+    l = 0
+
+    for node in individual.nodes():
+        m += 1
+
+        # counting the modules with no out going edges(aka the leafs)
+        if len(list(individual.successors(node))) == 0 and individual.nodes(data=True)[node]["type"] != "CORE":
+            l +=1
+
+    # thoroetical maximum number of limbs considering robot size
+    lmax = 4*int((m-8)/5) + (m-8) % 5 + 6 if m>7 else m-1
+    if lmax<=0:
+        return {"number_of_limbs": 0.0}
+    return {"number_of_limbs": l/lmax}
 
 
 def analyze_length_of_limbs(
@@ -270,12 +282,14 @@ def analyze_length_of_limbs(
     for node in individual.nodes():
         m += 1
 
-        # 5 means all faces are connected since their back should always be connected
-        if len(list(individual.successors(node))) == 1 and individual.nodes(data=True)[node]["type"] == "BRICK" or individual.nodes(data=True)[node]["type"] == "HINGE":
+        # 1 means 2 modules are connected to it since they are always connected in the back
+        if len(list(individual.successors(node))) == 1 and individual.nodes(data=True)[node]["type"] != "CORE":
             e +=1
         
     if m <3:
         return {"length_of_limbs": 0.0}
+    
+    # thoretical maximum length of a limb of robot size m
     emax = m-2
     
     
