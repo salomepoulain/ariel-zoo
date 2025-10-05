@@ -366,7 +366,12 @@ def analyze_size(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     but it is noted that this descriptor ranges in value from 0 to 1 [1].
     All behavior-oriented searches tended to explore larger Size, as a large body can more easily produce a large displacement for high speed [5].
     """
-    return {"size": 0.0}
+    counts = analyze_module_counts(individual)
+    not_none = counts["not-none"]
+    max_size = 50  
+    size_ratio = not_none / max_size if max_size > 0 else 0.0
+
+    return {"size": float(min(1.0, size_ratio))}
 
 
 def analyze_sensors(individual: DiGraph) -> NamedGraphPropertiesT[float]:
