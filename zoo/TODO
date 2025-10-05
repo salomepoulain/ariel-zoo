@@ -1,0 +1,5 @@
+☐ create method to canonicallize the subtree
+☐ create population derived method to see population distribution?
+☐ create a method to store the canonical graph (largest) in string format?
+☐ create parser that can write and read the string format and create initial population
+☐ easily save chosen population to csv?
