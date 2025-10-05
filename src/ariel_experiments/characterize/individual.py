@@ -224,13 +224,13 @@ def analyze_branching(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     b = 0
     m = 0
 
-    for node in graph.nodes():
+    for node in individual.nodes():
         m += 1
 
         # 5 means all faces are connected since their back should always be connected
-        if len(list(graph.successors(node))) == 5 and graph.nodes(data=True)[node]["type"] == "BRICK":
+        if len(list(individual.successors(node))) == 5 and individual.nodes(data=True)[node]["type"] == "BRICK":
             b +=1
-        if len(list(graph.successors(node))) == 6 and graph.nodes(data=True)[node]["type"] == "CORE":
+        if len(list(individual.successors(node))) == 6 and individual.nodes(data=True)[node]["type"] == "CORE":
             b +=1
     # a robot with less than 7 modules can never have a moduale with all their faces connected
     if m <7:
@@ -267,11 +267,11 @@ def analyze_length_of_limbs(
     e = 0
     m = 0
 
-    for node in graph.nodes():
+    for node in individual.nodes():
         m += 1
 
         # 5 means all faces are connected since their back should always be connected
-        if len(list(graph.successors(node))) == 1 and graph.nodes(data=True)[node]["type"] == "BRICK" or graph.nodes(data=True)[node]["type"] == "HINGE":
+        if len(list(individual.successors(node))) == 1 and individual.nodes(data=True)[node]["type"] == "BRICK" or individual.nodes(data=True)[node]["type"] == "HINGE":
             e +=1
         
     if m <3:
