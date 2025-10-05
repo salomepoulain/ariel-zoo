@@ -187,6 +187,7 @@ deemphasized
 deepcopy
 defenses
 deflist
+delaxes
 Deniz
 devcontainers
 dialog
@@ -289,6 +290,7 @@ funcs
 functools
 FURB
 furo
+fusestatic
 fzf
 FZF
 gainprm
@@ -857,6 +859,7 @@ undoc
 uniapprox
 urdf
 usernamehw
+usethread
 usr
 uvicorn
 uvx
@@ -893,6 +896,7 @@ xshift
 xspace
 xticks
 xunicode
+xyaxes
 xyflow
 xyzw
 yarl
