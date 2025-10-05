@@ -187,6 +187,7 @@ deemphasized
 deepcopy
 defenses
 deflist
+defusedxml
 delaxes
 Deniz
 devcontainers
@@ -390,6 +391,7 @@ jpf
 jpm
 jpx
 jsburckhardt
+jsonschema
 jupyter
 jxr
 Karine
@@ -442,6 +444,7 @@ libncurses
 libosmesa
 libpango
 libreadline
+libsass
 libsm
 libsqlite
 libx
@@ -481,6 +484,7 @@ lualatex
 luo
 Luo
 LWR
+lxml
 Maesani
 MAPCMA
 mapfiles
@@ -616,6 +620,7 @@ Perflint
 Perlin
 PERTFORCE
 PERTOBJ
+pexpect
 pgfkeys
 pgfplots
 PGH
@@ -852,6 +857,7 @@ typeguard
 typehints
 typeshed
 Tyrrell
+ujson
 underfull
 Underglow
 UNDERGLOW
