@@ -421,7 +421,7 @@ def find_length(graph, direction, node) -> int:
 
         # back means it needs to do an 180 or the same direction twice if its not the front
         elif direction == 'BACK' and face != 'FRONT':
-            length.append(find_length(graph, face, child)-1)
+            length.append(find_length(graph, 'LEFT', child)-1)
 
         else:
             length.append(find_length(graph, 'RIGHT', child)-1)
