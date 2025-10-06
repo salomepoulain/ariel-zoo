@@ -17,7 +17,7 @@ DATA = CWD / "__data__"
 DATA.mkdir(exist_ok=True)
 
 # Global functions
-install(show_locals=True)
+install(show_locals=False)
 console = Console()
 
 # Warning Control

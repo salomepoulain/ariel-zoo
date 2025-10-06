@@ -227,13 +227,13 @@ def test_kill_mechanics() -> None:
 
 def main() -> None:
     """Entry point."""
-    # --------------------- Test Kill Mechanics ---------------------
+    # --------------------- Test Kill Mechanics --------------------- #
     test_kill_mechanics()
 
-    # --------------------- Test Evaluate Mechanics ---------------------
+    # --------------------- Test Evaluate Mechanics --------------------- #
     test_evaluate_mechanics()
 
-    # --------------------- Test Fetch Logic ---------------------
+    # --------------------- Test Fetch Logic --------------------- #
     test_fetch_logic()
 
 

@@ -60,7 +60,7 @@ def init_database() -> Engine:
 class Individual(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
 
-    # ------------------------ LIFE TIME ------------------------
+    # ------------------------ LIFE TIME ------------------------ #
     alive: bool = Field(default=True, index=True)
 
     time_of_birth: int = Field(default=-1, index=True)
@@ -68,7 +68,7 @@ class Individual(SQLModel, table=True):
 
     # parents_id removed for now; reintroduce later if needed.
 
-    # ------------------------ FITNESS ------------------------
+    # ------------------------ FITNESS ------------------------ #
     requires_eval: bool = Field(default=True, index=True)
     fitness_: float | None = Field(default=None, index=True)
 
@@ -89,7 +89,7 @@ class Individual(SQLModel, table=True):
         self.requires_eval = False
         self.fitness_ = fitness_value
 
-    # ------------------------ GENOTYPE ------------------------
+    # ------------------------ GENOTYPE ------------------------ #
     requires_init: bool = Field(default=True, index=True)
     genotype_: JSONIterable | None = Field(default=None, sa_column=Column(JSON))
 
@@ -105,7 +105,7 @@ class Individual(SQLModel, table=True):
         self.requires_init = not bool(individual_genotype)
         self.genotype_ = individual_genotype
 
-    # ------------------------ TAGS ------------------------
+    # ------------------------ TAGS ------------------------ #
     tags_: dict[JSONType, JSONType] = Field(
         default={},
         sa_column=Column(JSON),

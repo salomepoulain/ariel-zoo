@@ -17,13 +17,13 @@ from ariel.body_phenotypes.robogen_lite.modules.module import Module
 type WeightType = float
 type DimensionType = tuple[float, float, float]
 
-# --- Robogen Configuration ---
+# --- Robogen Configuration --- #
 # Module weights (kg)
 CORE_MASS: WeightType = 1
 
 # Module dimensions (length, width, height) in meters
 CORE_DIMENSIONS: DimensionType = (0.10, 0.10, 0.10)
-# ------------------------------
+# ------------------------------ #
 
 
 class CoreModule(Module):

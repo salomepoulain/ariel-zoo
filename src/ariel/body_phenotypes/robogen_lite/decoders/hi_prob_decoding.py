@@ -10,9 +10,9 @@ References
 .. [1] `NetworkX JSON Graph <https://networkx.org/documentation/stable/reference/readwrite/generated/networkx.readwrite.json_graph.tree_data.html#networkx.readwrite.json_graph.tree_data>`_
 Todo
 ----
-    - [ ] for loops to be replaced with vectorized operations
-    - [ ] DiGraph positioning use cartesian coordinates instead of spring layout
-    - [ ] Should probably move the graph functions to a separate script
+- [ ] for loops to be replaced with vectorized operations
+- [ ] DiGraph positioning use cartesian coordinates instead of spring layout
+- [ ] Should probably move the graph functions to a separate script
 """
 
 # Evaluate type annotations in a deferred manner (ruff: UP037)

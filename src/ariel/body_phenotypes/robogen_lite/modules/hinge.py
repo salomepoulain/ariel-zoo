@@ -21,7 +21,7 @@ SHRINK = 0.99
 type WeightType = float
 type DimensionType = tuple[float, float, float]
 
-# --- Robogen Configuration ---
+# --- Robogen Configuration --- #
 # Module weights (kg)
 STATOR_MASS: WeightType = 0.02  # 20 grams
 ROTOR_MASS: WeightType = 0.04  # 40 grams
@@ -29,7 +29,7 @@ ROTOR_MASS: WeightType = 0.04  # 40 grams
 # Module dimensions (length, width, height) in meters
 STATOR_DIMENSIONS: DimensionType = (0.025, 0.03, 0.025)
 ROTOR_DIMENSIONS: DimensionType = (0.025, 0.02, 0.025)
-# ------------------------------
+# ------------------------------ #
 
 
 class HingeModule(Module):
@@ -123,7 +123,7 @@ class HingeModule(Module):
             bodyname2=rotor_name,
         )
 
-        # --- Actuator(s) ---
+        # --- Actuator(s) --- #
         dyntype = mujoco.mjtDyn.mjDYN_NONE
         gaintype = mujoco.mjtGain.mjGAIN_FIXED
         biastype = mujoco.mjtBias.mjBIAS_AFFINE
