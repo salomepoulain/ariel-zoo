@@ -300,12 +300,13 @@ def analyze_coverage(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     """
     Measures how much of the morphology space is covered (M4).
 
-    Calculation Method: The specific formula for 'Coverage' (M4) is not detailed in this source material,
-    but it is noted that this descriptor ranges in value from 0 to 1 [1].
-    Morphologies similar to snakes (like those predominant under S1 fitness) tended to have high coverage,
-    covering the whole body area [5].
+    Calculation Method: the volume that the robot occupice in the cube created by its own witdh, length and height
     """
-    return {"coverage": 0.0}
+
+    w,l,h = give_dim(graph)
+    m = len(graph.nodes())
+    
+    return {"coverage": m/(w*l*h)}
 
 
 def analyze_joints(individual: DiGraph) -> NamedGraphPropertiesT[float]:
