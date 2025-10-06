@@ -111,6 +111,7 @@ chapterpage
 charliermarsh
 charx
 charxstring
+Checkerboard
 cibuildwheel
 cibw
 CIBW
@@ -472,6 +473,7 @@ lnk
 loc
 logfilewarninglist
 logscale
+logspace
 longtable
 longtblr
 lookat
@@ -896,6 +898,7 @@ xdoctest
 xindy
 xlabel
 xlim
+xlrd
 xmat
 xpos
 xshift
