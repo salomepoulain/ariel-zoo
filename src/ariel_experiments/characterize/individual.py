@@ -430,7 +430,12 @@ def find_length(graph, direction, node) -> int:
 
     return max(length)+component_size
 
-def analyze_proportion(individual: DiGraph) -> NamedGraphPropertiesT[float]:
+
+# Before proceeding with the analyze_proportion function, we should analyze the 2 main paths we can follow:
+    #   - strictly follow the same logic as the paper, simply evaluating the ratio between the smallest and the largest dimension [analyze_proportion_literature]
+    #   - don't leave out any information about the third dimension and define the proportion variable as 1 - std(w,l,h) / mean(w,l,h)
+
+def analyze_proportion_literature(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     """
     Measures the proportionality or balance of the robot's shape (M6).
 
@@ -438,13 +443,27 @@ def analyze_proportion(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     but it is noted that this descriptor ranges in value from 0 to 1 [1].
     Proportion was observed to drop drastically for fitness S1, which was dominated by single-limb, disproportional robots [5].
     """
-# w,l,h is the width, length and height hopefully this is helpfull for porortions
+    # w,l,h is the width, length and height hopefully this is helpfull for proportions
     w,l,h = give_dim(graph)
-    print(w,l,h)
-    
+    ps = min(w,l,h)
+    pl = max(w,l,h)
+    if pl>0:
+        proportion_literature = ps/pl
+    else:
+        proportion_literature = 0.0
+
+    return {"proportion_literature": proportion_literature}
 
 
-    return {"proportion": 0.0}
+def analyze_proportion_spatial(individual: DiGraph) -> NamedGraphPropertiesT[float]:
+    w,l,h = give_dim(graph)
+    dims = np.array([w, l, h])
+    mean = np.mean(dims)
+    std = np.std(dims)
+    proportion_spatial = 1 - std / mean
+    proportion_spatial = np.clip(proportion_spatial, 0.0, 1.0)
+
+    return {"proportion_spatial": proportion_spatial}
 
 
 def analyze_symmetry(individual: DiGraph) -> NamedGraphPropertiesT[float]:
