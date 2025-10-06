@@ -12,9 +12,9 @@ import numpy as np
 from rich.console import Console
 
 # Global constants
-SCRIPT_NAME = __file__.split("/")[-1][:-3]
+# SCRIPT_NAME = __file__.split("/")[-1][:-3]
 CWD = Path.cwd()
-DATA = Path(CWD / "__data__" / SCRIPT_NAME)
+DATA = Path(CWD / "__data__")
 DATA.mkdir(exist_ok=True)
 SEED = 42
 
@@ -67,7 +67,8 @@ class VisualizationConfig:
     arrow_length: float = 2.5
     arrow_head_width: float = 0.35
     arrow_head_length: float = 0.2
-    font_size_labels: int = 9
+    arrow_color: str = "purple"
+    font_size_labels: int = 16
     font_size_edges: int = 12
 
 
@@ -294,7 +295,8 @@ def _create_node_labels(
         if node_rotation != "UNKNOWN":
             node_rotation = node_rotation.replace("DEG_", "")
 
-        node_labels[node] = f"{node}\n{node_type}\n{node_rotation}°"
+        # node_labels[node] = f"{node}\n{node_type}\n{node_rotation}°"
+        node_labels[node] = f"{node}"
         nodes_by_type[node_type].append(node)
 
     return node_labels, nodes_by_type
@@ -340,8 +342,8 @@ def _draw_rotation_arrows(
             dy,  # type: ignore[misc]
             head_width=config.arrow_head_width,
             head_length=config.arrow_head_length,
-            fc="black",
-            ec="black",
+            fc=config.arrow_color,
+            ec=config.arrow_color,
             alpha=0.9,
             zorder=1,
             linewidth=2,
@@ -392,7 +394,7 @@ def _draw_nodes(
         type_labels: dict[int, str] = {
             node: node_labels[node] for node in nodes
         }
-
+        
         nx.draw_networkx_labels(  # type: ignore[misc]
             tree,
             pos,
@@ -464,12 +466,13 @@ def _draw_edge_labels(
 
 
 def visualize_tree_from_graph(
-    graph: nx.Graph,
+    graph: nx.Graph | nx.DiGraph,
     root: int = 0,
     *,
     title: str = "",
     save_file: Path | str | None = None,
     config: VisualizationConfig | None = None,
+    make_tree: bool = False,
 ) -> None:
     """Visualize a robot graph as a tree structure.
 
@@ -491,7 +494,15 @@ def visualize_tree_from_graph(
     """
     config = config or VisualizationConfig()
 
-    tree: nx.DiGraph = _extract_spanning_tree(graph, root)
+    tree = graph
+    if isinstance(graph, nx.Graph): # TODO: remove
+        make_tree = True
+        
+    if make_tree:
+        tree = _extract_spanning_tree(graph, root)
+        
+    # tree: nx.DiGraph = _extract_spanning_tree(graph, root)
+    tree = graph
     pos: dict[int, tuple[float, float]] = _create_tree_layout(
         tree, root, config,
     )
@@ -512,7 +523,7 @@ def visualize_tree_from_graph(
 
     if save_file:
         path = DATA / Path(save_file)
-        console.log("saving file")
+        console.log(f"saving file to {path}")
         plt.savefig(str(path), dpi=DPI)  # type: ignore[misc]
 
     plt.show()  # type: ignore[misc]
@@ -522,4 +533,5 @@ if __name__ == "__main__":
     from ariel_experiments.utils.initialize import generate_random_individual
 
     graph = generate_random_individual()
-    visualize_tree_from_graph(graph, save_file="test.png")
+    
+    visualize_tree_from_graph(graph, save_file="visualize_tree.png")
