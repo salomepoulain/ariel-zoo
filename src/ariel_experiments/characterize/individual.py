@@ -334,6 +334,100 @@ def analyze_joints(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     
     return {"joints": joints_ratio}
 
+def give_dim(graph):
+    """
+    Giving the length width and height of the robotmeasured in nr of componets
+
+    will find the length, width and heigt by looking how far its limbs stretches in opposit directions and adding them togther
+
+    
+    """
+    w = [0]
+    l = [0]
+    h = [0]
+
+    # finding the width, length and height
+    w.append(find_length(graph, "FRONT", 0))
+    w.append(find_length(graph, "BACK", 0))
+
+    l.append(find_length(graph, "RIGHT", 0))
+    l.append(find_length(graph, "LEFT", 0))
+
+    h.append(find_length(graph, "TOP", 0))
+    h.append(find_length(graph, "BOTTOM", 0))
+
+    
+
+    # connecting the 2 largest values from each list, subtracting 1 since the core got counted double
+    cw = w[0] + w[1] - 1
+    cl = l[0] + l[1] - 1
+    ch = h[0] + h[1] - 1
+
+    return (cw,cl,ch)
+
+
+def find_length(graph, direction, node) -> int:
+    """
+    finds the length in any direction
+
+    graph: the Digraph of nodes of the robot
+    direction: direction is the face that it should be heading to, this is the local direction of the current node
+    node: the current node that we want to know the length of in a direction
+
+    method:
+    1. check all nodes that the current node has an outgoing edge to (aka do step one for all child nodes)
+    2. substract the size of the component if its not on the face we are intrested in, doubled if it is the complete opposite
+    3. take the biggest length, add the current nodes size to it and return it
+    """
+    length = [0]
+    faces = ['RIGHT', 'TOP', 'LEFT', 'BOTTOM']
+    rot = dict(graph.nodes(data=True))[node]['rotation']
+    component_size = 1 # usefull for later expansion if needed
+
+    # oriantation fixing by changing direction, 45 degrees maybe needs to be expanded upon later using comonentsize
+    if (direction != 'FRONT' and direction != 'BACK') and rot != "DEG_0":
+        match rot: 
+            case "DEG_90":
+                direction = faces[(faces.index(direction)+1)%4]
+            case "DEG_180":
+                direction = faces[(faces.index(direction)+2)%4]
+            case "DEG_270":
+                direction = faces[(faces.index(direction)+3)%4]
+            case "DEG_125":
+                direction = faces[(faces.index(direction)+1)%4]
+            case "DEG_225":
+                direction = faces[(faces.index(direction)+2)%4]
+            case "DEG_315":
+                direction = faces[(faces.index(direction)+3)%4]
+    
+
+    for index, child in enumerate(graph.successors(node)):
+
+        face = list(graph.edges(node, data=True))[index][2]["face"]
+
+
+        # if this is in the right way keep going that way
+        if face == direction:
+            length.append(find_length(graph, 'FRONT', child))
+
+
+        # completly the wrong way subtract 2 to penalize
+        elif (direction =='LEFT' and face == 'RIGHT') or (direction =='RIGHT' and face == 'LEFT') \
+            or (direction =='BOTTOM' and face == 'TOP') or (direction =='TOP' and face == 'BOTTOM'):
+
+            length.append(find_length(graph, 'BACK', child)- 2) 
+
+
+        # back means it needs to do an 180 or the same direction twice if its not the front
+        elif direction == 'BACK' and face != 'FRONT':
+            length.append(find_length(graph, face, child)-1)
+
+        else:
+            length.append(find_length(graph, 'RIGHT', child)-1)
+
+
+
+    return max(length)+component_size
 
 def analyze_proportion(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     """
@@ -343,6 +437,12 @@ def analyze_proportion(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     but it is noted that this descriptor ranges in value from 0 to 1 [1].
     Proportion was observed to drop drastically for fitness S1, which was dominated by single-limb, disproportional robots [5].
     """
+# w,l,h is the width, length and height hopefully this is helpfull for porortions
+    w,l,h = give_dim(graph)
+    print(w,l,h)
+    
+
+
     return {"proportion": 0.0}
 
 
