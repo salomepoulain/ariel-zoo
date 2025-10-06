@@ -342,9 +342,9 @@ def give_dim(graph):
 
     
     """
-    w = [0]
-    l = [0]
-    h = [0]
+    w = []
+    l = []
+    h = []
 
     # finding the width, length and height
     w.append(find_length(graph, "FRONT", 0))
