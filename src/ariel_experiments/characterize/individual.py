@@ -525,7 +525,7 @@ def analyze_size(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     """
     counts = analyze_module_counts(individual)
     not_none = counts["not-none"]
-    max_size = 50  
+    max_size = 20
     size_ratio = not_none / max_size if max_size > 0 else 0.0
 
     return {"size": float(min(1.0, size_ratio))}
