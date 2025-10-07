@@ -1,9 +1,9 @@
 """
-ARIEL.
+ARIEL: Autonomous Robots through Integrated Evolution and Learning.
 
 Todo
 ----
-    [ ] Make rich logger take command-line argument for verbosity  (clicK?)
+    [ ] Make rich logger take command-line argument for verbosity  (click?)
 """
 
 # Standard library

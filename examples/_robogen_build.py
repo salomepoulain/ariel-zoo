@@ -24,6 +24,7 @@ import mujoco
 from mujoco import viewer
 from rich.console import Console
 
+# Local libraries
 from ariel.body_phenotypes.robogen_lite.config import (
     ModuleFaces,
     ModuleRotationsTheta,
@@ -31,7 +32,7 @@ from ariel.body_phenotypes.robogen_lite.config import (
 from ariel.body_phenotypes.robogen_lite.modules.brick import BrickModule
 from ariel.body_phenotypes.robogen_lite.modules.core import CoreModule
 from ariel.body_phenotypes.robogen_lite.modules.hinge import HingeModule
-from ariel.simulation.environments.simple_flat_world import SimpleFlatWorld
+from ariel.simulation.environments import SimpleFlatWorld
 from ariel.utils.renderers import single_frame_renderer
 
 # Global constants

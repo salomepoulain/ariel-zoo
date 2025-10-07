@@ -30,7 +30,7 @@ class CoreModule(Module):
     """Core module specifications."""
 
     index: int | None = None
-    module_type: str = ModuleType.CORE
+    module_type: ModuleType = ModuleType.CORE
 
     def __init__(self, index: int) -> None:
         """

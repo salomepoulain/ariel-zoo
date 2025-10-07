@@ -121,9 +121,7 @@ def test_fetch_logic() -> None:
     threshold = 0.5
     population = fetch_population(
         engine,
-        logic=(
-            (Individual.fitness_ >= threshold),  # type: ignore[operator]
-        ),
+        logic=((Individual.fitness_ >= threshold),),
     )
     end = console.get_time()
     console.log(
@@ -135,9 +133,7 @@ def test_fetch_logic() -> None:
     threshold = 0.5
     population = fetch_population(
         engine,
-        logic=(
-            (Individual.fitness_ >= threshold),  # type: ignore[operator]
-        ),
+        logic=((Individual.fitness_ >= threshold),),
         constrain_alive=False,
     )
     end = console.get_time()

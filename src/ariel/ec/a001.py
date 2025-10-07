@@ -82,9 +82,9 @@ class Individual(SQLModel, table=True):
 
     @fitness.setter
     def fitness(self, fitness_value: float) -> None:
-        if fitness_value is None:
-            msg = "Trying to assign `None` to fitness!\n"
-            msg += f"--> {self.fitness_value=}"
+        if isinstance(fitness_value, float) is False:
+            msg = "Trying to assign a non-float value to fitness!\n"
+            msg += f"--> {fitness_value=}"
             raise ValueError(msg)
         self.requires_eval = False
         self.fitness_ = fitness_value

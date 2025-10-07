@@ -54,9 +54,8 @@ class HopfCPG:
         # Adjacency list for coupling
         self.adjacency_list = adjacency_list
         if len(adjacency_list) != num_neurons:
-            raise ValueError(
-                "Adjacency list length must match number of neurons."
-            )
+            msg = "Adjacency list length must match number of neurons."
+            raise ValueError(msg)
 
         # --- Initialize state variables --- #
         self.init_state = 0.5

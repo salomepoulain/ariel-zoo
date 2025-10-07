@@ -94,6 +94,8 @@ class HighProbabilityDecoder:
         DiGraph
             A graph representing the decoded modules and their connections.
         """
+        self._graph: dict[int, ModuleInstance] = {}
+        self.graph: DiGraph[Any] = nx.DiGraph()
         self.type_p_space = type_probability_space
         self.conn_p_space = connection_probability_space
         self.rot_p_space = rotation_probability_space

@@ -1,3 +1,8 @@
+"""EC A2 Template Code."""
+
+# Standard libraries
+from pathlib import Path
+
 # Third-party libraries
 import matplotlib.pyplot as plt
 import mujoco
@@ -6,7 +11,7 @@ from mujoco import viewer
 
 # import prebuilt robot phenotypes
 from ariel.body_phenotypes.robogen_lite.prebuilt_robots.gecko import gecko
-from ariel.simulation.environments.simple_flat_world import SimpleFlatWorld
+from ariel.simulation.environments import SimpleFlatWorld
 
 # Local libraries
 from ariel.utils.renderers import video_renderer
@@ -14,6 +19,12 @@ from ariel.utils.video_recorder import VideoRecorder
 
 # Keep track of data / history
 HISTORY = []
+
+# --- DATA SETUP --- #
+SCRIPT_NAME = __file__.split("/")[-1][:-3]
+CWD = Path.cwd()
+DATA = CWD / "__data__"
+DATA.mkdir(exist_ok=True)
 
 
 def random_move(model, data, to_track) -> None:
@@ -122,12 +133,12 @@ def main():
 
     # Spawn robot in the world
     # Check docstring for spawn conditions
-    world.spawn(gecko_core.spec, spawn_position=[0, 0, 0])
+    world.spawn(gecko_core.spec, position=[0, 0, 0])
 
     # Generate the model and data
     # These are standard parts of the simulation USE THEM AS IS, DO NOT CHANGE
     model = world.spec.compile()
-    data = mujoco.MjData(model)  # type: ignore
+    data = mujoco.MjData(model)
 
     # Initialise data tracking
     # to_track is automatically updated every time step
@@ -142,12 +153,13 @@ def main():
     # This opens a viewer window and runs the simulation with the controller you defined
     # If mujoco.set_mjcb_control(None), then you can control the limbs yourself.
     # viewer.launch(
-    #     model=model,  # type: ignore
+    #     model=model,
     #     data=data,
     # )
 
+    # If you want to record a video of your simulation, you can use the video renderer.
     # Non-default VideoRecorder options
-    PATH_TO_VIDEO_FOLDER = "./__videos__"
+    PATH_TO_VIDEO_FOLDER = DATA / "__videos__"
     video_recorder = VideoRecorder(output_folder=PATH_TO_VIDEO_FOLDER)
 
     # Render with video recorder
@@ -159,7 +171,6 @@ def main():
     )
 
     show_qpos_history(HISTORY)
-    # If you want to record a video of your simulation, you can use the video renderer.
 
 
 if __name__ == "__main__":

@@ -36,14 +36,14 @@ class HingeModule(Module):
     """Hinge module specifications."""
 
     index: int | None = None
-    module_type: str = ModuleType.HINGE
+    module_type: ModuleType = ModuleType.HINGE
 
     def __init__(self, index: int) -> None:
-        """Initialize the brick module.
+        """Initialize the hinge module.
 
         Parameters
         ----------
-        index : int
+        index
             The index of the hinge module being instantiated
         """
         # Set the index of the module
@@ -158,7 +158,7 @@ class HingeModule(Module):
 
         Parameters
         ----------
-        angle : float
+        angle
             The angle in degrees to rotate the hinge.
         """
         # Convert angle to quaternion
@@ -169,5 +169,5 @@ class HingeModule(Module):
         ])
         quat = np.roll(qnp.as_float_array(quat), shift=-1)
 
-        # Set the quaternion for the brick body
+        # Set the quaternion for the hinge body
         self.body.quat = np.round(quat, decimals=3)

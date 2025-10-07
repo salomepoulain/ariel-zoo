@@ -13,6 +13,7 @@ Todo
 # Standard library
 from abc import abstractmethod
 from copy import deepcopy
+from typing import cast
 
 # Third-party libraries
 import mujoco
@@ -31,6 +32,7 @@ class BaseWorld:
     name: str = "base-world"
 
     spawns: int = 0
+    spawn_prefix: str = "robot"
     default_spawn_position: Position = (0, 0, 0)  # x, y, z
     default_spawn_rotation: Rotation = (0, 0, 0)  # x, y, z
 
@@ -133,8 +135,21 @@ class BaseWorld:
 
             # Handle any negative contacts found
             for contact in contact_pairs:
-                geom1, geom2, dist = contact
+                # Unpack contact details
+                geom1: str | None = cast("str|None", contact[0])
+                geom2: str | None = cast("str|None", contact[1])
+                dist: float = contact[2]
+
+                # Get the floor name
                 floor_name = self.mujoco_config.floor_name
+
+                # Sometimes the spawn name is not given
+                if geom1 is None:
+                    geom1 = spawn_name
+                if geom2 is None:
+                    geom2 = spawn_name
+
+                # Check if one of the geoms is the floor and the other is the robot
                 one_geom_is_floor = floor_name in geom1 or floor_name in geom2
                 one_geom_is_robot = spawn_name in geom1 or spawn_name in geom2
                 if one_geom_is_floor and one_geom_is_robot:
@@ -150,8 +165,9 @@ class BaseWorld:
 
                     # Log the new spawn position
                     msg = "Correcting automatically by raising the robot: \n"
-                    msg += f"new spawn position: {spawn.pos} (+{correction} m)"
+                    msg += f"New spawn position: {spawn.pos} (+{correction} m)"
                     log.debug(msg)
+                    break
             validation_steps += 1
 
         # Log the completion of the validation
@@ -164,7 +180,7 @@ class BaseWorld:
         robot_spec: mujoco.MjSpec,
         position: Position | None = None,
         rotation: Rotation | None = None,
-        spawn_prefix: str = "robot",
+        spawn_prefix: str | None = None,
         *,
         correct_spawn_for_collisions: bool = True,
         rotation_sequence: str = "XYZ",  # xyzXYZ, assume intrinsic
@@ -180,6 +196,10 @@ class BaseWorld:
             rotation = self.default_spawn_rotation
         else:
             rotation = deepcopy(rotation)
+
+        # If no prefix is given, use the default one
+        if spawn_prefix is None:
+            spawn_prefix = self.spawn_prefix
 
         # Make a copy of the robot and world specs
         temp_robot_spec = duplicate_mj_spec(robot_spec)

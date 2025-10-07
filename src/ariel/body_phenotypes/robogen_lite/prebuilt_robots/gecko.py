@@ -7,7 +7,8 @@ from ariel.body_phenotypes.robogen_lite.modules.hinge import HingeModule
 
 
 def gecko() -> CoreModule:
-    """
+    """Gecko robot body.
+
     Create and attach bodies/sites, then print relative orientations between
     abdomen and spine bodies to debug hinge placement/orientation.
 
@@ -16,9 +17,13 @@ def gecko() -> CoreModule:
     The gecko body consists of a core module, 4 legs (flippers), a neck and a
     spine. For better mobility the front two flippers have 2 hinges (joints),
     each rotated 90 degrees to each other. Additionally, the back two flippers
-    are rotated 45 degrees compared to the bode, to encourage forward movement.
-    """
+    are rotated 45 degrees compared to the body, to encourage forward movement.
 
+    Returns
+    -------
+    CoreModule
+        The core module of the robot, with all other modules attached.
+    """
     core = CoreModule(
         index=0,
     )

@@ -12,7 +12,7 @@ Status:     Completed ✅
 import mujoco
 
 # Local libraries
-from ariel.simulation.environments.simple_flat_world import SimpleFlatWorld
+from ariel.simulation.environments import SimpleFlatWorld
 from ariel.utils.renderers import single_frame_renderer
 
 
@@ -38,7 +38,7 @@ def main() -> None:
     data = mujoco.MjData(model)
 
     # Render a single frame
-    single_frame_renderer(model, data, steps=10_000)
+    single_frame_renderer(model, data, steps=10_000, show=True)
 
 
 if __name__ == "__main__":

@@ -2,18 +2,21 @@
 
 # Standard library
 from dataclasses import dataclass
+from typing import Literal
 
 # Third-party libraries
 import numpy as np
-import numpy.typing as npt
 
-# Global constants
-float_precision = np.float64
-int_precision = np.int32
+# Local libraries
+from ariel.parameters.ariel_types import (
+    ND_FLOAT_PRECISION,
+    ND_INT_PRECISION,
+    FloatArray,
+    IntArray,
+)
 
 # Type Aliases
-type NpArray = npt.NDArray[np.float64]
-type NpIntArray = npt.NDArray[np.int32]
+type NormMethod = Literal["linear", "clip", "none"]
 
 
 @dataclass
@@ -30,6 +33,7 @@ class PerlinNoise:
     """
 
     seed: int | None = None
+    norm_methods: NormMethod = "linear"
 
     def __post_init__(self) -> None:
         """Initialize the Perlin noise generator."""
@@ -51,16 +55,18 @@ class PerlinNoise:
         )
 
     @staticmethod
-    def _fade(t: NpArray) -> NpArray:
+    def _fade(t: FloatArray) -> FloatArray:
         # 6t^5 - 15t^4 + 10t^3 (smoothstep^3), stable & vectorized
         #   https://www.wikiwand.com/en/articles/Smoothstep
-        return np.array(((6 * t - 15) * t + 10) * (t * t * t))
+        return np.array(((6 * t - 15) * t + 10) * (t * t * t)).astype(
+            ND_FLOAT_PRECISION,
+        )
 
     @staticmethod
-    def _lerp(a: NpArray, b: NpArray, t: NpArray) -> NpArray:
-        return a + t * (b - a)
+    def _lerp(a: FloatArray, b: FloatArray, t: FloatArray) -> FloatArray:
+        return (a + t * (b - a)).astype(ND_FLOAT_PRECISION)
 
-    def _hash2(self, xi: NpIntArray, yi: NpIntArray) -> NpIntArray:
+    def _hash2(self, xi: IntArray, yi: IntArray) -> IntArray:
         """
         Hash (xi, yi) -> [0, 255] via permutation table, vectorized.
 
@@ -80,7 +86,7 @@ class PerlinNoise:
         yi &= 255
         return self._perm[(self._perm[xi] + yi) & 255]
 
-    def _grad_at_corner(self, xi: NpIntArray, yi: NpIntArray) -> NpArray:
+    def _grad_at_corner(self, xi: IntArray, yi: IntArray) -> FloatArray:
         """
         Lookup 2D unit gradient vector at integer lattice corner (xi, yi).
 
@@ -98,45 +104,22 @@ class PerlinNoise:
         h = self._hash2(xi, yi) % self._grad_lut.shape[0]
         return self._grad_lut[h]
 
-    # ---------- public API ----------
-
-    def as_grid(  # noqa: PLR0914
+    def as_grid(  # noqa: D102, PLR0914
         self,
         width: int,
         height: int,
-        *,
         scale: float = 64.0,
-        normalize: bool = True,
-    ) -> np.ndarray:
-        """
-        Generate a (height, width) grid of Perlin noise.
-
-        Parameters
-        ----------
-        width
-        height
-        scale
-            The number of pixels per noise unit. Larger -> smoother noise.
-        normalize
-            If True, map result from [-1, 1] to [0, 1].
-
-        Raises
-        ------
-        ValueError
-            If scale <= 0.
-
-        Returns
-        -------
-        np.ndarray
-            Array of shape (height, width), dtype float32.
-        """
-        if scale <= 0:
-            msg = "scale must be > 0"
-            raise ValueError(msg)
+        normalize: NormMethod = "none",
+    ) -> FloatArray:
+        # Check that width height, scale are valid
+        for arg in (width, height, scale):
+            if arg <= 0:
+                msg = f"{arg} must be > 0"
+                raise ValueError(msg)
 
         # Pixel coordinate grid
-        xs = np.arange(width, dtype=np.float32)
-        ys = np.arange(height, dtype=np.float32)
+        xs = np.arange(width)
+        ys = np.arange(height)
         x_arr, y_arr = np.meshgrid(xs, ys, indexing="xy")
 
         # Noise-space coordinates
@@ -144,12 +127,12 @@ class PerlinNoise:
         y = y_arr / scale
 
         # Integer lattice corners
-        xi = np.floor(x).astype(np.int32)
-        yi = np.floor(y).astype(np.int32)
+        xi = np.floor(x).astype(ND_INT_PRECISION)
+        yi = np.floor(y).astype(ND_INT_PRECISION)
 
         # Local offsets inside cell
-        xf = (x - xi).astype(np.float32)
-        yf = (y - yi).astype(np.float32)
+        xf = x - xi
+        yf = y - yi
 
         # Gradients at 4 corners (broadcasts to HxW x 2)
         g00 = self._grad_at_corner(xi, yi)
@@ -177,8 +160,12 @@ class PerlinNoise:
         nx1 = self._lerp(n01, n11, u)  # along x at y1
         nxy = self._lerp(nx0, nx1, v)  # along y
 
-        # Optional normalization to [0, 1]
-        if normalize:
-            nxy = nxy * 0.5 + 0.5
-
-        return nxy.astype(np.float32, copy=False)
+        # Match normalization method
+        match normalize:
+            case "linear":
+                nxy = nxy * 0.5 + 0.5
+            case "clip":
+                nxy = np.clip(nxy, 0, 1.0)
+            case "none":
+                pass
+        return nxy.astype(ND_FLOAT_PRECISION)

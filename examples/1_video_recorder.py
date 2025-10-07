@@ -15,7 +15,7 @@ from pathlib import Path
 import mujoco
 
 # Local libraries
-from ariel.simulation.environments.simple_flat_world import SimpleFlatWorld
+from ariel.simulation.environments import SimpleFlatWorld
 from ariel.utils.renderers import video_renderer
 from ariel.utils.video_recorder import VideoRecorder
 

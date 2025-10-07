@@ -79,7 +79,6 @@ def show_xpos_history(history: list[float]) -> None:
     single_frame_renderer(
         model,
         data,
-        camera=camera,
         save_path=save_path,
         save=True,
     )
@@ -172,7 +171,7 @@ def experiment(
 
     # Spawn robot in the world
     # Check docstring for spawn conditions
-    world.spawn(robot.spec, spawn_position=SPAWN_POS)
+    world.spawn(robot.spec, position=SPAWN_POS)
 
     # Generate the model and data
     # These are standard parts of the simulation USE THEM AS IS, DO NOT CHANGE
