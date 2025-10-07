@@ -34,8 +34,8 @@ class Controller:
         self,
         model: mj.MjModel,
         data: mj.MjData,
-        *args: Any,
-        **kwargs: dict[Any, Any],
+        *args: Any | None,
+        **kwargs: dict[Any, Any] | None,
     ) -> None:
         # Calculate current time step
         time = data.time
@@ -53,11 +53,13 @@ class Controller:
             old_ctrl = data.ctrl.copy()
 
             # Execute the custom control function of the user
-            output = self.controller_callback_function(
-                model,
-                data,
-                *args,
-                **kwargs,
+            output = np.array(
+                self.controller_callback_function(
+                    model,
+                    data,
+                    *args,
+                    **kwargs,
+                ),
             )
 
             # Calculate the new control values
@@ -65,3 +67,9 @@ class Controller:
 
             # Ensure that the new control values are within the servo bounds
             data.ctrl = np.clip(new_ctrl, -np.pi / 2, np.pi / 2)
+
+            # Check if there are any NaN values in the control signal
+            if np.any(np.isnan(data.ctrl)):
+                msg = "NaN values detected in the control signal.\n"
+                msg += f"{data.ctrl}"
+                raise ValueError(msg)
