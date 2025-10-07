@@ -129,6 +129,7 @@ CMA
 cmaes
 cmap
 codeofconduct
+coeffs
 colname
 color
 colorama
@@ -635,7 +636,9 @@ PLR
 plt
 pnoise
 podman
+polyfit
 polyglossia
+polyval
 Popen
 posargs
 powerline
@@ -644,6 +647,7 @@ PRCNT
 preto
 prg
 printanswers
+printoptions
 prnt
 prob
 propcache
@@ -822,6 +826,7 @@ talltblr
 tamasfe
 tasklist
 tblr
+tensordot
 testmod
 testpypi
 texlive
