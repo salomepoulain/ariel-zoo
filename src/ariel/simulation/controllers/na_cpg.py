@@ -11,10 +11,12 @@ References
 
 Todo
 ----
-    [ ] Fix constraint function
+    [ ] Fix constraint function:
+        This requires experimental validation to find the mapping from angular
+        velocity to maximum allowed change in the CPG state space.
+        The paper determines this information empirically.
     [ ] Implement matrix formulation
-    [ ] Normalize the output angles to be within [-pi, pi]
-    [ ] ! what should the initial values be???
+    [ ] What should the initial values be???
 """
 
 # Standard library
@@ -336,7 +338,7 @@ class NaCPG(nn.Module):
         if np.any(np.isnan(angles.cpu().numpy())):
             msg = "NaN values detected in the angle signal.\n"
             msg += f"{angles.cpu().numpy()=}\n"
-            msg += f"{pre_clamping.cpu().numpy()=}\n"
+            msg += f"{self.clamping_error.cpu().numpy()=}\n"
             msg += f"{self.xy.cpu().numpy()=}\n"
             msg += f"{self.xy_dot_old.cpu().numpy()=}\n"
             msg += f"{self.ha.cpu().numpy()=}\n"
@@ -374,35 +376,6 @@ class NaCPG(nn.Module):
         console.log(f"[green]Loaded parameters from {path}[/green]")
 
 
-def generate_max_state_lookup(
-    cpg_class: NaCPG,
-    w_range: tuple[float, float],
-    num_steps: int = 1000,
-):
-    max_states = []
-    w_values = np.linspace(*w_range, num=20)
-
-    for w in w_values:
-        # Set w for all oscillators
-        model = cpg_class(create_fully_connected_adjacency(3))
-        model.w.data.fill_(w)
-
-        max_val = 0.0
-        for _ in range(num_steps):
-            model.forward()
-            max_val = max(max_val, model.xy.abs().max().item())
-        max_states.append(max_val)
-
-    # Fit or store table
-    coeffs = np.polyfit(w_values, max_states, 2)  # Quadratic fit
-
-    def lookup(w):
-        return np.polyval(coeffs, w)
-
-    # Or store for interpolation as a table
-    return lookup, w_values, max_states
-
-
 # Example usage
 def main() -> None:
     adj_dict = create_fully_connected_adjacency(3)
@@ -435,10 +408,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    # for _ in range(10):  # run fewer times for demo
-    #     main()
-    # Usage example
-    lookup_fn, w_vals, max_states = generate_max_state_lookup(
-        NaCPG,
-        (0.5, 10.0),
-    )
+    for _ in range(10):  # run fewer times for demo
+        main()
