@@ -14,8 +14,6 @@ from ariel.body_phenotypes.robogen_lite.prebuilt_robots.gecko import gecko
 from ariel.simulation.environments import SimpleFlatWorld
 
 # Local libraries
-from ariel.utils.renderers import video_renderer
-from ariel.utils.video_recorder import VideoRecorder
 
 # Keep track of data / history
 HISTORY = []
@@ -36,7 +34,6 @@ def random_move(model, data, to_track) -> None:
 
     Parameters
     ----------
-
     model : mujoco.MjModel
         The MuJoCo model of the robot.
     data : mujoco.MjData
@@ -47,7 +44,6 @@ def random_move(model, data, to_track) -> None:
     None
         This function modifies the data.ctrl in place.
     """
-
     # Get the number of joints
     num_joints = model.nu
 
@@ -88,7 +84,7 @@ def random_move(model, data, to_track) -> None:
     ##############################################
 
 
-def show_qpos_history(history: list):
+def show_qpos_history(history: list) -> None:
     # Convert list of [x,y,z] positions to numpy array
     pos_data = np.array(history)
 
@@ -110,7 +106,8 @@ def show_qpos_history(history: list):
     # Set equal aspect ratio and center at (0,0)
     plt.axis("equal")
     max_range = max(
-        abs(pos_data).max(), 0.3
+        abs(pos_data).max(),
+        0.3,
     )  # At least 1.0 to avoid empty plots
     plt.xlim(-max_range, max_range)
     plt.ylim(-max_range, max_range)
@@ -118,7 +115,7 @@ def show_qpos_history(history: list):
     plt.show()
 
 
-def main():
+def main() -> None:
     """Main function to run the simulation with random movements."""
     # Initialise controller to controller to None, always in the beginning.
     mujoco.set_mjcb_control(None)  # DO NOT REMOVE
@@ -152,23 +149,23 @@ def main():
 
     # This opens a viewer window and runs the simulation with the controller you defined
     # If mujoco.set_mjcb_control(None), then you can control the limbs yourself.
-    # viewer.launch(
-    #     model=model,
-    #     data=data,
-    # )
+    viewer.launch(
+        model=model,
+        data=data,
+    )
 
     # If you want to record a video of your simulation, you can use the video renderer.
     # Non-default VideoRecorder options
-    PATH_TO_VIDEO_FOLDER = DATA / "__videos__"
-    video_recorder = VideoRecorder(output_folder=PATH_TO_VIDEO_FOLDER)
+    # PATH_TO_VIDEO_FOLDER = DATA / "__videos__"
+    # video_recorder = VideoRecorder(output_folder=PATH_TO_VIDEO_FOLDER)
 
     # Render with video recorder
-    video_renderer(
-        model,
-        data,
-        duration=30,
-        video_recorder=video_recorder,
-    )
+    # video_renderer(
+    #     model,
+    #     data,
+    #     duration=30,
+    #     video_recorder=video_recorder,
+    # )
 
     show_qpos_history(HISTORY)
 
