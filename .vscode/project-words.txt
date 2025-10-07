@@ -719,6 +719,7 @@ refurb
 rejectattr
 rel
 repitition
+revde
 reviung
 RGT
 rgx
