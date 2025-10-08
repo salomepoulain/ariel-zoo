@@ -15,7 +15,7 @@ import mujoco
 from PIL import Image
 
 # Local libraries
-from ariel import console, log
+from ariel import log
 from ariel.utils.file_ops import generate_save_path
 from ariel.utils.video_recorder import VideoRecorder
 
@@ -199,11 +199,12 @@ def tracking_video_renderer(
             mujoco.mjtObj.mjOBJ_BODY,
             geom_to_track,
         )
-        console.log(f"Tracking core body ID: {core_body_id}")
+        msg = f"Tracking core body ID: {core_body_id}"
+        log.info(msg)
     except ValueError:
         msg = f"Body name '{geom_to_track}' not found in the model."
         msg += " Using default camera."
-        console.log(f"[bold red] --> Warning: {msg}[/bold red]")
+        log.warning(msg)
         core_body_id = None
         for i in range(model.nbody):
             body_name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, i)
