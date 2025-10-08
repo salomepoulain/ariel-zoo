@@ -8,8 +8,9 @@ import matplotlib.pyplot as plt
 import mujoco
 import nevergrad as ng
 import numpy as np
-from ariel.simulation.environments.simple_flat_world import SimpleFlatWorld
+from ariel.simulation.environments import SimpleFlatWorld
 from mujoco import viewer
+import keyboard as kb
 
 # import prebuilt robot phenotypes
 from ariel import console
@@ -72,7 +73,7 @@ def main() -> None:
 
     # Spawn robot in the world
     # Check docstring for spawn conditions
-    world.spawn(gecko_core.spec, spawn_position=[0, 0, 0])
+    world.spawn(gecko_core.spec, position=[0, 0, 0])
 
     # Generate the model and data
     # These are standard parts of the simulation USE THEM AS IS, DO NOT CHANGE
@@ -133,23 +134,29 @@ def main() -> None:
     # Run optimization loop
     best_fitness = float("inf")
     best_params = None
-    for idx in range(optimizer.budget):
+    loss = None
+    for idx in range(100):
+        if kb.is_pressed("q"):
+            console.log("Exiting optimization loop.")
+            break
         ctrl.tracker.reset()
-        x = optimizer.ask()
-        na_cpg_mat.set_param_with_dict(x.kwargs)
-        simple_runner(
-            model,
-            data,
-            duration=10,
-        )
-        loss = fitness_function(tracker.history["xpos"][0])
-        optimizer.tell(x, loss)
-        if loss < best_fitness:
-            best_fitness = loss
-            best_params = x.kwargs
-            console.log(
-                f"({idx}) Current loss: {loss}, Best loss: {best_fitness}",
+        candidates = [optimizer.ask() for _ in range(20)]
+        # x = optimizer.ask()
+        for x in candidates:
+            na_cpg_mat.set_param_with_dict(x.kwargs)
+            simple_runner(
+                model,
+                data,
+                duration=10,
             )
+            loss = fitness_function(tracker.history["xpos"][0])
+            optimizer.tell(x, loss)
+            if loss < best_fitness:
+                best_fitness = loss
+                best_params = x.kwargs
+        console.log(
+            f"({idx}) Current loss: {loss}, Best loss: {best_fitness}",
+        )
 
     # Rerun best parameters
     na_cpg_mat.set_param_with_dict(best_params)

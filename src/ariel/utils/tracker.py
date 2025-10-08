@@ -49,3 +49,9 @@ class Tracker:
         for idx, obj in enumerate(self.to_track):
             for attr in self.observable_attributes:
                 self.history[attr][idx].append(getattr(obj, attr).copy())
+
+    def reset(self):
+        # Clear history dictionary
+        for attr in self.observable_attributes:
+            for idx in range(len(self.to_track)):
+                self.history[attr][idx] = []

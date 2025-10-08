@@ -45,7 +45,7 @@ class OlympicArena(BaseWorld):
         rugged_resolution: int = 64,
         rugged_scale: float = 4.0,
         rugged_hillyness: float = 5.0,
-        rugged_height: float = 0.1,
+        rugged_height: float = 0.07,
         # Inclined section parameters
         incline_thickness: float = 0.1,
         incline_degrees: float = -15.0,
@@ -188,7 +188,7 @@ class OlympicArena(BaseWorld):
         # --- Section 2: Rugged terrain (X: -0.5 to 0.5) --- #
         rugged_center_x = flat_center_x + self.section_length * 2.5
         rugged_body = self.spec.worldbody.add_body(
-            pos=[rugged_center_x, 0.0, -0.075],
+            pos=[rugged_center_x, 0.0, -0.035],
             name="rugged_section",
         )
         rugged_body.add_geom(
