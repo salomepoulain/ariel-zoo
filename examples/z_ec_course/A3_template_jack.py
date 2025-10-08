@@ -65,7 +65,7 @@ TARGET_POSITION = [5, 0, 0.5]
 GENOTYPE_SIZE = 64
 
 
-def fitness_function(history: list[float]) -> float:
+def fitness_function(history: list[tuple[float, float, float]]) -> float:
     xt, yt, zt = TARGET_POSITION
     xc, yc, zc = history[-1]
 
@@ -336,8 +336,7 @@ def evaluate(
     model, data, world = quick_spawn(robot)
 
     # Pass the model and data to the tracker
-    if controller.tracker is not None:
-        controller.tracker.setup(world.spec, data)
+    controller.tracker.setup(world.spec, data)
 
     # Set the control callback function
     mj.set_mjcb_control(controller.set_control)
@@ -350,7 +349,7 @@ def evaluate(
             model,
             data,
             duration=duration,
-            mode="tracking",
+            mode="video",
         )
 
         # Show the tracked history
@@ -380,8 +379,10 @@ def main() -> None:
         if fitness > best_fitness:
             fitness_other = evaluate(robot, nn, plot_and_record=True)
             console.log(
+                "\n",
                 f"Best fitness so far: {best_fitness} vs {fitness_other}",
-                f"Are they the same? {(fitness - best_fitness):.5f}",
+                f"Are they the same? Δ {(fitness - best_fitness):.5f}",
+                "\n",
             )
             best_fitness = fitness
     console.log(f"Best fitness achieved: {best_fitness}")

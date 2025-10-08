@@ -25,7 +25,11 @@ DATA = CWD / "__data__"
 DATA.mkdir(exist_ok=True)
 
 
-def random_move(model, data, to_track) -> None:
+def random_move(
+    model: mujoco.MjModel,
+    data: mujoco.MjData,
+    to_track: list[mujoco.MjsGeom],
+) -> None:
     """Generate random movements for the robot's joints.
 
     The mujoco.set_mjcb_control() function will always give
@@ -38,11 +42,6 @@ def random_move(model, data, to_track) -> None:
         The MuJoCo model of the robot.
     data : mujoco.MjData
         The MuJoCo data of the robot.
-
-    Returns
-    -------
-    None
-        This function modifies the data.ctrl in place.
     """
     # Get the number of joints
     num_joints = model.nu
@@ -66,7 +65,7 @@ def random_move(model, data, to_track) -> None:
     # Bound the control values to be within the hinge limits.
     # If a value goes outside the bounds it might result in jittery movement.
     # data.ctrl = np.clip(data.ctrl, -np.pi/2, np.pi/2)
-    data.ctrl = [0 for i in range(len(data.ctrl))]
+    data.ctrl = [0 for _ in range(len(data.ctrl))]
     data.ctrl[0] = 1.5
 
     # Save movement to history
@@ -84,7 +83,7 @@ def random_move(model, data, to_track) -> None:
     ##############################################
 
 
-def show_qpos_history(history: list) -> None:
+def show_qpos_history(history: list[list[float]]) -> None:
     # Convert list of [x,y,z] positions to numpy array
     pos_data = np.array(history)
 
@@ -145,7 +144,7 @@ def main() -> None:
 
     # Set the control callback function
     # This is called every time step to get the next action.
-    mujoco.set_mjcb_control(lambda m, d: random_move(m, d, to_track))
+    mujoco.set_mjcb_control(lambda m, d: random_move(m, d, to_track))  # pyright: ignore[reportUnknownLambdaType]
 
     # This opens a viewer window and runs the simulation with the controller you defined
     # If mujoco.set_mjcb_control(None), then you can control the limbs yourself.

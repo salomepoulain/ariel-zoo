@@ -8,9 +8,7 @@ import matplotlib.pyplot as plt
 import mujoco
 import nevergrad as ng
 import numpy as np
-from ariel.simulation.environments import SimpleFlatWorld
 from mujoco import viewer
-import keyboard as kb
 
 # import prebuilt robot phenotypes
 from ariel import console
@@ -18,6 +16,7 @@ from ariel.body_phenotypes.robogen_lite.prebuilt_robots.gecko import gecko
 from ariel.simulation.controllers import NaCPG
 from ariel.simulation.controllers.controller import Controller, Tracker
 from ariel.simulation.controllers.na_cpg import create_fully_connected_adjacency
+from ariel.simulation.environments import SimpleFlatWorld
 from ariel.utils.runners import simple_runner
 
 # --- DATA SETUP ---
@@ -113,15 +112,14 @@ def main() -> None:
 
     # Simulate the robot
     ctrl = Controller(
-        controller_callback_function=lambda m, d: na_cpg_mat.forward(d.time),
+        controller_callback_function=lambda _, d: na_cpg_mat.forward(d.time),  # pyright: ignore[reportUnknownLambdaType]
         tracker=tracker,
     )
 
     # Set the control callback function
     # This is called every time step to get the next action.
     # Pass the model and data to the tracker
-    if ctrl.tracker is not None:
-        ctrl.tracker.setup(world.spec, data)
+    ctrl.tracker.setup(world.spec, data)
 
     # Set the control callback function
     mujoco.set_mjcb_control(
@@ -134,36 +132,30 @@ def main() -> None:
     # Run optimization loop
     best_fitness = float("inf")
     best_params = None
-    loss = None
-    for idx in range(100):
-        if kb.is_pressed("q"):
-            console.log("Exiting optimization loop.")
-            break
+    for idx in range(optimizer.budget):
         ctrl.tracker.reset()
-        candidates = [optimizer.ask() for _ in range(20)]
-        # x = optimizer.ask()
-        for x in candidates:
-            na_cpg_mat.set_param_with_dict(x.kwargs)
-            simple_runner(
-                model,
-                data,
-                duration=10,
-            )
-            loss = fitness_function(tracker.history["xpos"][0])
-            optimizer.tell(x, loss)
-            if loss < best_fitness:
-                best_fitness = loss
-                best_params = x.kwargs
-        console.log(
-            f"({idx}) Current loss: {loss}, Best loss: {best_fitness}",
+        x = optimizer.ask()
+        na_cpg_mat.set_param_with_dict(x.kwargs)
+        simple_runner(
+            model,
+            data,
+            duration=10,
         )
+        loss = fitness_function(tracker.history["xpos"][0])
+        optimizer.tell(x, loss)
+        if loss < best_fitness:
+            best_fitness = loss
+            best_params = x.kwargs
+            console.log(
+                f"({idx}) Current loss: {loss}, Best loss: {best_fitness}",
+            )
 
     # Rerun best parameters
     na_cpg_mat.set_param_with_dict(best_params)
     ctrl.tracker.reset()
     mujoco.mj_resetData(model, data)
 
-    # This opens a viewer window and runs the simulation with the controller you defined
+    # This opens a viewer window and runs the simulation with your controller
     # If mujoco.set_mjcb_control(None), then you can control the limbs yourself.
     viewer.launch(
         model=model,

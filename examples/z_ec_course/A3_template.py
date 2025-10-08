@@ -50,7 +50,7 @@ NUM_OF_MODULES = 30
 TARGET_POSITION = [5, 0, 0.5]
 
 
-def fitness_function(history: list[float]) -> float:
+def fitness_function(history: list[tuple[float, float, float]]) -> float:
     xt, yt, zt = TARGET_POSITION
     xc, yc, zc = history[-1]
 
@@ -182,8 +182,7 @@ def experiment(
     mj.mj_resetData(model, data)
 
     # Pass the model and data to the tracker
-    if controller.tracker is not None:
-        controller.tracker.setup(world.spec, data)
+    controller.tracker.setup(world.spec, data)
 
     # Set the control callback function
     # This is called every time step to get the next action.
@@ -191,7 +190,7 @@ def experiment(
     kwargs: dict[Any, Any] = {}  # IF YOU NEED MORE ARGUMENTS ADD THEM HERE!
 
     mj.set_mjcb_control(
-        lambda m, d: controller.set_control(m, d, *args, **kwargs),
+        lambda m, d: controller.set_control(m, d, *args, **kwargs),  # pyright: ignore[reportUnknownLambdaType]
     )
 
     # ------------------------------------------------------------------ #
