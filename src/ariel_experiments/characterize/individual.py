@@ -303,8 +303,8 @@ def analyze_coverage(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     Calculation Method: the volume that the robot occupice in the cube created by its own witdh, length and height
     """
 
-    w,l,h = give_dim(graph)
-    m = len(graph.nodes())
+    w,l,h = give_dim(individual)
+    m = len(individual.nodes())
     
     return {"coverage": m/(w*l*h)}
 
@@ -466,7 +466,7 @@ def analyze_proportion_literature(individual: DiGraph) -> NamedGraphPropertiesT[
     Proportion was observed to drop drastically for fitness S1, which was dominated by single-limb, disproportional robots [5].
     """
     # w,l,h is the width, length and height hopefully this is helpfull for proportions
-    w,l,h = give_dim(graph)
+    w,l,h = give_dim(individual)
     ps = min(w,l,h)
     pl = max(w,l,h)
     if pl>0:
@@ -478,7 +478,7 @@ def analyze_proportion_literature(individual: DiGraph) -> NamedGraphPropertiesT[
 
 
 def analyze_proportion_spatial(individual: DiGraph) -> NamedGraphPropertiesT[float]:
-    w,l,h = give_dim(graph)
+    w,l,h = give_dim(individual)
     dims = np.array([w, l, h])
     mean = np.mean(dims)
     std = np.std(dims)
