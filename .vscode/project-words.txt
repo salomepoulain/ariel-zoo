@@ -98,6 +98,7 @@ bysource
 bzr
 captionpos
 captionsetup
+Carola
 castshadow
 cbar
 cdll
@@ -112,6 +113,7 @@ charliermarsh
 charx
 charxstring
 Checkerboard
+chisquare
 cibuildwheel
 cibw
 CIBW
@@ -128,6 +130,7 @@ cls
 CMA
 cmaes
 cmap
+Cobyla
 codeofconduct
 coeffs
 colname
@@ -138,6 +141,7 @@ colored
 colorlog
 colormap
 colors
+colorspace
 colspec
 commentcolor
 commentstyle
@@ -193,6 +197,8 @@ defusedxml
 delaxes
 Deniz
 devcontainers
+dfden
+dfnum
 dialog
 dib
 directsearch
@@ -258,6 +264,7 @@ favor
 fbcpg
 FBT
 fcl
+FCMA
 fdfind
 fieldlist
 figsize
@@ -319,6 +326,7 @@ gprof
 Graphviz
 Grégoire
 Grigoriadis
+gumbel
 Guszti
 hammerspoon
 hasattr
@@ -473,7 +481,9 @@ lmr
 lnk
 loc
 logfilewarninglist
+lognormal
 logscale
+logseries
 logspace
 longtable
 longtblr
@@ -496,6 +506,7 @@ matangover
 matchtext
 Mateusz
 matplotlib
+maxgeom
 maximisation
 mbf
 mccabe
@@ -548,6 +559,7 @@ mypycify
 myst
 nala
 Nala
+nbad
 nbody
 nbsphinx
 nbvh
@@ -563,6 +575,7 @@ newfigname
 newpxtext
 newtablename
 ngeom
+ngood
 nicegui
 Nikolaus
 njpwerner
@@ -572,6 +585,8 @@ nodeeditor
 nodeenv
 nodeid
 nohyp
+nonc
+noncentral
 noncommercially
 nonconvex
 nonstopmode
@@ -588,6 +603,7 @@ npt
 NPY
 nrow
 nrows
+nsample
 nsmallest
 nstep
 Num
@@ -598,6 +614,7 @@ numpages
 numpy
 numpydoc
 nvm
+odict
 offheight
 offwidth
 omz
@@ -655,6 +672,7 @@ protogen
 Przemyslaw
 pstats
 PTH
+pvals
 PWR
 pybind
 pybuilder
@@ -725,6 +743,7 @@ rel
 repitition
 revde
 reviung
+rgba
 RGT
 rgx
 rlg
@@ -885,6 +904,7 @@ Ver
 viridis
 virtualenv
 vmap
+vonmises
 Vrije
 vsc
 Vytas
