@@ -385,7 +385,7 @@ def find_length(graph, direction, node) -> int:
     rot = dict(graph.nodes(data=True))[node]['rotation']
     component_size = 1 # usefull for later expansion if needed
 
-    # oriantation fixing by changing direction, 45 degrees maybe needs to be expanded upon later using comonentsize
+    # oriantation fixing by changing direction, 45 degrees maybe needs to be expanded upon later
     if (direction != 'FRONT' and direction != 'BACK') and rot != "DEG_0":
         match rot: 
             case "DEG_90":
@@ -394,18 +394,18 @@ def find_length(graph, direction, node) -> int:
                 direction = faces[(faces.index(direction)+2)%4]
             case "DEG_270":
                 direction = faces[(faces.index(direction)+3)%4]
-            case "DEG_125":
+            case "DEG_135":
                 direction = faces[(faces.index(direction)+1)%4]
             case "DEG_225":
                 direction = faces[(faces.index(direction)+2)%4]
             case "DEG_315":
                 direction = faces[(faces.index(direction)+3)%4]
     
-
+    faces = ['RIGHT', 'TOP', 'FRONT', 'LEFT', 'BOTTOM', 'BACK']
     for index, child in enumerate(graph.successors(node)):
 
         face = list(graph.edges(node, data=True))[index][2]["face"]
-
+        opposite = faces[(faces.index(direction)-3)]
 
         # if this is in the right way keep going that way
         if face == direction:
@@ -413,18 +413,40 @@ def find_length(graph, direction, node) -> int:
 
 
         # completly the wrong way subtract 2 to penalize
-        elif (direction =='LEFT' and face == 'RIGHT') or (direction =='RIGHT' and face == 'LEFT') \
-            or (direction =='BOTTOM' and face == 'TOP') or (direction =='TOP' and face == 'BOTTOM'):
+        elif face == opposite:
 
             length.append(find_length(graph, 'BACK', child)- 2) 
 
 
-        # back means it needs to do an 180 or the same direction twice if its not the front
+        # back means it needs to do an 180 by going left for the next block if its not the front or back
         elif direction == 'BACK' and face != 'FRONT':
             length.append(find_length(graph, 'LEFT', child)-1)
 
-        else:
-            length.append(find_length(graph, 'RIGHT', child)-1)
+        # if front is not the way we keep our direction for the the child attached to the front
+        elif face=="FRONT":
+            length.append(find_length(graph, direction, child))
+
+        # If we want to go to the side but can not go their directly and not trough the front face
+        elif direction == "RIGHT" or direction == "LEFT":
+            match face:
+
+                case "BACK":
+                    length.append(find_length(graph, opposite, child))
+                case "TOP":
+                    length.append(find_length(graph, "BOTTOM", child))
+                case "BOTTOM":
+                    length.append(find_length(graph, "TOP", child))
+        # If we want to go to the top of bottom but can not go their directly and not trough the front face
+        elif direction == "TOP" or direction == "BOTTOM":
+            match face:
+
+                case "BACK":
+                    length.append(find_length(graph, direction, child))
+                case "RIGHT":
+                    length.append(find_length(graph, "BOTTOM", child))
+                case "LEFT":
+                    length.append(find_length(graph, "TOP", child))
+
 
 
 
