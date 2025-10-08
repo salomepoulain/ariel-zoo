@@ -28,7 +28,7 @@ class Controller:
     alpha: float = 1
 
     # Trackable objects
-    tracker: Tracker | None = None
+    tracker: Tracker = Tracker()
 
     def set_control(
         self,
@@ -44,8 +44,7 @@ class Controller:
         # Execute saving only at specific time-steps
         if (deduced_time_step % self.time_steps_per_save) == 0:
             # Update the tracker if it exists
-            if self.tracker is not None:
-                self.tracker.update(data)
+            self.tracker.update(data)
 
         # Execute control strategy only at specific time-steps
         if (deduced_time_step % self.time_steps_per_ctrl_step) == 0:
