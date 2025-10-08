@@ -121,7 +121,7 @@ def test_fetch_logic() -> None:
     threshold = 0.5
     population = fetch_population(
         engine,
-        logic=((Individual.fitness_ >= threshold),),
+        logic=((Individual.fitness_ >= threshold),),  # pyright: ignore[reportOptionalOperand]
     )
     end = console.get_time()
     console.log(
@@ -133,7 +133,7 @@ def test_fetch_logic() -> None:
     threshold = 0.5
     population = fetch_population(
         engine,
-        logic=((Individual.fitness_ >= threshold),),
+        logic=((Individual.fitness_ >= threshold),),  # pyright: ignore[reportOptionalOperand]
         constrain_alive=False,
     )
     end = console.get_time()
