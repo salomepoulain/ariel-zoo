@@ -1,13 +1,22 @@
 """Hybrid MuJoCo world combining flat, rugged, and inclined terrain sections."""
 
+# Standard library
+# Third-party libraries
 import mujoco
 import numpy as np
 
+# Local libraries
 from ariel.simulation.environments import BaseWorld
 from ariel.utils.noise_gen import PerlinNoise
 
+# Global constants
 USE_DEGREES = False
 TERRAIN_COLOR = [0.460, 0.362, 0.216, 1.0]
+
+# Global functions
+# Warning Control
+# Type Checking
+# Type Aliases
 
 
 def quaternion_from_axis_angle(axis: str, angle_deg: float) -> list[float]:
@@ -34,6 +43,8 @@ def quaternion_from_axis_angle(axis: str, angle_deg: float) -> list[float]:
 
 
 class OlympicArena(BaseWorld):
+    name = "olympic_arena"
+
     def __init__(
         self,
         # Overall arena parameters
@@ -50,7 +61,17 @@ class OlympicArena(BaseWorld):
         incline_thickness: float = 0.1,
         incline_degrees: float = -15.0,
         incline_axis: str = "y",
+        *,
+        load_precompiled: bool = True,
     ) -> None:
+        # Initialize base class
+        super().__init__(name=self.name, load_precompiled=load_precompiled)
+
+        # If precompiled XML was loaded, skip regeneration
+        if self.is_precompiled:
+            return
+
+        # Store parameters
         self.arena_width = arena_width
         self.section_length = section_length
         self.flat_thickness = flat_thickness
@@ -61,9 +82,6 @@ class OlympicArena(BaseWorld):
         self.incline_thickness = incline_thickness
         self.incline_degrees = incline_degrees
         self.incline_axis = incline_axis.lower()
-
-        # Initialize base class
-        super().__init__(name=self.name)
 
         # Generate rugged heightmap
         self.heightmap = self._generate_heightmap()
@@ -260,3 +278,11 @@ class OlympicArena(BaseWorld):
             ],
             rgba=[1, 1, 1, 1],  # Dark brown cliff color
         )
+
+
+if __name__ == "__main__":
+    # Compile and save the XML for inspection
+    arena = OlympicArena(
+        load_precompiled=False,
+    )
+    arena.compile_to_xml()

@@ -13,6 +13,7 @@ Todo
 # Standard library
 from abc import abstractmethod
 from copy import deepcopy
+from pathlib import Path
 from typing import cast
 
 # Third-party libraries
@@ -36,10 +37,14 @@ class BaseWorld:
     default_spawn_position: Position = (0, 0, 0)  # x, y, z
     default_spawn_rotation: Rotation = (0, 0, 0)  # x, y, z
 
+    is_precompiled: bool = False
+
     def __init__(
         self,
         name: str | None = None,
         mujoco_config: MujocoConfig | None = None,
+        *,
+        load_precompiled: bool = True,
     ) -> None:
         # Use default mujoco config if none is provided
         if mujoco_config is None:
@@ -48,6 +53,12 @@ class BaseWorld:
         # Set world name
         if name is not None:
             self.name = name
+
+        # Load precompiled XML if requested
+        if load_precompiled:
+            self.is_precompiled = self.load_precompiled()
+            if self.is_precompiled:
+                return
 
         # Build and save specification
         self.spec: mujoco.MjSpec = self._init_spec()
@@ -81,8 +92,6 @@ class BaseWorld:
         )
 
         # Add ortho camera and normal camera
-        # <camera pos="-5.429 0.094 5.210" xyaxes="-0.017 -1.000 -0.000 0.692 -0.012 0.722"/>
-
         spec.worldbody.add_camera(
             name="ortho-cam",
             orthographic=True,
@@ -235,3 +244,28 @@ class BaseWorld:
 
         # Return a copy of the updated spec
         return duplicate_mj_spec(self.spec)
+
+    def compile_to_xml(self) -> None:
+        # Derive save path
+        this_script_path = Path(__file__)
+        save_dir = this_script_path.parent / "pre_compiled"
+        save_path = save_dir / f"{self.name}.xml"
+        save_dir.mkdir(parents=True, exist_ok=True)
+        xml = self.spec.to_xml()
+
+        # Save file
+        with save_path.open("w") as f:
+            f.write(xml)
+
+    def load_precompiled(self) -> bool:
+        # Derive XML path
+        this_script_path = Path(__file__)
+        xml_path = this_script_path.parent / "pre_compiled" / f"{self.name}.xml"
+
+        # Check if file exists
+        if not xml_path.exists():
+            return False
+
+        # Load the XML file
+        self.spec = mujoco.MjSpec.from_file(str(xml_path))
+        return True
