@@ -370,7 +370,7 @@ def evaluate(
 def main() -> None:
     """Entry point."""
     best_fitness = -np.inf
-    for _ in track(range(10_000)):
+    for _ in track(range(200)):
         # Create a robot
         robot = create_robot_body()
         nn = NN(robot)
