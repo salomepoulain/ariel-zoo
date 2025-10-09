@@ -1,76 +1,34 @@
-import collections.abc
 import flags
 import mujoco._enums
 import mujoco._structs
 import numpy
-import numpy.typing
-import typing
-from typing import Callable, ClassVar, overload
+from typing import Callable, ClassVar, Iterator, overload
 
 class MjByteVec:
-    def __init__(self, arg0, arg1: typing.SupportsInt) -> None:
-        """__init__(self: mujoco._specs.MjByteVec, arg0: std::byte, arg1: typing.SupportsInt) -> None"""
+    def __init__(self, arg0, arg1: int) -> None:
+        """__init__(self: mujoco._specs.MjByteVec, arg0: std::byte, arg1: int) -> None"""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
     def __getitem__(self, index):
-        """__getitem__(self: mujoco._specs.MjByteVec, arg0: typing.SupportsInt) -> std::byte"""
+        """__getitem__(self: mujoco._specs.MjByteVec, arg0: int) -> std::byte"""
     def __iter__(self):
-        """__iter__(self: mujoco._specs.MjByteVec) -> collections.abc.Iterator[std::byte]"""
+        """__iter__(self: mujoco._specs.MjByteVec) -> Iterator[std::byte]"""
     def __len__(self) -> int:
         """__len__(self: mujoco._specs.MjByteVec) -> int"""
-    def __setitem__(self, arg0: typing.SupportsInt, arg1) -> None:
-        """__setitem__(self: mujoco._specs.MjByteVec, arg0: typing.SupportsInt, arg1: std::byte) -> None"""
+    def __setitem__(self, arg0: int, arg1) -> None:
+        """__setitem__(self: mujoco._specs.MjByteVec, arg0: int, arg1: std::byte) -> None"""
 
 class MjCharVec:
-    def __init__(self, arg0: str, arg1: typing.SupportsInt) -> None:
-        """__init__(self: mujoco._specs.MjCharVec, arg0: str, arg1: typing.SupportsInt) -> None"""
+    def __init__(self, arg0: str, arg1: int) -> None:
+        """__init__(self: mujoco._specs.MjCharVec, arg0: str, arg1: int) -> None"""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
-    def __getitem__(self, arg0: typing.SupportsInt) -> str:
-        """__getitem__(self: mujoco._specs.MjCharVec, arg0: typing.SupportsInt) -> str"""
-    def __iter__(self) -> collections.abc.Iterator[str]:
-        """__iter__(self: mujoco._specs.MjCharVec) -> collections.abc.Iterator[str]"""
+    def __getitem__(self, arg0: int) -> str:
+        """__getitem__(self: mujoco._specs.MjCharVec, arg0: int) -> str"""
+    def __iter__(self) -> Iterator[str]:
+        """__iter__(self: mujoco._specs.MjCharVec) -> Iterator[str]"""
     def __len__(self) -> int:
         """__len__(self: mujoco._specs.MjCharVec) -> int"""
-    def __setitem__(self, arg0: typing.SupportsInt, arg1: str) -> None:
-        """__setitem__(self: mujoco._specs.MjCharVec, arg0: typing.SupportsInt, arg1: str) -> None"""
-
-class MjDoubleVec:
-    def __init__(self, arg0: typing.SupportsFloat, arg1: typing.SupportsInt) -> None:
-        """__init__(self: mujoco._specs.MjDoubleVec, arg0: typing.SupportsFloat, arg1: typing.SupportsInt) -> None"""
-    def _pybind11_conduit_v1_(self, *args, **kwargs): ...
-    def __getitem__(self, arg0: typing.SupportsInt) -> float:
-        """__getitem__(self: mujoco._specs.MjDoubleVec, arg0: typing.SupportsInt) -> float"""
-    def __iter__(self) -> collections.abc.Iterator[float]:
-        """__iter__(self: mujoco._specs.MjDoubleVec) -> collections.abc.Iterator[float]"""
-    def __len__(self) -> int:
-        """__len__(self: mujoco._specs.MjDoubleVec) -> int"""
-    def __setitem__(self, arg0: typing.SupportsInt, arg1: typing.SupportsFloat) -> None:
-        """__setitem__(self: mujoco._specs.MjDoubleVec, arg0: typing.SupportsInt, arg1: typing.SupportsFloat) -> None"""
-
-class MjFloatVec:
-    def __init__(self, arg0: typing.SupportsFloat, arg1: typing.SupportsInt) -> None:
-        """__init__(self: mujoco._specs.MjFloatVec, arg0: typing.SupportsFloat, arg1: typing.SupportsInt) -> None"""
-    def _pybind11_conduit_v1_(self, *args, **kwargs): ...
-    def __getitem__(self, arg0: typing.SupportsInt) -> float:
-        """__getitem__(self: mujoco._specs.MjFloatVec, arg0: typing.SupportsInt) -> float"""
-    def __iter__(self) -> collections.abc.Iterator[float]:
-        """__iter__(self: mujoco._specs.MjFloatVec) -> collections.abc.Iterator[float]"""
-    def __len__(self) -> int:
-        """__len__(self: mujoco._specs.MjFloatVec) -> int"""
-    def __setitem__(self, arg0: typing.SupportsInt, arg1: typing.SupportsFloat) -> None:
-        """__setitem__(self: mujoco._specs.MjFloatVec, arg0: typing.SupportsInt, arg1: typing.SupportsFloat) -> None"""
-
-class MjIntVec:
-    def __init__(self, arg0: typing.SupportsInt, arg1: typing.SupportsInt) -> None:
-        """__init__(self: mujoco._specs.MjIntVec, arg0: typing.SupportsInt, arg1: typing.SupportsInt) -> None"""
-    def _pybind11_conduit_v1_(self, *args, **kwargs): ...
-    def __getitem__(self, arg0: typing.SupportsInt) -> int:
-        """__getitem__(self: mujoco._specs.MjIntVec, arg0: typing.SupportsInt) -> int"""
-    def __iter__(self) -> collections.abc.Iterator[int]:
-        """__iter__(self: mujoco._specs.MjIntVec) -> collections.abc.Iterator[int]"""
-    def __len__(self) -> int:
-        """__len__(self: mujoco._specs.MjIntVec) -> int"""
-    def __setitem__(self, arg0: typing.SupportsInt, arg1: typing.SupportsInt) -> None:
-        """__setitem__(self: mujoco._specs.MjIntVec, arg0: typing.SupportsInt, arg1: typing.SupportsInt) -> None"""
+    def __setitem__(self, arg0: int, arg1: str) -> None:
+        """__setitem__(self: mujoco._specs.MjCharVec, arg0: int, arg1: str) -> None"""
 
 class MjOption:
     apirate: float
@@ -81,27 +39,27 @@ class MjOption:
     disableactuator: int
     disableflags: int
     enableflags: int
-    gravity: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
+    gravity: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
     impratio: float
     integrator: int
     iterations: int
     jacobian: int
     ls_iterations: int
     ls_tolerance: float
-    magnetic: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
+    magnetic: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
     noslip_iterations: int
     noslip_tolerance: float
-    o_friction: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[5, 1]', 'flags.writeable']
+    o_friction: numpy.ndarray[numpy.float64[5, 1], flags.writeable]
     o_margin: float
-    o_solimp: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[5, 1]', 'flags.writeable']
-    o_solref: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[2, 1]', 'flags.writeable']
+    o_solimp: numpy.ndarray[numpy.float64[5, 1], flags.writeable]
+    o_solref: numpy.ndarray[numpy.float64[2, 1], flags.writeable]
     sdf_initpoints: int
     sdf_iterations: int
     solver: int
     timestep: float
     tolerance: float
     viscosity: float
-    wind: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
+    wind: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
@@ -182,7 +140,7 @@ class MjSpec:
     def add_tuple(self, **kwargs) -> MjsTuple:
         """add_tuple(self: mujoco._specs.MjSpec, **kwargs) -> mujoco._specs.MjsTuple"""
     def attach(self, child: MjSpec, prefix: str | None = ..., suffix: str | None = ..., site: object | None = ..., frame: object | None = ...) -> MjsFrame:
-        """attach(self: mujoco._specs.MjSpec, child: mujoco._specs.MjSpec, prefix: str | None = None, suffix: str | None = None, site: object | None = None, frame: object | None = None) -> mujoco._specs.MjsFrame"""
+        """attach(self: mujoco._specs.MjSpec, child: mujoco._specs.MjSpec, prefix: Optional[str] = None, suffix: Optional[str] = None, site: Optional[object] = None, frame: Optional[object] = None) -> mujoco._specs.MjsFrame"""
     def body(self, arg0: str) -> MjsBody:
         """body(self: mujoco._specs.MjSpec, arg0: str) -> mujoco._specs.MjsBody"""
     def camera(self, arg0: str) -> MjsCamera:
@@ -191,1381 +149,10 @@ class MjSpec:
         """compile(self: mujoco._specs.MjSpec) -> object"""
     def copy(self) -> MjSpec:
         """copy(self: mujoco._specs.MjSpec) -> mujoco._specs.MjSpec"""
-    @overload
-    def delete(self, arg0: MjsDefault) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsBody) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsFrame) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsGeom) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsJoint) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsSite) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsCamera) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsLight) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsMaterial) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsMesh) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsPair) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsEquality) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsActuator) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsTendon) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsSensor) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsFlex) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsHField) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsSkin) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsTexture) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsKey) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsText) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsNumeric) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsExclude) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsTuple) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
-    @overload
-    def delete(self, arg0: MjsPlugin) -> None:
-        """delete(*args, **kwargs)
-        Overloaded function.
-
-        1. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None
-
-        2. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None
-
-        3. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFrame) -> None
-
-        4. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsGeom) -> None
-
-        5. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsJoint) -> None
-
-        6. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSite) -> None
-
-        7. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsCamera) -> None
-
-        8. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsLight) -> None
-
-        9. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMaterial) -> None
-
-        10. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsMesh) -> None
-
-        11. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPair) -> None
-
-        12. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsEquality) -> None
-
-        13. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsActuator) -> None
-
-        14. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTendon) -> None
-
-        15. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSensor) -> None
-
-        16. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsFlex) -> None
-
-        17. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsHField) -> None
-
-        18. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsSkin) -> None
-
-        19. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTexture) -> None
-
-        20. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsKey) -> None
-
-        21. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsText) -> None
-
-        22. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsNumeric) -> None
-
-        23. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsExclude) -> None
-
-        24. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsTuple) -> None
-
-        25. delete(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsPlugin) -> None
-        """
+    def detach_body(self, arg0: MjsBody) -> None:
+        """detach_body(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsBody) -> None"""
+    def detach_default(self, arg0: MjsDefault) -> None:
+        """detach_default(self: mujoco._specs.MjSpec, arg0: mujoco._specs.MjsDefault) -> None"""
     def equality(self, arg0: str) -> MjsEquality:
         """equality(self: mujoco._specs.MjSpec, arg0: str) -> mujoco._specs.MjsEquality"""
     def exclude(self, arg0: str) -> MjsExclude:
@@ -1577,8 +164,8 @@ class MjSpec:
     def frame(self, arg0: str) -> MjsFrame:
         """frame(self: mujoco._specs.MjSpec, arg0: str) -> mujoco._specs.MjsFrame"""
     @staticmethod
-    def from_file(filename: str, include: collections.abc.Mapping[str, bytes] | None = ..., assets: dict | None = ...) -> MjSpec:
-        """from_file(filename: str, include: collections.abc.Mapping[str, bytes] | None = None, assets: dict | None = None) -> mujoco._specs.MjSpec
+    def from_file(filename: str, include: dict[str, bytes] | None = ..., assets: dict | None = ...) -> MjSpec:
+        """from_file(filename: str, include: Optional[dict[str, bytes]] = None, assets: Optional[dict] = None) -> mujoco._specs.MjSpec
 
 
             Creates a spec from an XML file.
@@ -1596,8 +183,8 @@ class MjSpec:
   
         """
     @staticmethod
-    def from_string(xml: str, include: collections.abc.Mapping[str, bytes] | None = ..., assets: dict | None = ...) -> MjSpec:
-        """from_string(xml: str, include: collections.abc.Mapping[str, bytes] | None = None, assets: dict | None = None) -> mujoco._specs.MjSpec
+    def from_string(xml: str, include: dict[str, bytes] | None = ..., assets: dict | None = ...) -> MjSpec:
+        """from_string(xml: str, include: Optional[dict[str, bytes]] = None, assets: Optional[dict] = None) -> mujoco._specs.MjSpec
 
 
             Creates a spec from an XML string.
@@ -1636,9 +223,6 @@ class MjSpec:
         """plugin(self: mujoco._specs.MjSpec, arg0: str) -> mujoco._specs.MjsPlugin"""
     def recompile(self, arg0: object, arg1: object) -> object:
         """recompile(self: mujoco._specs.MjSpec, arg0: object, arg1: object) -> object"""
-    @staticmethod
-    def resolve_orientation(*args, **kwargs):
-        '''resolve_orientation(degree: bool, sequence: mujoco._specs.MjCharVec = None, orientation: mujoco._specs.MjsOrientation) -> typing.Annotated[list[float], "FixedSize(4)"]'''
     def sensor(self, arg0: str) -> MjsSensor:
         """sensor(self: mujoco._specs.MjSpec, arg0: str) -> mujoco._specs.MjsSensor"""
     def site(self, arg0: str) -> MjsSite:
@@ -1658,92 +242,64 @@ class MjSpec:
     def tuple(self, arg0: str) -> MjsTuple:
         """tuple(self: mujoco._specs.MjSpec, arg0: str) -> mujoco._specs.MjsTuple"""
     @property
-    def _address(self) -> int:
-        """(arg0: mujoco._specs.MjSpec) -> int"""
+    def _address(self) -> int: ...
     @property
-    def actuators(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def actuators(self) -> list: ...
     @property
-    def bodies(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def bodies(self) -> list: ...
     @property
-    def cameras(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def cameras(self) -> list: ...
     @property
-    def default(self) -> MjsDefault:
-        """(arg0: mujoco._specs.MjSpec) -> mujoco._specs.MjsDefault"""
+    def default(self) -> MjsDefault: ...
     @property
-    def equalities(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def equalities(self) -> list: ...
     @property
-    def excludes(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def excludes(self) -> list: ...
     @property
-    def flexes(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def flexes(self) -> list: ...
     @property
-    def frames(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def frames(self) -> list: ...
     @property
-    def geoms(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def geoms(self) -> list: ...
     @property
-    def hfields(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def hfields(self) -> list: ...
     @property
-    def joints(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def joints(self) -> list: ...
     @property
-    def keys(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def keys(self) -> list: ...
     @property
-    def lights(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def lights(self) -> list: ...
     @property
-    def materials(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def materials(self) -> list: ...
     @property
-    def meshes(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def meshes(self) -> list: ...
     @property
-    def numerics(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def numerics(self) -> list: ...
     @property
-    def pairs(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def pairs(self) -> list: ...
     @property
-    def parent(self) -> MjSpec:
-        """(arg0: mujoco._specs.MjSpec) -> mujoco._specs.MjSpec"""
+    def parent(self) -> MjSpec: ...
     @property
-    def plugins(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def plugins(self) -> list: ...
     @property
-    def sensors(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def sensors(self) -> list: ...
     @property
-    def sites(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def sites(self) -> list: ...
     @property
-    def skins(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def skins(self) -> list: ...
     @property
-    def tendons(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def tendons(self) -> list: ...
     @property
-    def texts(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def texts(self) -> list: ...
     @property
-    def textures(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def textures(self) -> list: ...
     @property
-    def tuples(self) -> list:
-        """(arg0: mujoco._specs.MjSpec) -> list"""
+    def tuples(self) -> list: ...
     @property
-    def worldbody(self) -> MjsBody:
-        """(arg0: mujoco._specs.MjSpec) -> mujoco._specs.MjsBody"""
+    def worldbody(self) -> MjsBody: ...
 
 class MjStatistic:
-    center: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
+    center: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
     extent: float
     meaninertia: float
     meanmass: float
@@ -1753,17 +309,17 @@ class MjStatistic:
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
 
 class MjStringVec:
-    def __init__(self, arg0: str, arg1: typing.SupportsInt) -> None:
-        """__init__(self: mujoco._specs.MjStringVec, arg0: str, arg1: typing.SupportsInt) -> None"""
+    def __init__(self, arg0: str, arg1: int) -> None:
+        """__init__(self: mujoco._specs.MjStringVec, arg0: str, arg1: int) -> None"""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
-    def __getitem__(self, arg0: typing.SupportsInt) -> str:
-        """__getitem__(self: mujoco._specs.MjStringVec, arg0: typing.SupportsInt) -> str"""
-    def __iter__(self) -> collections.abc.Iterator[str]:
-        """__iter__(self: mujoco._specs.MjStringVec) -> collections.abc.Iterator[str]"""
+    def __getitem__(self, arg0: int) -> str:
+        """__getitem__(self: mujoco._specs.MjStringVec, arg0: int) -> str"""
+    def __iter__(self) -> Iterator[str]:
+        """__iter__(self: mujoco._specs.MjStringVec) -> Iterator[str]"""
     def __len__(self) -> int:
         """__len__(self: mujoco._specs.MjStringVec) -> int"""
-    def __setitem__(self, arg0: typing.SupportsInt, arg1: str) -> None:
-        """__setitem__(self: mujoco._specs.MjStringVec, arg0: typing.SupportsInt, arg1: str) -> None"""
+    def __setitem__(self, arg0: int, arg1: str) -> None:
+        """__setitem__(self: mujoco._specs.MjStringVec, arg0: int, arg1: str) -> None"""
 
 class MjVisual:
     global_: mujoco._structs.MjVisual.Global
@@ -1778,39 +334,39 @@ class MjVisual:
 
 class MjVisualHeadlight:
     active: int
-    ambient: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[3, 1]', 'flags.writeable']
-    diffuse: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[3, 1]', 'flags.writeable']
-    specular: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[3, 1]', 'flags.writeable']
+    ambient: numpy.ndarray[numpy.float32[3, 1], flags.writeable]
+    diffuse: numpy.ndarray[numpy.float32[3, 1], flags.writeable]
+    specular: numpy.ndarray[numpy.float32[3, 1], flags.writeable]
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
 
 class MjVisualRgba:
-    actuator: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    actuatornegative: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    actuatorpositive: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    bv: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    bvactive: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    camera: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    com: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    connect: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    constraint: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    contactforce: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    contactfriction: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    contactgap: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    contactpoint: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    contacttorque: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    crankbroken: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    fog: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    force: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    frustum: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    haze: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    inertia: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    joint: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    light: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    rangefinder: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    selectpoint: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    slidercrank: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
+    actuator: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    actuatornegative: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    actuatorpositive: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    bv: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    bvactive: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    camera: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    com: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    connect: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    constraint: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    contactforce: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    contactfriction: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    contactgap: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    contactpoint: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    contacttorque: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    crankbroken: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    fog: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    force: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    frustum: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    haze: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    inertia: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    joint: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    light: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    rangefinder: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    selectpoint: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    slidercrank: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
@@ -1819,76 +375,60 @@ class MjsActuator:
     actdim: int
     actearly: int
     actlimited: int
-    actrange: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[2, 1]', 'flags.writeable']
-    biasprm: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[10, 1]', 'flags.writeable']
+    actrange: numpy.ndarray[numpy.float64[2, 1], flags.writeable]
+    biasprm: numpy.ndarray[numpy.float64[10, 1], flags.writeable]
     biastype: mujoco._enums.mjtBias
     classname: MjsDefault
     cranklength: float
     ctrllimited: int
-    ctrlrange: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[2, 1]', 'flags.writeable']
-    dynprm: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[10, 1]', 'flags.writeable']
+    ctrlrange: numpy.ndarray[numpy.float64[2, 1], flags.writeable]
+    dynprm: numpy.ndarray[numpy.float64[10, 1], flags.writeable]
     dyntype: mujoco._enums.mjtDyn
     forcelimited: int
-    forcerange: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[2, 1]', 'flags.writeable']
-    gainprm: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[10, 1]', 'flags.writeable']
+    forcerange: numpy.ndarray[numpy.float64[2, 1], flags.writeable]
+    gainprm: numpy.ndarray[numpy.float64[10, 1], flags.writeable]
     gaintype: mujoco._enums.mjtGain
-    gear: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[6, 1]', 'flags.writeable']
+    gear: numpy.ndarray[numpy.float64[6, 1], flags.writeable]
     group: int
     info: str
     inheritrange: float
-    lengthrange: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[2, 1]', 'flags.writeable']
+    lengthrange: numpy.ndarray[numpy.float64[2, 1], flags.writeable]
     name: str
     plugin: MjsPlugin
     refsite: str
     slidersite: str
     target: str
     trntype: mujoco._enums.mjtTrn
-    userdata: MjDoubleVec
+    userdata: numpy.ndarray[numpy.float64]
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
-    def set_to_adhesion(self, gain: typing.SupportsFloat) -> None:
-        """set_to_adhesion(self: mujoco._specs.MjsActuator, gain: typing.SupportsFloat) -> None"""
-    def set_to_cylinder(self, timeconst: typing.SupportsFloat, bias: typing.SupportsFloat, area: typing.SupportsFloat, diameter: typing.SupportsFloat = ...) -> None:
-        """set_to_cylinder(self: mujoco._specs.MjsActuator, timeconst: typing.SupportsFloat, bias: typing.SupportsFloat, area: typing.SupportsFloat, diameter: typing.SupportsFloat = -1) -> None"""
-    def set_to_damper(self, kv: typing.SupportsFloat) -> None:
-        """set_to_damper(self: mujoco._specs.MjsActuator, kv: typing.SupportsFloat) -> None"""
-    def set_to_intvelocity(self, kp: typing.SupportsFloat, kv: typing.SupportsFloat = ..., dampratio: typing.SupportsFloat = ..., timeconst: typing.SupportsFloat = ..., inheritrange: bool = ...) -> None:
-        """set_to_intvelocity(self: mujoco._specs.MjsActuator, kp: typing.SupportsFloat, kv: typing.SupportsFloat = -1, dampratio: typing.SupportsFloat = -1, timeconst: typing.SupportsFloat = -1, inheritrange: bool = False) -> None"""
-    def set_to_motor(self) -> None:
-        """set_to_motor(self: mujoco._specs.MjsActuator) -> None"""
-    def set_to_muscle(self, timeconst: typing.SupportsFloat = ..., tausmooth: typing.SupportsFloat, range: typing.SupportsFloat = ..., force: typing.SupportsFloat = ..., scale: typing.SupportsFloat = ..., lmin: typing.SupportsFloat = ..., lmax: typing.SupportsFloat = ..., vmax: typing.SupportsFloat = ..., fpmax: typing.SupportsFloat = ..., fvmax: typing.SupportsFloat = ...) -> None:
-        """set_to_muscle(self: mujoco._specs.MjsActuator, timeconst: typing.SupportsFloat = -1, tausmooth: typing.SupportsFloat, range: typing.SupportsFloat = [-1.0, -1.0], force: typing.SupportsFloat = -1, scale: typing.SupportsFloat = -1, lmin: typing.SupportsFloat = -1, lmax: typing.SupportsFloat = -1, vmax: typing.SupportsFloat = -1, fpmax: typing.SupportsFloat = -1, fvmax: typing.SupportsFloat = -1) -> None"""
-    def set_to_position(self, kp: typing.SupportsFloat, kv: typing.SupportsFloat = ..., dampratio: typing.SupportsFloat = ..., timeconst: typing.SupportsFloat = ..., inheritrange: bool = ...) -> None:
-        """set_to_position(self: mujoco._specs.MjsActuator, kp: typing.SupportsFloat, kv: typing.SupportsFloat = -1, dampratio: typing.SupportsFloat = -1, timeconst: typing.SupportsFloat = -1, inheritrange: bool = False) -> None"""
-    def set_to_velocity(self, kv: typing.SupportsFloat) -> None:
-        """set_to_velocity(self: mujoco._specs.MjsActuator, kv: typing.SupportsFloat) -> None"""
+    def delete(self) -> None:
+        """delete(self: mujoco._specs.MjsActuator) -> None"""
     @property
-    def id(self) -> int:
-        """(arg0: mujoco._specs.MjsActuator) -> int"""
+    def id(self) -> int: ...
     @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsActuator) -> int"""
+    def signature(self) -> int: ...
 
 class MjsBody:
     alt: MjsOrientation
     childclass: str
     classname: MjsDefault
     explicitinertial: int
-    fullinertia: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[6, 1]', 'flags.writeable']
+    fullinertia: numpy.ndarray[numpy.float64[6, 1], flags.writeable]
     gravcomp: float
     ialt: MjsOrientation
-    inertia: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
+    inertia: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
     info: str
-    ipos: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
-    iquat: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[4, 1]', 'flags.writeable']
+    ipos: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
+    iquat: numpy.ndarray[numpy.float64[4, 1], flags.writeable]
     mass: float
     mocap: int
     name: str
     plugin: MjsPlugin
-    pos: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
-    quat: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[4, 1]', 'flags.writeable']
-    userdata: MjDoubleVec
+    pos: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
+    quat: numpy.ndarray[numpy.float64[4, 1], flags.writeable]
+    userdata: numpy.ndarray[numpy.float64]
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
@@ -1909,7 +449,7 @@ class MjsBody:
     def add_site(self, default: MjsDefault = ..., **kwargs) -> MjsSite:
         """add_site(self: mujoco._specs.MjsBody, default: mujoco._specs.MjsDefault = None, **kwargs) -> mujoco._specs.MjsSite"""
     def attach_frame(self, frame: MjsFrame, prefix: str | None = ..., suffix: str | None = ...) -> MjsFrame:
-        """attach_frame(self: mujoco._specs.MjsBody, frame: mujoco._specs.MjsFrame, prefix: str | None = None, suffix: str | None = None) -> mujoco._specs.MjsFrame"""
+        """attach_frame(self: mujoco._specs.MjsBody, frame: mujoco._specs.MjsFrame, prefix: Optional[str] = None, suffix: Optional[str] = None) -> mujoco._specs.MjsFrame"""
     @overload
     def find_all(self, arg0: mujoco._enums.mjtObj) -> list:
         """find_all(*args, **kwargs)
@@ -1963,76 +503,59 @@ class MjsBody:
     def to_frame(self) -> MjsFrame:
         """to_frame(self: mujoco._specs.MjsBody) -> mujoco._specs.MjsFrame"""
     @property
-    def bodies(self) -> list:
-        """(arg0: mujoco._specs.MjsBody) -> list"""
+    def bodies(self) -> list: ...
     @property
-    def cameras(self) -> list:
-        """(arg0: mujoco._specs.MjsBody) -> list"""
+    def cameras(self) -> list: ...
     @property
-    def frame(self) -> MjsFrame:
-        """(arg0: mujoco._specs.MjsBody) -> mujoco._specs.MjsFrame"""
+    def frames(self) -> list: ...
     @property
-    def frames(self) -> list:
-        """(arg0: mujoco._specs.MjsBody) -> list"""
+    def geoms(self) -> list: ...
     @property
-    def geoms(self) -> list:
-        """(arg0: mujoco._specs.MjsBody) -> list"""
+    def id(self) -> int: ...
     @property
-    def id(self) -> int:
-        """(arg0: mujoco._specs.MjsBody) -> int"""
+    def joints(self) -> list: ...
     @property
-    def joints(self) -> list:
-        """(arg0: mujoco._specs.MjsBody) -> list"""
+    def lights(self) -> list: ...
     @property
-    def lights(self) -> list:
-        """(arg0: mujoco._specs.MjsBody) -> list"""
+    def parent(self) -> MjsBody: ...
     @property
-    def parent(self) -> MjsBody:
-        """(arg0: mujoco._specs.MjsBody) -> mujoco._specs.MjsBody"""
+    def signature(self) -> int: ...
     @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsBody) -> int"""
-    @property
-    def sites(self) -> list:
-        """(arg0: mujoco._specs.MjsBody) -> list"""
+    def sites(self) -> list: ...
 
 class MjsCamera:
     alt: MjsOrientation
     classname: MjsDefault
-    focal_length: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[2, 1]', 'flags.writeable']
-    focal_pixel: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[2, 1]', 'flags.writeable']
+    focal_length: numpy.ndarray[numpy.float32[2, 1], flags.writeable]
+    focal_pixel: numpy.ndarray[numpy.float32[2, 1], flags.writeable]
     fovy: float
     info: str
-    intrinsic: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
+    intrinsic: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
     ipd: float
     mode: mujoco._enums.mjtCamLight
     name: str
     orthographic: int
-    pos: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
-    principal_length: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[2, 1]', 'flags.writeable']
-    principal_pixel: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[2, 1]', 'flags.writeable']
-    quat: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[4, 1]', 'flags.writeable']
-    resolution: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[2, 1]', 'flags.writeable']
-    sensor_size: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[2, 1]', 'flags.writeable']
+    pos: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
+    principal_length: numpy.ndarray[numpy.float32[2, 1], flags.writeable]
+    principal_pixel: numpy.ndarray[numpy.float32[2, 1], flags.writeable]
+    quat: numpy.ndarray[numpy.float64[4, 1], flags.writeable]
+    resolution: numpy.ndarray[numpy.float32[2, 1], flags.writeable]
+    sensor_size: numpy.ndarray[numpy.float32[2, 1], flags.writeable]
     targetbody: str
-    userdata: MjDoubleVec
+    userdata: numpy.ndarray[numpy.float64]
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
+    def delete(self) -> None:
+        """delete(self: mujoco._specs.MjsCamera) -> None"""
     def set_frame(self, arg0: MjsFrame) -> None:
         """set_frame(self: mujoco._specs.MjsCamera, arg0: mujoco._specs.MjsFrame) -> None"""
     @property
-    def frame(self) -> MjsFrame:
-        """(arg0: mujoco._specs.MjsCamera) -> mujoco._specs.MjsFrame"""
+    def id(self) -> int: ...
     @property
-    def id(self) -> int:
-        """(arg0: mujoco._specs.MjsCamera) -> int"""
+    def parent(self) -> MjsBody: ...
     @property
-    def parent(self) -> MjsBody:
-        """(arg0: mujoco._specs.MjsCamera) -> mujoco._specs.MjsBody"""
-    @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsCamera) -> int"""
+    def signature(self) -> int: ...
 
 class MjsCompiler:
     LRopt: mujoco._structs.MjLROpt
@@ -2047,7 +570,7 @@ class MjsCompiler:
     fitaabb: int
     fusestatic: int
     inertiafromgeom: int
-    inertiagrouprange: typing.Annotated[numpy.typing.NDArray[numpy.int32], '[2, 1]', 'flags.writeable']
+    inertiagrouprange: numpy.ndarray[numpy.int32[2, 1], flags.writeable]
     saveinertial: int
     settotalmass: float
     usethread: int
@@ -2081,24 +604,24 @@ class MjsElement:
 class MjsEquality:
     active: int
     classname: MjsDefault
-    data: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[11, 1]', 'flags.writeable']
+    data: numpy.ndarray[numpy.float64[11, 1], flags.writeable]
     info: str
     name: str
     name1: str
     name2: str
     objtype: mujoco._enums.mjtObj
-    solimp: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[5, 1]', 'flags.writeable']
-    solref: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[2, 1]', 'flags.writeable']
+    solimp: numpy.ndarray[numpy.float64[5, 1], flags.writeable]
+    solref: numpy.ndarray[numpy.float64[2, 1], flags.writeable]
     type: mujoco._enums.mjtEq
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
+    def delete(self) -> None:
+        """delete(self: mujoco._specs.MjsEquality) -> None"""
     @property
-    def id(self) -> int:
-        """(arg0: mujoco._specs.MjsEquality) -> int"""
+    def id(self) -> int: ...
     @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsEquality) -> int"""
+    def signature(self) -> int: ...
 
 class MjsExclude:
     bodyname1: str
@@ -2108,12 +631,12 @@ class MjsExclude:
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
+    def delete(self) -> None:
+        """delete(self: mujoco._specs.MjsExclude) -> None"""
     @property
-    def id(self) -> int:
-        """(arg0: mujoco._specs.MjsExclude) -> int"""
+    def id(self) -> int: ...
     @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsExclude) -> int"""
+    def signature(self) -> int: ...
 
 class MjsFlex:
     activelayers: int
@@ -2124,11 +647,10 @@ class MjsFlex:
     dim: int
     edgedamping: float
     edgestiffness: float
-    elastic2d: int
-    elem: MjIntVec
-    elemtexcoord: MjIntVec
+    elem: numpy.ndarray[numpy.int32]
+    elemtexcoord: numpy.ndarray[numpy.int32]
     flatskin: int
-    friction: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
+    friction: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
     gap: float
     group: int
     info: str
@@ -2136,59 +658,53 @@ class MjsFlex:
     margin: float
     material: str
     name: str
-    node: MjDoubleVec
+    node: numpy.ndarray[numpy.float64]
     nodebody: MjStringVec
-    passive: int
     poisson: float
     priority: int
     radius: float
-    rgba: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
+    rgba: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
     selfcollide: int
-    solimp: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[5, 1]', 'flags.writeable']
+    solimp: numpy.ndarray[numpy.float64[5, 1], flags.writeable]
     solmix: float
-    solref: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[2, 1]', 'flags.writeable']
-    texcoord: MjFloatVec
+    solref: numpy.ndarray[numpy.float64[2, 1], flags.writeable]
+    texcoord: numpy.ndarray[numpy.float32]
     thickness: float
-    vert: MjDoubleVec
+    vert: numpy.ndarray[numpy.float64]
     vertbody: MjStringVec
-    vertcollide: int
     young: float
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
+    def delete(self) -> None:
+        """delete(self: mujoco._specs.MjsFlex) -> None"""
     @property
-    def id(self) -> int:
-        """(arg0: mujoco._specs.MjsFlex) -> int"""
+    def id(self) -> int: ...
     @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsFlex) -> int"""
+    def signature(self) -> int: ...
 
 class MjsFrame:
     alt: MjsOrientation
     childclass: str
     info: str
     name: str
-    pos: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
-    quat: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[4, 1]', 'flags.writeable']
+    pos: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
+    quat: numpy.ndarray[numpy.float64[4, 1], flags.writeable]
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
     def attach_body(self, body: MjsBody, prefix: str | None = ..., suffix: str | None = ...) -> MjsBody:
-        """attach_body(self: mujoco._specs.MjsFrame, body: mujoco._specs.MjsBody, prefix: str | None = None, suffix: str | None = None) -> mujoco._specs.MjsBody"""
+        """attach_body(self: mujoco._specs.MjsFrame, body: mujoco._specs.MjsBody, prefix: Optional[str] = None, suffix: Optional[str] = None) -> mujoco._specs.MjsBody"""
+    def delete(self) -> None:
+        """delete(self: mujoco._specs.MjsFrame) -> None"""
     def set_frame(self, arg0: MjsFrame) -> None:
         """set_frame(self: mujoco._specs.MjsFrame, arg0: mujoco._specs.MjsFrame) -> None"""
     @property
-    def frame(self) -> MjsFrame:
-        """(arg0: mujoco._specs.MjsFrame) -> mujoco._specs.MjsFrame"""
+    def id(self) -> int: ...
     @property
-    def id(self) -> int:
-        """(arg0: mujoco._specs.MjsFrame) -> int"""
+    def parent(self) -> MjsBody: ...
     @property
-    def parent(self) -> MjsBody:
-        """(arg0: mujoco._specs.MjsFrame) -> mujoco._specs.MjsBody"""
-    @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsFrame) -> int"""
+    def signature(self) -> int: ...
 
 class MjsGeom:
     alt: MjsOrientation
@@ -2198,10 +714,10 @@ class MjsGeom:
     contype: int
     density: float
     fitscale: float
-    fluid_coefs: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[5, 1]', 'flags.writeable']
+    fluid_coefs: numpy.ndarray[numpy.float64[5, 1], flags.writeable]
     fluid_ellipsoid: float
-    friction: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
-    fromto: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[6, 1]', 'flags.writeable']
+    friction: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
+    fromto: numpy.ndarray[numpy.float64[6, 1], flags.writeable]
     gap: float
     group: int
     hfieldname: str
@@ -2212,34 +728,30 @@ class MjsGeom:
     meshname: str
     name: str
     plugin: MjsPlugin
-    pos: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
+    pos: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
     priority: int
-    quat: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[4, 1]', 'flags.writeable']
-    rgba: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    size: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
-    solimp: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[5, 1]', 'flags.writeable']
+    quat: numpy.ndarray[numpy.float64[4, 1], flags.writeable]
+    rgba: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    size: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
+    solimp: numpy.ndarray[numpy.float64[5, 1], flags.writeable]
     solmix: float
-    solref: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[2, 1]', 'flags.writeable']
+    solref: numpy.ndarray[numpy.float64[2, 1], flags.writeable]
     type: mujoco._enums.mjtGeom
     typeinertia: mujoco._enums.mjtGeomInertia
-    userdata: MjDoubleVec
+    userdata: numpy.ndarray[numpy.float64]
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
+    def delete(self) -> None:
+        """delete(self: mujoco._specs.MjsGeom) -> None"""
     def set_frame(self, arg0: MjsFrame) -> None:
         """set_frame(self: mujoco._specs.MjsGeom, arg0: mujoco._specs.MjsFrame) -> None"""
     @property
-    def frame(self) -> MjsFrame:
-        """(arg0: mujoco._specs.MjsGeom) -> mujoco._specs.MjsFrame"""
+    def id(self) -> int: ...
     @property
-    def id(self) -> int:
-        """(arg0: mujoco._specs.MjsGeom) -> int"""
+    def parent(self) -> MjsBody: ...
     @property
-    def parent(self) -> MjsBody:
-        """(arg0: mujoco._specs.MjsGeom) -> mujoco._specs.MjsBody"""
-    @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsGeom) -> int"""
+    def signature(self) -> int: ...
 
 class MjsHField:
     content_type: str
@@ -2248,25 +760,25 @@ class MjsHField:
     name: str
     ncol: int
     nrow: int
-    size: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[4, 1]', 'flags.writeable']
-    userdata: MjFloatVec
+    size: numpy.ndarray[numpy.float64[4, 1], flags.writeable]
+    userdata: numpy.ndarray[numpy.float32]
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
+    def delete(self) -> None:
+        """delete(self: mujoco._specs.MjsHField) -> None"""
     @property
-    def id(self) -> int:
-        """(arg0: mujoco._specs.MjsHField) -> int"""
+    def id(self) -> int: ...
     @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsHField) -> int"""
+    def signature(self) -> int: ...
 
 class MjsJoint:
     actfrclimited: int
-    actfrcrange: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[2, 1]', 'flags.writeable']
+    actfrcrange: numpy.ndarray[numpy.float64[2, 1], flags.writeable]
     actgravcomp: int
     align: int
     armature: float
-    axis: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
+    axis: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
     classname: MjsDefault
     damping: float
     frictionloss: float
@@ -2275,94 +787,83 @@ class MjsJoint:
     limited: int
     margin: float
     name: str
-    pos: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
-    range: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[2, 1]', 'flags.writeable']
+    pos: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
+    range: numpy.ndarray[numpy.float64[2, 1], flags.writeable]
     ref: float
-    solimp_friction: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[5, 1]', 'flags.writeable']
-    solimp_limit: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[5, 1]', 'flags.writeable']
-    solref_friction: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[2, 1]', 'flags.writeable']
-    solref_limit: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[2, 1]', 'flags.writeable']
-    springdamper: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[2, 1]', 'flags.writeable']
+    solimp_friction: numpy.ndarray[numpy.float64[5, 1], flags.writeable]
+    solimp_limit: numpy.ndarray[numpy.float64[5, 1], flags.writeable]
+    solref_friction: numpy.ndarray[numpy.float64[2, 1], flags.writeable]
+    solref_limit: numpy.ndarray[numpy.float64[2, 1], flags.writeable]
+    springdamper: numpy.ndarray[numpy.float64[2, 1], flags.writeable]
     springref: float
     stiffness: float
     type: mujoco._enums.mjtJoint
-    userdata: MjDoubleVec
+    userdata: numpy.ndarray[numpy.float64]
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
+    def delete(self) -> None:
+        """delete(self: mujoco._specs.MjsJoint) -> None"""
     def set_frame(self, arg0: MjsFrame) -> None:
         """set_frame(self: mujoco._specs.MjsJoint, arg0: mujoco._specs.MjsFrame) -> None"""
     @property
-    def frame(self) -> MjsFrame:
-        """(arg0: mujoco._specs.MjsJoint) -> mujoco._specs.MjsFrame"""
+    def id(self) -> int: ...
     @property
-    def id(self) -> int:
-        """(arg0: mujoco._specs.MjsJoint) -> int"""
+    def parent(self) -> MjsBody: ...
     @property
-    def parent(self) -> MjsBody:
-        """(arg0: mujoco._specs.MjsJoint) -> mujoco._specs.MjsBody"""
-    @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsJoint) -> int"""
+    def signature(self) -> int: ...
 
 class MjsKey:
-    act: MjDoubleVec
-    ctrl: MjDoubleVec
+    act: numpy.ndarray[numpy.float64]
+    ctrl: numpy.ndarray[numpy.float64]
     info: str
-    mpos: MjDoubleVec
-    mquat: MjDoubleVec
+    mpos: numpy.ndarray[numpy.float64]
+    mquat: numpy.ndarray[numpy.float64]
     name: str
-    qpos: MjDoubleVec
-    qvel: MjDoubleVec
+    qpos: numpy.ndarray[numpy.float64]
+    qvel: numpy.ndarray[numpy.float64]
     time: float
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
+    def delete(self) -> None:
+        """delete(self: mujoco._specs.MjsKey) -> None"""
     @property
-    def id(self) -> int:
-        """(arg0: mujoco._specs.MjsKey) -> int"""
+    def id(self) -> int: ...
     @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsKey) -> int"""
+    def signature(self) -> int: ...
 
 class MjsLight:
     active: int
-    ambient: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[3, 1]', 'flags.writeable']
-    attenuation: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[3, 1]', 'flags.writeable']
+    ambient: numpy.ndarray[numpy.float32[3, 1], flags.writeable]
+    attenuation: numpy.ndarray[numpy.float32[3, 1], flags.writeable]
     bulbradius: float
     castshadow: int
     classname: MjsDefault
     cutoff: float
-    diffuse: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[3, 1]', 'flags.writeable']
-    dir: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
+    diffuse: numpy.ndarray[numpy.float32[3, 1], flags.writeable]
+    dir: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
+    directional: int
     exponent: float
     info: str
-    intensity: float
     mode: mujoco._enums.mjtCamLight
     name: str
-    pos: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
-    range: float
-    specular: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[3, 1]', 'flags.writeable']
+    pos: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
+    specular: numpy.ndarray[numpy.float32[3, 1], flags.writeable]
     targetbody: str
-    texture: str
-    type: mujoco._enums.mjtLightType
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
+    def delete(self) -> None:
+        """delete(self: mujoco._specs.MjsLight) -> None"""
     def set_frame(self, arg0: MjsFrame) -> None:
         """set_frame(self: mujoco._specs.MjsLight, arg0: mujoco._specs.MjsFrame) -> None"""
     @property
-    def frame(self) -> MjsFrame:
-        """(arg0: mujoco._specs.MjsLight) -> mujoco._specs.MjsFrame"""
+    def id(self) -> int: ...
     @property
-    def id(self) -> int:
-        """(arg0: mujoco._specs.MjsLight) -> int"""
+    def parent(self) -> MjsBody: ...
     @property
-    def parent(self) -> MjsBody:
-        """(arg0: mujoco._specs.MjsLight) -> mujoco._specs.MjsBody"""
-    @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsLight) -> int"""
+    def signature(self) -> int: ...
 
 class MjsMaterial:
     classname: MjsDefault
@@ -2371,22 +872,22 @@ class MjsMaterial:
     metallic: float
     name: str
     reflectance: float
-    rgba: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
+    rgba: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
     roughness: float
     shininess: float
     specular: float
-    texrepeat: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[2, 1]', 'flags.writeable']
+    texrepeat: numpy.ndarray[numpy.float32[2, 1], flags.writeable]
     textures: MjStringVec
     texuniform: int
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
+    def delete(self) -> None:
+        """delete(self: mujoco._specs.MjsMaterial) -> None"""
     @property
-    def id(self) -> int:
-        """(arg0: mujoco._specs.MjsMaterial) -> int"""
+    def id(self) -> int: ...
     @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsMaterial) -> int"""
+    def signature(self) -> int: ...
 
 class MjsMesh:
     classname: MjsDefault
@@ -2394,65 +895,49 @@ class MjsMesh:
     file: str
     inertia: mujoco._enums.mjtMeshInertia
     info: str
-    material: str
     maxhullvert: int
     name: str
-    needsdf: int
     plugin: MjsPlugin
-    refpos: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
-    refquat: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[4, 1]', 'flags.writeable']
-    scale: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
+    refpos: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
+    refquat: numpy.ndarray[numpy.float64[4, 1], flags.writeable]
+    scale: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
     smoothnormal: int
-    userface: MjIntVec
-    userfacetexcoord: MjIntVec
-    usernormal: MjFloatVec
-    usertexcoord: MjFloatVec
-    uservert: MjFloatVec
+    userface: numpy.ndarray[numpy.int32]
+    userfacetexcoord: numpy.ndarray[numpy.int32]
+    usernormal: numpy.ndarray[numpy.float32]
+    usertexcoord: numpy.ndarray[numpy.float32]
+    uservert: numpy.ndarray[numpy.float32]
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
-    def make_cone(self, nedge: typing.SupportsInt, radius: typing.SupportsFloat) -> None:
-        """make_cone(self: mujoco._specs.MjsMesh, nedge: typing.SupportsInt, radius: typing.SupportsFloat) -> None"""
-    def make_hemisphere(self, resolution: typing.SupportsInt) -> None:
-        """make_hemisphere(self: mujoco._specs.MjsMesh, resolution: typing.SupportsInt) -> None"""
-    def make_plate(self, resolution=...) -> None:
-        '''make_plate(self: mujoco._specs.MjsMesh, resolution: typing.Annotated[collections.abc.Sequence[typing.SupportsInt], "FixedSize(2)"] = [0, 0]) -> None'''
-    def make_sphere(self, subdivision: typing.SupportsInt) -> None:
-        """make_sphere(self: mujoco._specs.MjsMesh, subdivision: typing.SupportsInt) -> None"""
-    def make_supersphere(self, resolution: typing.SupportsInt, e: typing.SupportsFloat, n: typing.SupportsFloat) -> None:
-        """make_supersphere(self: mujoco._specs.MjsMesh, resolution: typing.SupportsInt, e: typing.SupportsFloat, n: typing.SupportsFloat) -> None"""
-    def make_supertorus(self, resolution: typing.SupportsInt, radius: typing.SupportsFloat, s: typing.SupportsFloat, t: typing.SupportsFloat) -> None:
-        """make_supertorus(self: mujoco._specs.MjsMesh, resolution: typing.SupportsInt, radius: typing.SupportsFloat, s: typing.SupportsFloat, t: typing.SupportsFloat) -> None"""
-    def make_wedge(self, resolution=..., fov=..., gamma: typing.SupportsFloat = ...) -> None:
-        '''make_wedge(self: mujoco._specs.MjsMesh, resolution: typing.Annotated[collections.abc.Sequence[typing.SupportsInt], "FixedSize(2)"] = [0, 0], fov: typing.Annotated[collections.abc.Sequence[typing.SupportsFloat], "FixedSize(2)"] = [0.0, 0.0], gamma: typing.SupportsFloat = 0) -> None'''
+    def delete(self) -> None:
+        """delete(self: mujoco._specs.MjsMesh) -> None"""
     @property
-    def id(self) -> int:
-        """(arg0: mujoco._specs.MjsMesh) -> int"""
+    def id(self) -> int: ...
     @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsMesh) -> int"""
+    def signature(self) -> int: ...
 
 class MjsNumeric:
-    data: MjDoubleVec
+    data: numpy.ndarray[numpy.float64]
     info: str
     name: str
     size: int
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
+    def delete(self) -> None:
+        """delete(self: mujoco._specs.MjsNumeric) -> None"""
     @property
-    def id(self) -> int:
-        """(arg0: mujoco._specs.MjsNumeric) -> int"""
+    def id(self) -> int: ...
     @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsNumeric) -> int"""
+    def signature(self) -> int: ...
 
 class MjsOrientation:
-    axisangle: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[4, 1]', 'flags.writeable']
-    euler: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
+    axisangle: numpy.ndarray[numpy.float64[4, 1], flags.writeable]
+    euler: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
     type: mujoco._enums.mjtOrientation
-    xyaxes: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[6, 1]', 'flags.writeable']
-    zaxis: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
+    xyaxes: numpy.ndarray[numpy.float64[6, 1], flags.writeable]
+    zaxis: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
@@ -2460,29 +945,29 @@ class MjsOrientation:
 class MjsPair:
     classname: MjsDefault
     condim: int
-    friction: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[5, 1]', 'flags.writeable']
+    friction: numpy.ndarray[numpy.float64[5, 1], flags.writeable]
     gap: float
     geomname1: str
     geomname2: str
     info: str
     margin: float
     name: str
-    solimp: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[5, 1]', 'flags.writeable']
-    solref: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[2, 1]', 'flags.writeable']
-    solreffriction: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[2, 1]', 'flags.writeable']
+    solimp: numpy.ndarray[numpy.float64[5, 1], flags.writeable]
+    solref: numpy.ndarray[numpy.float64[2, 1], flags.writeable]
+    solreffriction: numpy.ndarray[numpy.float64[2, 1], flags.writeable]
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
+    def delete(self) -> None:
+        """delete(self: mujoco._specs.MjsPair) -> None"""
     @property
-    def id(self) -> int:
-        """(arg0: mujoco._specs.MjsPair) -> int"""
+    def id(self) -> int: ...
     @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsPair) -> int"""
+    def signature(self) -> int: ...
 
 class MjsPlugin:
     active: int
-    config: dict
+    config: None
     id: int
     info: str
     name: str
@@ -2490,16 +975,16 @@ class MjsPlugin:
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
+    def delete(self) -> None:
+        """delete(self: mujoco._specs.MjsPlugin) -> None"""
     @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsPlugin) -> int"""
+    def signature(self) -> int: ...
 
 class MjsSensor:
     cutoff: float
     datatype: mujoco._enums.mjtDataType
     dim: int
     info: str
-    intprm: typing.Annotated[numpy.typing.NDArray[numpy.int32], '[3, 1]', 'flags.writeable']
     name: str
     needstage: mujoco._enums.mjtStage
     noise: float
@@ -2509,82 +994,76 @@ class MjsSensor:
     refname: str
     reftype: mujoco._enums.mjtObj
     type: mujoco._enums.mjtSensor
-    userdata: MjDoubleVec
+    userdata: numpy.ndarray[numpy.float64]
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
-    def get_data_size(self) -> int:
-        """get_data_size(self: mujoco._specs.MjsSensor) -> int"""
+    def delete(self) -> None:
+        """delete(self: mujoco._specs.MjsSensor) -> None"""
     @property
-    def id(self) -> int:
-        """(arg0: mujoco._specs.MjsSensor) -> int"""
+    def id(self) -> int: ...
     @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsSensor) -> int"""
+    def signature(self) -> int: ...
 
 class MjsSite:
     alt: MjsOrientation
     classname: MjsDefault
-    fromto: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[6, 1]', 'flags.writeable']
+    fromto: numpy.ndarray[numpy.float64[6, 1], flags.writeable]
     group: int
     info: str
     material: str
     name: str
-    pos: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
-    quat: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[4, 1]', 'flags.writeable']
-    rgba: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    size: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
+    pos: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
+    quat: numpy.ndarray[numpy.float64[4, 1], flags.writeable]
+    rgba: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    size: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
     type: mujoco._enums.mjtGeom
-    userdata: MjDoubleVec
+    userdata: numpy.ndarray[numpy.float64]
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
     def attach_body(self, body: MjsBody, prefix: str | None = ..., suffix: str | None = ...) -> MjsBody:
-        """attach_body(self: mujoco._specs.MjsSite, body: mujoco._specs.MjsBody, prefix: str | None = None, suffix: str | None = None) -> mujoco._specs.MjsBody"""
+        """attach_body(self: mujoco._specs.MjsSite, body: mujoco._specs.MjsBody, prefix: Optional[str] = None, suffix: Optional[str] = None) -> mujoco._specs.MjsBody"""
+    def delete(self) -> None:
+        """delete(self: mujoco._specs.MjsSite) -> None"""
     def set_frame(self, arg0: MjsFrame) -> None:
         """set_frame(self: mujoco._specs.MjsSite, arg0: mujoco._specs.MjsFrame) -> None"""
     @property
-    def frame(self) -> MjsFrame:
-        """(arg0: mujoco._specs.MjsSite) -> mujoco._specs.MjsFrame"""
+    def id(self) -> int: ...
     @property
-    def id(self) -> int:
-        """(arg0: mujoco._specs.MjsSite) -> int"""
+    def parent(self) -> MjsBody: ...
     @property
-    def parent(self) -> MjsBody:
-        """(arg0: mujoco._specs.MjsSite) -> mujoco._specs.MjsBody"""
-    @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsSite) -> int"""
+    def signature(self) -> int: ...
 
 class MjsSkin:
-    bindpos: MjFloatVec
-    bindquat: MjFloatVec
+    bindpos: numpy.ndarray[numpy.float32]
+    bindquat: numpy.ndarray[numpy.float32]
     bodyname: MjStringVec
-    face: MjIntVec
+    face: numpy.ndarray[numpy.int32]
     file: str
     group: int
     inflate: float
     info: str
     material: str
     name: str
-    rgba: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    texcoord: MjFloatVec
-    vert: MjFloatVec
+    rgba: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    texcoord: numpy.ndarray[numpy.float32]
+    vert: numpy.ndarray[numpy.float32]
     vertid: list
     vertweight: list
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
+    def delete(self) -> None:
+        """delete(self: mujoco._specs.MjsSkin) -> None"""
     @property
-    def id(self) -> int:
-        """(arg0: mujoco._specs.MjsSkin) -> int"""
+    def id(self) -> int: ...
     @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsSkin) -> int"""
+    def signature(self) -> int: ...
 
 class MjsTendon:
     actfrclimited: int
-    actfrcrange: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[2, 1]', 'flags.writeable']
+    actfrcrange: numpy.ndarray[numpy.float64[2, 1], flags.writeable]
     armature: float
     damping: float
     frictionloss: float
@@ -2594,35 +1073,35 @@ class MjsTendon:
     margin: float
     material: str
     name: str
-    range: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[2, 1]', 'flags.writeable']
-    rgba: typing.Annotated[numpy.typing.NDArray[numpy.float32], '[4, 1]', 'flags.writeable']
-    solimp_friction: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[5, 1]', 'flags.writeable']
-    solimp_limit: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[5, 1]', 'flags.writeable']
-    solref_friction: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[2, 1]', 'flags.writeable']
-    solref_limit: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[2, 1]', 'flags.writeable']
-    springlength: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[2, 1]', 'flags.writeable']
+    range: numpy.ndarray[numpy.float64[2, 1], flags.writeable]
+    rgba: numpy.ndarray[numpy.float32[4, 1], flags.writeable]
+    solimp_friction: numpy.ndarray[numpy.float64[5, 1], flags.writeable]
+    solimp_limit: numpy.ndarray[numpy.float64[5, 1], flags.writeable]
+    solref_friction: numpy.ndarray[numpy.float64[2, 1], flags.writeable]
+    solref_limit: numpy.ndarray[numpy.float64[2, 1], flags.writeable]
+    springlength: numpy.ndarray[numpy.float64[2, 1], flags.writeable]
     stiffness: float
-    userdata: MjDoubleVec
+    userdata: numpy.ndarray[numpy.float64]
     width: float
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
     def default(self) -> MjsDefault:
         """default(self: mujoco._specs.MjsTendon) -> mujoco._specs.MjsDefault"""
+    def delete(self) -> None:
+        """delete(self: mujoco._specs.MjsTendon) -> None"""
     def wrap_geom(self, arg0: str, arg1: str) -> MjsWrap:
         """wrap_geom(self: mujoco._specs.MjsTendon, arg0: str, arg1: str) -> mujoco._specs.MjsWrap"""
-    def wrap_joint(self, arg0: str, arg1: typing.SupportsFloat) -> MjsWrap:
-        """wrap_joint(self: mujoco._specs.MjsTendon, arg0: str, arg1: typing.SupportsFloat) -> mujoco._specs.MjsWrap"""
-    def wrap_pulley(self, arg0: typing.SupportsFloat) -> MjsWrap:
-        """wrap_pulley(self: mujoco._specs.MjsTendon, arg0: typing.SupportsFloat) -> mujoco._specs.MjsWrap"""
+    def wrap_joint(self, arg0: str, arg1: float) -> MjsWrap:
+        """wrap_joint(self: mujoco._specs.MjsTendon, arg0: str, arg1: float) -> mujoco._specs.MjsWrap"""
+    def wrap_pulley(self, arg0: float) -> MjsWrap:
+        """wrap_pulley(self: mujoco._specs.MjsTendon, arg0: float) -> mujoco._specs.MjsWrap"""
     def wrap_site(self, arg0: str) -> MjsWrap:
         """wrap_site(self: mujoco._specs.MjsTendon, arg0: str) -> mujoco._specs.MjsWrap"""
     @property
-    def id(self) -> int:
-        """(arg0: mujoco._specs.MjsTendon) -> int"""
+    def id(self) -> int: ...
     @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsTendon) -> int"""
+    def signature(self) -> int: ...
 
 class MjsText:
     data: str
@@ -2631,60 +1110,59 @@ class MjsText:
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
+    def delete(self) -> None:
+        """delete(self: mujoco._specs.MjsText) -> None"""
     @property
-    def id(self) -> int:
-        """(arg0: mujoco._specs.MjsText) -> int"""
+    def id(self) -> int: ...
     @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsText) -> int"""
+    def signature(self) -> int: ...
 
 class MjsTexture:
     builtin: int
-    colorspace: mujoco._enums.mjtColorSpace
     content_type: str
     cubefiles: MjStringVec
     data: MjByteVec
     file: str
     gridlayout: MjCharVec
-    gridsize: typing.Annotated[numpy.typing.NDArray[numpy.int32], '[2, 1]', 'flags.writeable']
+    gridsize: numpy.ndarray[numpy.int32[2, 1], flags.writeable]
     height: int
     hflip: int
     info: str
     mark: int
-    markrgb: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
+    markrgb: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
     name: str
     nchannel: int
     random: float
-    rgb1: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
-    rgb2: typing.Annotated[numpy.typing.NDArray[numpy.float64], '[3, 1]', 'flags.writeable']
+    rgb1: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
+    rgb2: numpy.ndarray[numpy.float64[3, 1], flags.writeable]
     type: mujoco._enums.mjtTexture
     vflip: int
     width: int
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
+    def delete(self) -> None:
+        """delete(self: mujoco._specs.MjsTexture) -> None"""
     @property
-    def id(self) -> int:
-        """(arg0: mujoco._specs.MjsTexture) -> int"""
+    def id(self) -> int: ...
     @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsTexture) -> int"""
+    def signature(self) -> int: ...
 
 class MjsTuple:
     info: str
     name: str
     objname: MjStringVec
-    objprm: MjDoubleVec
-    objtype: MjIntVec
+    objprm: numpy.ndarray[numpy.float64]
+    objtype: numpy.ndarray[numpy.int32]
     def __init__(self, *args, **kwargs) -> None:
         """Initialize self.  See help(type(self)) for accurate signature."""
     def _pybind11_conduit_v1_(self, *args, **kwargs): ...
+    def delete(self) -> None:
+        """delete(self: mujoco._specs.MjsTuple) -> None"""
     @property
-    def id(self) -> int:
-        """(arg0: mujoco._specs.MjsTuple) -> int"""
+    def id(self) -> int: ...
     @property
-    def signature(self) -> int:
-        """(arg0: mujoco._specs.MjsTuple) -> int"""
+    def signature(self) -> int: ...
 
 class MjsWrap:
     info: str

@@ -25,7 +25,6 @@ anyio
 Aorus
 apdisk
 apidocs
-apidocs
 apng
 ARCHS
 argcomplete
@@ -39,10 +38,8 @@ asyncio
 aurelia
 autoapi
 autoapisummary
-autoapisummary
 autobuild
 AUTOCONNECT
-autodoc
 autodoc
 autolimits
 automodule
@@ -101,7 +98,6 @@ bysource
 bzr
 captionpos
 captionsetup
-Carola
 castshadow
 cbar
 cdll
@@ -115,8 +111,6 @@ chapterpage
 charliermarsh
 charx
 charxstring
-Checkerboard
-chisquare
 cibuildwheel
 cibw
 CIBW
@@ -133,9 +127,7 @@ cls
 CMA
 cmaes
 cmap
-Cobyla
 codeofconduct
-coeffs
 colname
 color
 colorama
@@ -144,7 +136,6 @@ colored
 colorlog
 colormap
 colors
-colorspace
 colspec
 commentcolor
 commentstyle
@@ -196,12 +187,8 @@ deemphasized
 deepcopy
 defenses
 deflist
-defusedxml
-delaxes
 Deniz
 devcontainers
-dfden
-dfnum
 dialog
 dib
 directsearch
@@ -240,9 +227,7 @@ ehthumbs
 eiben
 Eiben
 elif
-elif
 encryptable
-endfor
 endfor
 engineio
 ENT
@@ -250,7 +235,6 @@ enummember
 env
 EOF
 epath
-equalto
 equalto
 errmsg
 errorlens
@@ -270,14 +254,12 @@ favor
 fbcpg
 FBT
 fcl
-FCMA
 fdfind
 fieldlist
 figsize
 filelock
 FILTEREXACT
 firsthead
-fixedcamid
 fixedcamid
 FLEXBVH
 FLEXEDGE
@@ -291,7 +273,6 @@ fontspec
 fonttools
 footnotesize
 fourcc
-fovy
 fovy
 fpath
 freejoint
@@ -308,7 +289,6 @@ funcs
 functools
 FURB
 furo
-fusestatic
 fzf
 FZF
 gainprm
@@ -334,7 +314,6 @@ gprof
 Graphviz
 Grégoire
 Grigoriadis
-gumbel
 Guszti
 hammerspoon
 hasattr
@@ -374,14 +353,12 @@ Ilya
 img
 implicitfast
 imread
-imread
 imshow
 inf
 inheritability
 iniconfig
 INP
 inproceedings
-Ioannis
 Ioannis
 ipynb
 ipython
@@ -411,7 +388,6 @@ jpf
 jpm
 jpx
 jsburckhardt
-jsonschema
 jupyter
 jxr
 Karine
@@ -424,7 +400,6 @@ keywordstyle
 KGM
 Kief
 kiwisolver
-klass
 klass
 KOMA
 Kornatowski
@@ -446,7 +421,6 @@ LBKT
 LBRC
 LCTRL
 lerp
-lerp
 LFT
 LGUI
 liamrwilkins
@@ -466,7 +440,6 @@ libncurses
 libosmesa
 libpango
 libreadline
-libsass
 libsm
 libsqlite
 libx
@@ -493,13 +466,9 @@ lmr
 lnk
 loc
 logfilewarninglist
-lognormal
 logscale
-logseries
-logspace
 longtable
 longtblr
-lookat
 lookat
 Loshchilov
 Lses
@@ -510,7 +479,6 @@ lualatex
 luo
 Luo
 LWR
-lxml
 Maesani
 MAPCMA
 mapfiles
@@ -519,7 +487,6 @@ matangover
 matchtext
 Mateusz
 matplotlib
-maxgeom
 maximisation
 mbf
 mccabe
@@ -527,7 +494,6 @@ mcr
 mdit
 mdurl
 MESHBVH
-meshgrid
 meshgrid
 meshname
 metaheuristic
@@ -555,7 +521,6 @@ modname
 moredelim
 morekeywords
 mpimg
-mpimg
 MRO
 msg
 msix
@@ -574,7 +539,6 @@ mypycify
 myst
 nala
 Nala
-nbad
 nbody
 nbsphinx
 nbvh
@@ -590,7 +554,6 @@ newfigname
 newpxtext
 newtablename
 ngeom
-ngood
 nicegui
 Nikolaus
 njpwerner
@@ -600,8 +563,6 @@ nodeeditor
 nodeenv
 nodeid
 nohyp
-nonc
-noncentral
 noncommercially
 nonconvex
 nonstopmode
@@ -618,7 +579,6 @@ npt
 NPY
 nrow
 nrows
-nsample
 nsmallest
 nstep
 Num
@@ -629,7 +589,6 @@ numpages
 numpy
 numpydoc
 nvm
-odict
 offheight
 offwidth
 omz
@@ -644,7 +603,6 @@ orjson
 osmesa
 outdir
 pandoc
-pandoc
 pathlib
 pathspec
 pawlik
@@ -656,7 +614,6 @@ Perflint
 Perlin
 PERTFORCE
 PERTOBJ
-pexpect
 pgfkeys
 pgfplots
 PGH
@@ -669,9 +626,7 @@ PLR
 plt
 pnoise
 podman
-polyfit
 polyglossia
-polyval
 Popen
 posargs
 powerline
@@ -680,7 +635,6 @@ PRCNT
 preto
 prg
 printanswers
-printoptions
 prnt
 prob
 propcache
@@ -688,7 +642,6 @@ protogen
 Przemyslaw
 pstats
 PTH
-pvals
 PWR
 pybind
 pybuilder
@@ -716,7 +669,6 @@ pyopengl
 pypa
 pypackages
 pypandoc
-pypandoc
 pyparsing
 pypdf
 pypi
@@ -736,13 +688,11 @@ QACC
 Qml
 qnp
 qpos
-qpos
 qualname
 quat
 qwtel
 RALT
 Ramel
-randn
 randn
 rastrigin
 Rastrigin
@@ -758,12 +708,9 @@ reexport
 refquat
 refurb
 rejectattr
-rejectattr
 rel
 repitition
-revde
 reviung
-rgba
 RGT
 rgx
 rlg
@@ -798,7 +745,6 @@ SDFITER
 sdist
 seanwu
 SEL
-selectattr
 selectattr
 selectby
 sessionmaker
@@ -853,8 +799,6 @@ stuurman
 Stuurman
 subpackages
 Subpackages
-subpackages
-Subpackages
 suptitle
 Svargotter
 svelteflow
@@ -868,7 +812,6 @@ talltblr
 tamasfe
 tasklist
 tblr
-tensordot
 testmod
 testpypi
 texlive
@@ -888,7 +831,6 @@ timestep
 Timmis
 titlesec
 titlesonly
-titlesonly
 toctree
 tol
 tolif
@@ -897,7 +839,6 @@ Tomczak
 tomli
 topn
 tqdm
-trackbodyid
 trackbodyid
 trimesh
 Trn
@@ -909,7 +850,6 @@ typeguard
 typehints
 typeshed
 Tyrrell
-ujson
 underfull
 Underglow
 UNDERGLOW
@@ -917,7 +857,6 @@ undoc
 uniapprox
 urdf
 usernamehw
-usethread
 usr
 uvicorn
 uvx
@@ -929,7 +868,6 @@ Ver
 viridis
 virtualenv
 vmap
-vonmises
 Vrije
 vsc
 Vytas
@@ -949,20 +887,17 @@ xdoctest
 xindy
 xlabel
 xlim
-xlrd
 xmat
 xpos
 xshift
 xspace
 xticks
 xunicode
-xyaxes
 xyflow
 xyzw
 yarl
 Yinyang
 ylabel
-ylim
 ylim
 ypos
 yshift
@@ -973,7 +908,6 @@ Zeeuwe
 Zeina
 zenodo
 Zenodo
-zipf
 zipp
 zmax
 zmin
