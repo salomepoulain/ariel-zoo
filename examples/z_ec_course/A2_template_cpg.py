@@ -108,7 +108,7 @@ def main() -> None:
         b=ng.p.Array(shape=(len(data.ctrl),)).set_bounds(-100, 100),
     )
     optim = ng.optimizers.DifferentialEvolution()
-    optimizer = optim(parametrization=params, budget=10_000)
+    optimizer = optim(parametrization=params, budget=500)
 
     # Simulate the robot
     ctrl = Controller(
