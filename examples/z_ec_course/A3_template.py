@@ -238,9 +238,9 @@ def main() -> None:
     """Entry point."""
     # ? ------------------------------------------------------------------ #
     genotype_size = 64
-    type_p_genes = RNG.random(genotype_size).astype(np.float32)
-    conn_p_genes = RNG.random(genotype_size).astype(np.float32)
-    rot_p_genes = RNG.random(genotype_size).astype(np.float32)
+    type_p_genes = RNG.uniform(-100, 100, genotype_size).astype(np.float32)
+    conn_p_genes = RNG.uniform(-100, 100, genotype_size).astype(np.float32)
+    rot_p_genes = RNG.uniform(-100, 100, genotype_size).astype(np.float32)
 
     genotype = [
         type_p_genes,
