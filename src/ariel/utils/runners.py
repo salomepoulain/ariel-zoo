@@ -1,5 +1,7 @@
 """TODO(jmdm): description of script."""
 
+"""TODO(jmdm): description of script."""
+
 # Third-party libraries
 import mujoco
 import numpy as np
@@ -19,6 +21,7 @@ def simple_runner(
 ) -> None:
     """
     Run a simple headless simulation for a given duration.
+
 
     Parameters
     ----------
