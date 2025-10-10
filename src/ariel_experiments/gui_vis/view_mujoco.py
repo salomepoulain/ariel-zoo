@@ -32,7 +32,7 @@ def view(
     robot: CoreModule,
     *,
     with_viewer: bool = False,
-    save_xml: str | None = None, #TODO: might delete, bit strange
+    save_xml: str | None = None,
 ) -> Image.Image:
     """
     Visualize a robot in a MuJoCo simulation environment.
@@ -79,7 +79,15 @@ def view(
         builtin=mujoco.mjtBuiltin.mjBUILTIN_CHECKER, 
         rgb1=[0.9, 0.9, 0.9], 
         rgb2=[0.95, 0.95, 0.95],  
-        reflectance=0.1,
+        width=800, 
+        height=800, 
+    )
+    world.spec.add_material(
+        name="custom_floor_material",
+        textures=["", "custom_grid"],  
+        texrepeat=[5, 5], 
+        texuniform=True,
+        reflectance=0.05,  
     )
     
     # Make robot parts more transparant
