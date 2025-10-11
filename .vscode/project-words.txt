@@ -79,6 +79,7 @@ bkp
 BKSP
 BLE
 BODYBVH
+bodyid
 bodyname
 Bongard
 booktitle
@@ -111,6 +112,7 @@ chapterpage
 charliermarsh
 charx
 charxstring
+chisquare
 cibuildwheel
 cibw
 CIBW
@@ -191,6 +193,8 @@ deflist
 defusedxml
 Deniz
 devcontainers
+dfden
+dfnum
 dialog
 dib
 directsearch
@@ -262,6 +266,7 @@ figsize
 filelock
 FILTEREXACT
 firsthead
+fitaabb
 fixedcamid
 FLEXBVH
 FLEXEDGE
@@ -316,7 +321,9 @@ gprof
 Graphviz
 Grégoire
 Grigoriadis
+gumbel
 Guszti
+Hammersley
 hammerspoon
 hasattr
 hashlib
@@ -470,7 +477,9 @@ lmr
 lnk
 loc
 logfilewarninglist
+lognormal
 logscale
+logseries
 longtable
 longtblr
 lookat
@@ -544,6 +553,7 @@ mypycify
 myst
 nala
 Nala
+nbad
 nbody
 nbsphinx
 nbvh
@@ -559,6 +569,7 @@ newfigname
 newpxtext
 newtablename
 ngeom
+ngood
 nicegui
 Nikolaus
 njpwerner
@@ -568,6 +579,8 @@ nodeeditor
 nodeenv
 nodeid
 nohyp
+nonc
+noncentral
 noncommercially
 nonconvex
 nonstopmode
@@ -584,6 +597,7 @@ npt
 NPY
 nrow
 nrows
+nsample
 nsmallest
 nstep
 Num
@@ -632,15 +646,19 @@ PLR
 plt
 pnoise
 podman
+polyfit
 polyglossia
+polyval
 Popen
 posargs
 powerline
 Pradeep
 PRCNT
+pred
 preto
 prg
 printanswers
+printoptions
 prnt
 prob
 propcache
@@ -648,6 +666,7 @@ protogen
 Przemyslaw
 pstats
 PTH
+pvals
 PWR
 pybind
 pybuilder
@@ -766,6 +785,8 @@ sigstore
 Sigstore
 simp
 siunitx
+skipsensor
+skipstage
 SLF
 slvs
 smam
@@ -818,6 +839,7 @@ talltblr
 tamasfe
 tasklist
 tblr
+TBPSA
 testmod
 testpypi
 texlive
@@ -875,6 +897,7 @@ Ver
 viridis
 virtualenv
 vmap
+vonmises
 Vrije
 vsc
 Vytas
@@ -901,6 +924,7 @@ xshift
 xspace
 xticks
 xunicode
+xyaxes
 xyflow
 xyzw
 yarl
@@ -916,6 +940,7 @@ Zeeuwe
 Zeina
 zenodo
 Zenodo
+zipf
 zipp
 zmax
 zmin
