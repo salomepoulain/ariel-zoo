@@ -56,10 +56,10 @@ class BaseWorld:
 
         # Load precompiled XML if requested
         if load_precompiled is True:
-            print("Attempting to load precompiled XML...")
+            log.debug("Attempting to load precompiled XML...")
             self.is_precompiled = self.load_from_xml()
             if self.is_precompiled:
-                print("Precompiled XML loaded successfully.")
+                log.debug("Precompiled XML loaded successfully.")
                 return
 
         # Build and save specification
