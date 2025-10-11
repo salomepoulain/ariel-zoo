@@ -194,7 +194,7 @@ class BaseWorld:
         spawn_name: str,
         base_point: float = 0.01,
         *,
-        check_for_collisions: bool = False,
+        validate_no_collisions: bool = False,
     ) -> None:
         # Get the spawn position
         msg = f"Initial spawn position: {spawn.pos}"
@@ -212,7 +212,7 @@ class BaseWorld:
         log.debug(msg)
 
         # Validate the spawn position by checking for collisions
-        if check_for_collisions is True:
+        if validate_no_collisions is True:
             contact_pairs = self._find_contacts()
             for contact in contact_pairs:
                 # Unpack contact details
@@ -241,7 +241,8 @@ class BaseWorld:
         rotation: Rotation | None = None,
         spawn_prefix: str | None = None,
         *,
-        correct_spawn_for_collisions: bool = True,
+        correct_collision_with_floor: bool = True,
+        validate_no_collisions: bool = False,
         rotation_sequence: str = "XYZ",  # xyzXYZ, assume intrinsic
     ) -> mj.MjSpec:
         # Default spawn position
@@ -286,8 +287,12 @@ class BaseWorld:
         )
 
         # Validate the updated world spec
-        if correct_spawn_for_collisions is True:
-            self._check_and_correct_spawn(spawn, spawn_name)
+        if correct_collision_with_floor is True:
+            self._check_and_correct_spawn(
+                spawn,
+                spawn_name,
+                validate_no_collisions=validate_no_collisions,
+            )
 
         # Allow the robot to move freely
         spawn.add_freejoint()

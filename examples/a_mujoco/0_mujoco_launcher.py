@@ -43,7 +43,7 @@ def main() -> None:
     </mujoco>
     """
     test_object = mujoco.MjSpec.from_string(xml)
-    world.spawn(test_object, correct_spawn_for_collisions=True)
+    world.spawn(test_object, correct_collision_with_floor=True)
 
     # Compile the model and create data
     model = world.spec.compile()
