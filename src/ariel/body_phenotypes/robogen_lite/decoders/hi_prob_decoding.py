@@ -288,6 +288,26 @@ def save_graph_as_json(
     with Path(save_file).open("w", encoding="utf-8") as f:
         f.write(json_string)
 
+def load_graph_from_json(
+    load_file: Path | str,
+) -> DiGraph[Any]:
+    """
+    Load a directed graph from a JSON file.
+
+    Parameters
+    ----------
+    load_file : Path | str
+        The file path to load the graph JSON.
+
+    Returns
+    -------
+    DiGraph
+        The loaded directed graph.
+    """
+    with Path(load_file).open("r", encoding="utf-8") as f:
+        data = json.load(f)
+    return json_graph.node_link_graph(data, directed=True, multigraph=False)
+
 
 def draw_graph(
     graph: DiGraph[Any],
