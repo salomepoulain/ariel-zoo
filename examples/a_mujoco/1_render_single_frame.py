@@ -23,7 +23,7 @@ def main() -> None:
 
     # Object
     body = mujoco.MjSpec()
-    cube = body.worldbody.add_body(name="cube")
+    cube = body.worldbody.add_body()
     cube.add_geom(
         type=mujoco.mjtGeom.mjGEOM_BOX,
         size=(0.1, 0.1, 0.1),
@@ -31,14 +31,17 @@ def main() -> None:
     )
 
     # Add object to world
-    world.spawn(body)
+    world.spawn(
+        body,
+        correct_collision_with_floor=True,
+    )
 
     # Generate the model and data
     model = world.spec.compile()
     data = mujoco.MjData(model)
 
     # Render a single frame
-    single_frame_renderer(model, data, steps=10_000, show=True)
+    single_frame_renderer(model, data, show=True)
 
 
 if __name__ == "__main__":
