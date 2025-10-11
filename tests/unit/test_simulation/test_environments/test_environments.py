@@ -108,7 +108,12 @@ def test_instantiation_of_all_environments() -> None:
         """
 
         # Instantiate the environment
-        world = cls()
+        world: BaseWorld = cls(
+            load_precompiled=False,
+        )
+
+        # Ensure the environment
+        assert issubclass(type(world), BaseWorld)
 
         # Spawn a test object to validate the environment
         test_object = mujoco.MjSpec.from_string(xml)
@@ -116,12 +121,15 @@ def test_instantiation_of_all_environments() -> None:
             test_object,
             position=(0, 0, 0),
             rotation=(0, 0, 0),
-            correct_spawn_for_collisions=True,
+            correct_collision_with_floor=True,
         )
 
         # Compile the model and create data
         model = world.spec.compile()
         data = mujoco.MjData(model)
+
+        # Step the simulation to ensure no errors
+        mujoco.mj_step(model, data)
 
         # Clear memory
         del xml, world, test_object, model, data
