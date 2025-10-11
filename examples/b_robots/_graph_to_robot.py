@@ -29,6 +29,7 @@ from ariel.body_phenotypes.robogen_lite.constructor import (
 )
 from ariel.body_phenotypes.robogen_lite.decoders.hi_prob_decoding import (
     HighProbabilityDecoder,
+    load_graph_from_json,
     save_graph_as_json,
 )
 from ariel.body_phenotypes.robogen_lite.modules.core import CoreModule
@@ -88,6 +89,16 @@ def main() -> None:
     )
 
     # Print all nodes
+    core = construct_mjspec_from_graph(graph)
+
+    # Simulate the robot
+    run(core, with_viewer=True)
+
+    # ============================================================ #
+    # Load the graph from a file
+    graph = load_graph_from_json(DATA / "graph.json")
+
+    # Construct the robot from the graph
     core = construct_mjspec_from_graph(graph)
 
     # Simulate the robot
