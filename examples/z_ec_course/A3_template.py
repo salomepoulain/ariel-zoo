@@ -167,11 +167,17 @@ def experiment(
 
     # Initialise world
     # Import environments from ariel.simulation.environments
-    world = OlympicArena()
+    world = OlympicArena(
+        load_precompiled=False,
+    )
 
     # Spawn robot in the world
     # Check docstring for spawn conditions
-    world.spawn(robot.spec, position=SPAWN_POS)
+    world.spawn(
+        robot.spec,
+        position=SPAWN_POS,
+        correct_collision_with_floor=True,
+    )
 
     # Generate the model and data
     # These are standard parts of the simulation USE THEM AS IS, DO NOT CHANGE
@@ -286,7 +292,7 @@ def main() -> None:
         tracker=tracker,
     )
 
-    experiment(robot=core, controller=ctrl, mode="launcher")
+    experiment(robot=core, controller=ctrl, mode="simple")
 
     show_xpos_history(tracker.history["xpos"][0])
 
