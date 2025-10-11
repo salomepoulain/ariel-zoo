@@ -4,14 +4,13 @@
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
-import matplotlib.pyplot as plt
+# Third-party libraries
 import mujoco as mj
 import numpy as np
 import numpy.typing as npt
 from mujoco import viewer
 
 # Local libraries
-from ariel import console
 from ariel.body_phenotypes.robogen_lite.constructor import (
     construct_mjspec_from_graph,
 )
@@ -45,9 +44,12 @@ DATA = CWD / "__data__" / SCRIPT_NAME
 DATA.mkdir(exist_ok=True)
 
 # Global variables
-SPAWN_POS = [-0.8, 0, 0.1]
+SPAWN_POS = [-0.8, 0, 0]
 NUM_OF_MODULES = 30
 TARGET_POSITION = [5, 0, 0.5]
+
+# Local scripts
+from A3_plot_function import show_xpos_history
 
 
 def fitness_function(history: list[tuple[float, float, float]]) -> float:
@@ -59,71 +61,6 @@ def fitness_function(history: list[tuple[float, float, float]]) -> float:
         (xt - xc) ** 2 + (yt - yc) ** 2 + (zt - zc) ** 2,
     )
     return -cartesian_distance
-
-
-def show_xpos_history(history: list[float]) -> None:
-    # Create a tracking camera
-    camera = mj.MjvCamera()
-    camera.type = mj.mjtCamera.mjCAMERA_FREE
-    camera.lookat = [2.5, 0, 0]
-    camera.distance = 10
-    camera.azimuth = 0
-    camera.elevation = -90
-
-    # Initialize world to get the background
-    mj.set_mjcb_control(None)
-    world = OlympicArena()
-    model = world.spec.compile()
-    data = mj.MjData(model)
-    save_path = str(DATA / "background.png")
-    single_frame_renderer(
-        model,
-        data,
-        save_path=save_path,
-        save=True,
-    )
-
-    # Setup background image
-    img = plt.imread(save_path)
-    _, ax = plt.subplots()
-    ax.imshow(img)
-    w, h, _ = img.shape
-
-    # Convert list of [x,y,z] positions to numpy array
-    pos_data = np.array(history)
-
-    # Calculate initial position
-    x0, y0 = int(h * 0.483), int(w * 0.815)
-    xc, yc = int(h * 0.483), int(w * 0.9205)
-    ym0, ymc = 0, SPAWN_POS[0]
-
-    # Convert position data to pixel coordinates
-    pixel_to_dist = -((ymc - ym0) / (yc - y0))
-    pos_data_pixel = [[xc, yc]]
-    for i in range(len(pos_data) - 1):
-        xi, yi, _ = pos_data[i]
-        xj, yj, _ = pos_data[i + 1]
-        xd, yd = (xj - xi) / pixel_to_dist, (yj - yi) / pixel_to_dist
-        xn, yn = pos_data_pixel[i]
-        pos_data_pixel.append([xn + int(xd), yn + int(yd)])
-    pos_data_pixel = np.array(pos_data_pixel)
-
-    # Plot x,y trajectory
-    ax.plot(x0, y0, "kx", label="[0, 0, 0]")
-    ax.plot(xc, yc, "go", label="Start")
-    ax.plot(pos_data_pixel[:, 0], pos_data_pixel[:, 1], "b-", label="Path")
-    ax.plot(pos_data_pixel[-1, 0], pos_data_pixel[-1, 1], "ro", label="End")
-
-    # Add labels and title
-    ax.set_xlabel("X Position")
-    ax.set_ylabel("Y Position")
-    ax.legend()
-
-    # Title
-    plt.title("Robot Path in XY Plane")
-
-    # Show results
-    plt.show()
 
 
 def nn_controller(
@@ -296,9 +233,9 @@ def main() -> None:
 
     show_xpos_history(tracker.history["xpos"][0])
 
-    fitness = fitness_function(tracker.history["xpos"][0])
-    msg = f"Fitness of generated robot: {fitness}"
-    console.log(msg)
+    # fitness = fitness_function(tracker.history["xpos"][0])
+    # msg = f"Fitness of generated robot: {fitness}"
+    # console.log(msg)
 
 
 if __name__ == "__main__":
