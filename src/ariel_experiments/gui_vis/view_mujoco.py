@@ -8,11 +8,13 @@ from mujoco import viewer
 from PIL import Image
 from rich.console import Console
 
+from ariel.body_phenotypes.robogen_lite.config import NUM_OF_FACES, NUM_OF_ROTATIONS, NUM_OF_TYPES_OF_MODULES
+from ariel.body_phenotypes.robogen_lite.constructor import construct_mjspec_from_graph
+from ariel.body_phenotypes.robogen_lite.decoders.hi_prob_decoding import HighProbabilityDecoder
 from ariel.body_phenotypes.robogen_lite.modules.core import CoreModule
 
 # Local libraries
 from ariel.simulation.environments.simple_flat_world import SimpleFlatWorld
-from ariel.simulation.environments.simple_tilted_world import TiltedFlatWorld
 from ariel.utils.renderers import single_frame_renderer
 
 # Global constants
@@ -122,3 +124,35 @@ def view(
         viewer.launch(model=model, data=data)
         
     return img
+
+
+if __name__ == "__main__":
+
+    num_modules = 20
+    
+    type_probability_space = RNG.random(
+        size=(num_modules, NUM_OF_TYPES_OF_MODULES),
+        dtype=np.float32,
+    )
+
+    # "Connection" probability space
+    conn_probability_space = RNG.random(
+        size=(num_modules, num_modules, NUM_OF_FACES),
+        dtype=np.float32,
+    )
+
+    # "Rotation" probability space
+    rotation_probability_space = RNG.random(
+        size=(num_modules, NUM_OF_ROTATIONS),
+        dtype=np.float32,
+    )
+
+    # Decode the high-probability graph
+    hpd = HighProbabilityDecoder(num_modules)
+    robot_graph = hpd.probability_matrices_to_graph(
+        type_probability_space,
+        conn_probability_space,
+        rotation_probability_space,
+    )
+    robot = construct_mjspec_from_graph(robot_graph)
+    view(robot, with_viewer=True)
