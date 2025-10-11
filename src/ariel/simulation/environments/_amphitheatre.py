@@ -40,6 +40,9 @@ class AmphitheatreTerrainWorld(CompoundWorld):
     ring_inner_radius: float = 0.2
     ring_outer_radius: float = 0.45
 
+    # Whether to load precompiled XML (if it exists)
+    load_precompiled: bool = True
+
     def __post_init__(self) -> None:
         # Rugged part of heightmap
         rugged_part = rugged_heightmap(
@@ -68,4 +71,5 @@ class AmphitheatreTerrainWorld(CompoundWorld):
             floor_rot_sequence=self.floor_rot_sequence,
             checker_floor=self.checker_floor,
             floor_heightmap=self.floor_heightmap,
+            load_precompiled=self.load_precompiled,
         )

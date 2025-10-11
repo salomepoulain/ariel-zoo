@@ -23,9 +23,16 @@ class SimpleTiltedWorld(BaseWorld):
     floor_rot_sequence: str = "XYZ"  # xyzXYZ, assume intrinsic
     checker_floor: bool = True
 
+    # Whether to load precompiled XML (if it exists)
+    load_precompiled: bool = True
+
     def __post_init__(self) -> None:
         # Initialize base class
-        super().__init__(name=self.name)
+        super().__init__(name=self.name, load_precompiled=self.load_precompiled)
+
+        # If precompiled XML was loaded, skip regeneration
+        if self.is_precompiled:
+            return
 
         # Floor geom parameters
         self._floor_name = self.mujoco_config.floor_name

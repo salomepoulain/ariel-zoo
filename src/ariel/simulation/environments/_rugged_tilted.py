@@ -30,6 +30,9 @@ class RuggedTiltedWorld(CompoundWorld):
     scale_of_noise: int = 4
     normalize: NormMethod = "none"
 
+    # Whether to load precompiled XML (if it exists)
+    load_precompiled: bool = True
+
     def __post_init__(self) -> None:
         # Create heightmap
         self.floor_heightmap = rugged_heightmap(
@@ -47,4 +50,5 @@ class RuggedTiltedWorld(CompoundWorld):
             floor_rot_sequence=self.floor_rot_sequence,
             checker_floor=self.checker_floor,
             floor_heightmap=self.floor_heightmap,
+            load_precompiled=self.load_precompiled,
         )
