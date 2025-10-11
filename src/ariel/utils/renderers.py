@@ -23,10 +23,12 @@ from ariel.utils.video_recorder import VideoRecorder
 def single_frame_renderer(
     model: mujoco.MjModel,
     data: mujoco.MjData,
-    steps: int = 10,
+    steps: int = 1,
     width: int = 480,
     height: int = 640,
-    fovy: float = 7,
+    cam_fovy: float | None = None,
+    cam_pos: tuple[float] | None = None,
+    cam_quat: tuple[float] | None = None,
     *,
     show: bool = False,
     save: bool = False,
@@ -36,8 +38,29 @@ def single_frame_renderer(
     mujoco.mj_resetData(model, data)
 
     # Enable joint visualization option:
-    scene_option = mujoco.MjvOption()
-    scene_option.flags[mujoco.mjtVisFlag.mjVIS_JOINT] = True
+    viz_options = mujoco.MjvOption()
+    viz_options.flags[mujoco.mjtVisFlag.mjVIS_JOINT] = False
+    viz_options.flags[mujoco.mjtVisFlag.mjVIS_TRANSPARENT] = False
+    viz_options.flags[mujoco.mjtVisFlag.mjVIS_ACTUATOR] = False
+    viz_options.flags[mujoco.mjtVisFlag.mjVIS_BODYBVH] = False
+
+    # Update rendering engine
+    camera = mujoco.mj_name2id(
+        model,
+        mujoco.mjtObj.mjOBJ_CAMERA,
+        "ortho-cam",
+    )
+
+    # If camera not found, use default camera
+    if camera == -1:
+        msg = "Camera 'ortho-cam' not found. Using default camera."
+        log.debug(msg)
+        camera = None
+    else:
+        model.cam_fovy[camera] = cam_fovy or model.cam_fovy[camera]
+        model.cam_pos[camera] = cam_pos or model.cam_pos[camera]
+        model.cam_quat[camera] = cam_quat or model.cam_quat[camera]
+        model.cam_sensorsize[camera] = [width, height]
 
     # Call rendering engine
     with mujoco.Renderer(
@@ -46,26 +69,12 @@ def single_frame_renderer(
         height=height,
     ) as renderer:
         # Move simulation forward one iteration/step
-        mujoco.mj_step(model, data, nstep=steps)
-
-        # Update rendering engine
-        camera = mujoco.mj_name2id(
-            model,
-            mujoco.mjtObj.mjOBJ_CAMERA,
-            "ortho-cam",
-        )
-
-        # If camera not found, use default camera
-        if camera == -1:
-            log.debug("Camera 'ortho-cam' not found. Using default camera.")
-            camera = None
-        else:
-            model.cam_fovy[camera] = fovy
+        mujoco.mj_forward(model, data)
 
         # Update the renderer's camera
         renderer.update_scene(
             data,
-            scene_option=scene_option,
+            scene_option=viz_options,
             camera=camera,
         )
 
@@ -114,8 +123,11 @@ def video_renderer(
         video_recorder = VideoRecorder()
 
     # Enable joint visualization option:
-    scene_option = mujoco.MjvOption()
-    scene_option.flags[mujoco.mjtVisFlag.mjVIS_JOINT] = True
+    viz_options = mujoco.MjvOption()
+    viz_options.flags[mujoco.mjtVisFlag.mjVIS_JOINT] = False
+    viz_options.flags[mujoco.mjtVisFlag.mjVIS_TRANSPARENT] = False
+    viz_options.flags[mujoco.mjtVisFlag.mjVIS_ACTUATOR] = False
+    viz_options.flags[mujoco.mjtVisFlag.mjVIS_BODYBVH] = False
 
     # Reset state and time of simulation
     mujoco.mj_resetData(model, data)
@@ -137,7 +149,7 @@ def video_renderer(
             mujoco.mj_step(model, data, nstep=math.floor(steps_per_frame))
 
             # Update rendering engine
-            renderer.update_scene(data, scene_option=scene_option)
+            renderer.update_scene(data, scene_option=viz_options)
 
             # Save frame
             video_recorder.write(frame=renderer.render())
