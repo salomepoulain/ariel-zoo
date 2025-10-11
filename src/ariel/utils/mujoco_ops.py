@@ -55,13 +55,19 @@ def euler_to_quat_conversion(
     return rotation_as_quat
 
 
-def duplicate_mj_spec(spec: mujoco.MjSpec) -> mujoco.MjSpec:
+def mjspec_deep_copy(spec: mujoco.MjSpec) -> mujoco.MjSpec:
     """Create a copy of a MuJoCo specification.
 
     Parameters
     ----------
     spec
         The original MuJoCo specification to duplicate.
+
+    Notes
+    -----
+    It is MUCH faster to use the MuJoCo function `spec.copy()`, at no loss of
+    functionality as far as the author can tell. If you need to make EXTRA sure
+    you have a deep copy, use this function.
 
     Returns
     -------
