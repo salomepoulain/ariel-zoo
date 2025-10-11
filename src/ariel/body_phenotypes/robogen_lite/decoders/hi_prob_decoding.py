@@ -282,7 +282,7 @@ def save_graph_as_json(
     if save_file is None:
         return
 
-    data = json_graph.node_link_data(graph, edges="edges")  # pyright: ignore[reportDeprecated]
+    data = json_graph.node_link_data(graph, edges="edges")
     json_string = json.dumps(data, indent=4)
 
     with Path(save_file).open("w", encoding="utf-8") as f:
@@ -307,6 +307,32 @@ def load_graph_from_json(
     with Path(load_file).open("r", encoding="utf-8") as f:
         data = json.load(f)
     return json_graph.node_link_graph(data, directed=True, multigraph=False)
+
+
+def load_graph_from_json(
+    load_file: Path | str,
+) -> DiGraph[Any]:
+    """
+    Load a directed graph from a JSON file.
+
+    Parameters
+    ----------
+    load_file : Path | str
+        The file path to load the graph JSON.
+
+    Returns
+    -------
+    DiGraph
+        The loaded directed graph.
+    """
+    with Path(load_file).open("r", encoding="utf-8") as f:
+        data = json.load(f)
+    return json_graph.node_link_graph(
+        data,
+        directed=True,
+        multigraph=False,
+        edges="edges",
+    )
 
 
 def draw_graph(
