@@ -117,16 +117,27 @@ class BaseWorld:
         data = mj.MjData(model)
 
         # Step the simulation to ensure everything is stable
-        mj.mj_forward(model, data)  # , skipsensor=1, skipstage=1)
+        mj.mj_forward(model, data)
 
         # Iterate over all geoms
         lowest_point = np.inf
         for i in range(model.ngeom):
             # Get the geometry
             geom = data.geom(i)
+            bodyid = model.geom_bodyid[geom.id]
+            parentid = model.body(bodyid).parentid
+
+            # Possible names
+            name_of_geom = geom.name
+            name_of_body = model.body(bodyid).name
+            name_of_parent = model.body(parentid).name
 
             # If the geom does not belong to the spawned robot, skip it
-            if spawn_name not in geom.name:
+            if (
+                (spawn_name not in name_of_geom)
+                and (spawn_name not in name_of_parent)
+                and (spawn_name not in name_of_body)
+            ):
                 continue
 
             # Global position of the geometry (x, y, z)
@@ -157,6 +168,8 @@ class BaseWorld:
         del model, data
 
         # Return the lowest position rounded to avoid floating point issues
+        if lowest_point == np.inf:
+            return 0.0
         return np.round(lowest_point, 6)
 
     def _find_contacts(self) -> set[tuple[str, str, float]]:
