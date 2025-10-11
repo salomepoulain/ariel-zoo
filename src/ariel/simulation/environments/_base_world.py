@@ -119,7 +119,7 @@ class BaseWorld:
         # Step the simulation to ensure everything is stable
         mj.mj_forward(model, data)  # , skipsensor=1, skipstage=1)
 
-        # print all geoms in the model
+        # Iterate over all geoms
         lowest_point = np.inf
         for i in range(model.ngeom):
             # Get the geometry
@@ -190,14 +190,19 @@ class BaseWorld:
 
     def _check_and_correct_spawn(
         self,
-        spawn: mj.MjsBody,
+        spawn_site: mj.MjsBody,
+        spawn_body: mj.MjsBody,
         spawn_name: str,
         base_point: float = 0.01,
         *,
         validate_no_collisions: bool = False,
     ) -> None:
+        # Log the correction process
+        msg = "-" * 60
+        log.debug(msg)
+
         # Get the spawn position
-        msg = f"Initial spawn position: {spawn.pos}"
+        msg = f"Initial spawn position: {spawn_site.pos}"
         log.debug(msg)
 
         # Find lowest position of the robot
@@ -206,9 +211,9 @@ class BaseWorld:
         log.debug(msg)
 
         # Adjust the spawn position to ensure the robot is above ground
-        diff_from_base = base_point - lowest_position
-        spawn.pos[2] += diff_from_base
-        msg = f"Adjusted spawn position: {spawn.pos}"
+        diff_from_base = (base_point + spawn_site.pos[2]) - lowest_position
+        spawn_body.pos[2] += diff_from_base
+        msg = f"Adjusted spawn position: {spawn_body.pos}"
         log.debug(msg)
 
         # Validate the spawn position by checking for collisions
@@ -225,7 +230,7 @@ class BaseWorld:
                     msg += f"--> '{geom1_name}', '{geom2_name}'\n"
                     msg += f"\t With distance: {dist}\n"
                     msg += " Please adjust the spawn position: \n"
-                    msg += f"\t {spawn.pos=}"
+                    msg += f"\t {spawn_site.pos=}"
                     log.warning(msg)
                 else:
                     # Log other collisions as debug info
@@ -276,26 +281,24 @@ class BaseWorld:
             quat=np.array(rotation_as_quat),
         )
 
-        # Make a copy of the robot and world specs
-        # temp_robot_spec = robot_spec.copy()
-
         # Attach the robot body to the spawn site
         spawn_name = f"{spawn_prefix}{self.spawns}_"
-        spawn = spawn_site.attach_body(
+        spawn_body = spawn_site.attach_body(
             body=robot_spec.worldbody,
             prefix=spawn_name,
         )
 
-        # Validate the updated world spec
+        # Correct the spawn position if requested
         if correct_collision_with_floor is True:
             self._check_and_correct_spawn(
-                spawn,
+                spawn_site,
+                spawn_body,
                 spawn_name,
                 validate_no_collisions=validate_no_collisions,
             )
 
         # Allow the robot to move freely
-        spawn.add_freejoint()
+        spawn_body.add_freejoint()
 
         # Return a copy of the updated spec
         return self.spec
