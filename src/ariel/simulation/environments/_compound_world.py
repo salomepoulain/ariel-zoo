@@ -25,7 +25,7 @@ from ariel.parameters.ariel_types import (
 )
 from ariel.simulation.environments._base_world import BaseWorld
 from ariel.simulation.environments.heightmap_functions import flat_heightmap
-from ariel.utils.mujoco_ops import duplicate_mj_spec, euler_to_quat_conversion
+from ariel.utils.mujoco_ops import euler_to_quat_conversion
 
 
 class CompoundWorld(BaseWorld):
@@ -55,10 +55,20 @@ class CompoundWorld(BaseWorld):
         terrain_color: tuple[float, float, float, float] | None = None,
         *,
         checker_floor: bool | None = None,
+        load_precompiled: bool = False,
     ) -> None:
-        # Override class defaults with provided arguments when given
+        # Set name if provided
         if name is not None:
             self.name = name
+
+        # Initialize base class
+        super().__init__(name=self.name, load_precompiled=load_precompiled)
+
+        # If precompiled XML was loaded, skip regeneration
+        if self.is_precompiled:
+            return
+
+        # Override class defaults with provided arguments when given
         if floor_size is not None:
             self.floor_size = floor_size
         if floor_tilt is not None:
@@ -73,9 +83,6 @@ class CompoundWorld(BaseWorld):
             self.floor_heightmap = floor_heightmap
         if terrain_color is not None:
             self._terrain_color = terrain_color
-
-        # Initialize base class
-        super().__init__(name=self.name)
 
         # Floor geom parameters
         self._floor_name = self.mujoco_config.floor_name
@@ -167,4 +174,4 @@ class CompoundWorld(BaseWorld):
 
     def _expand_spec(self) -> None:
         self.spec.worldbody.add_geom(**self._floor_kwargs)
-        self.spec = duplicate_mj_spec(self.spec)
+        # self.spec = mjspec_deep_copy(self.spec)

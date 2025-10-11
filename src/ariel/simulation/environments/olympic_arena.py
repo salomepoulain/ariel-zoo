@@ -284,4 +284,4 @@ if __name__ == "__main__":
     arena = OlympicArena(
         load_precompiled=False,
     )
-    arena.compile_to_xml()
+    arena.store_to_xml()
