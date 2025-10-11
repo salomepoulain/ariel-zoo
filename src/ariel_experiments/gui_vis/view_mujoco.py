@@ -33,6 +33,7 @@ console = Console()
 RNG = np.random.default_rng(SEED)
 DPI = 300
 
+from IPython.display import Image, display
 
 def view(
     robot: nx.Graph | nx.DiGraph, # type: ignore
@@ -43,7 +44,7 @@ def view(
     config: VisualizationConfig | None = None,
     make_tree: bool = False,
     with_viewer: bool = False
-) -> Image.Image:
+):
     """
     Visualize a robot in a MuJoCo simulation environment.
 
@@ -133,10 +134,11 @@ def view(
     if with_viewer:
         viewer.launch(model=model, data=data)
     
-    plt.imshow(img)
-    plt.axis('off')
-    plt.show()
-    return img
+    display(img)
+    # plt.imshow(img)
+    # plt.axis('off')
+    # plt.show()
+    # return img
 
 
 if __name__ == "__main__":
