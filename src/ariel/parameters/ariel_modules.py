@@ -48,7 +48,7 @@ class SER0019(BaseSettings):
     # Assume 6 V operation
     MIN_ANGLE: float = -np.pi  # radians
     MAX_ANGLE: float = np.pi  # radians
-    MAX_SPEED: float = 0.18  # sec/60 degrees
+    MAX_SPEED: float = 0.18  # seconds per 60 degrees of rotation
     STALL_TORQUE: float = 13.5  # kg*cm
     MAX_TORQUE_POWER: float = 15  # kg
     DIMENSIONS: DimensionType = (54.5, 20, 47.5)  # mm
