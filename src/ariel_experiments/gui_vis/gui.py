@@ -42,7 +42,9 @@ class IndividualVisualizer:
         population: list,
         console: Console | None = None,
         gui: bool = True,
+        visualize_fn = visualize_tree_from_graph,
     ) -> None:
+        self._visualize_fn = visualize_fn
         self._population = population
         self._console = console or Console()
         self._output_area = None
@@ -266,7 +268,7 @@ class IndividualVisualizer:
 
     def _render_all_visualizations(
         self,
-        visualize_fn=visualize_tree_from_graph,
+        
     ) -> None:
         """Render all visualized individuals in order (most recent first)."""
         if not self._viz_output_area or not self._visualized_individuals:
@@ -283,7 +285,8 @@ class IndividualVisualizer:
                     title = (
                         self._get_path() + f" | Individual {idx}{pin_marker}"
                     )
-                    visualize_fn(self._population[idx], title=title)
+                    
+                    self._visualize_fn(self._population[idx], title=title)
 
     def backward(self) -> None:
         # when viewing individuals
@@ -461,7 +464,6 @@ class IndividualVisualizer:
     def visualize_individual(
         self,
         cycle: bool = False,
-        visualize_fn=visualize_tree_from_graph,
     ) -> None:
         idx = self._get_current_individual_value()
         if idx is None or not self._population or idx >= len(self._population):
@@ -471,7 +473,7 @@ class IndividualVisualizer:
         title = self._get_path() + " | Population individual index: " + str(idx)
         if self._viz_output_area:
             with self._viz_output_area:
-                visualize_fn(self._population[idx], title=title)
+                self._visualize_fn(self._population[idx], title=title)
         self.display_individual_list()
 
     def _get_current_individual_value(self) -> int | None:
