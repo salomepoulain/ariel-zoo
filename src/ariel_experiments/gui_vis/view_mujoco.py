@@ -2,11 +2,14 @@
 from pathlib import Path
 
 # Third-party libraries
+from matplotlib import pyplot as plt
 import mujoco
 import numpy as np
 from mujoco import viewer
 from PIL import Image
 from rich.console import Console
+import networkx as nx
+
 
 from ariel.body_phenotypes.robogen_lite.config import NUM_OF_FACES, NUM_OF_ROTATIONS, NUM_OF_TYPES_OF_MODULES
 from ariel.body_phenotypes.robogen_lite.constructor import construct_mjspec_from_graph
@@ -16,6 +19,7 @@ from ariel.body_phenotypes.robogen_lite.modules.core import CoreModule
 # Local libraries
 from ariel.simulation.environments.simple_flat_world import SimpleFlatWorld
 from ariel.utils.renderers import single_frame_renderer
+from ariel_experiments.gui_vis.visualize_tree import VisualizationConfig
 
 # Global constants
 # SCRIPT_NAME = __file__.split("/")[-1][:-3]
@@ -31,18 +35,22 @@ DPI = 300
 
 
 def view(
-    robot: CoreModule,
+    robot: nx.Graph | nx.DiGraph, # type: ignore
+    root: int = 0,
     *,
-    with_viewer: bool = False,
-    save_xml: str | None = None,
+    title: str = "",
+    save_file: Path | str | None = None,
+    config: VisualizationConfig | None = None,
+    make_tree: bool = False,
+    with_viewer: bool = False
 ) -> Image.Image:
     """
     Visualize a robot in a MuJoCo simulation environment.
 
     Parameters
     ----------
-    robot : CoreModule
-        The robot module to visualize in the simulation.
+    robot : Digraph
+        The robot graph to be turn into a robot to visualize in the simulation.
     with_viewer : bool, default False
         Whether to launch an interactive MuJoCo viewer window.
     save_xml : str or None, default None
@@ -58,6 +66,7 @@ def view(
     - If save_xml provided, saves XML to DATA directory with UTF-8 encoding
     """
     # MuJoCo configuration
+    robot = construct_mjspec_from_graph(robot)
     viz_options = mujoco.MjvOption()  # visualization of various elements
 
     # Visualization of the corresponding model or decoration element
@@ -91,7 +100,13 @@ def view(
         texuniform=True,
         reflectance=0.05,  
     )
-    
+
+    #Save the model to XML
+    if save_file:
+        xml = world.spec.to_xml()
+        with (DATA / f"{save_file}.xml").open("w", encoding="utf-8") as f:
+            f.write(xml)
+
     # Make robot parts more transparant
     for i in range(len(robot.spec.geoms)):
         robot.spec.geoms[i].rgba[-1] = 0.7
@@ -103,12 +118,7 @@ def view(
     model = world.spec.compile()
     data = mujoco.MjData(model)
 
-    if save_xml:
-        path = DATA / Path(save_xml)
-        console.log(f"saving file to {path}")
-        xml = world.spec.to_xml()
-        with path.open("w", encoding="utf-8") as f:
-            f.write(xml)
+    
 
     # Number of actuators and DoFs
     console.log(f"DoF (model.nv): {model.nv}, Actuators (model.nu): {model.nu}")
@@ -122,7 +132,10 @@ def view(
     # View
     if with_viewer:
         viewer.launch(model=model, data=data)
-        
+    
+    plt.imshow(img)
+    plt.axis('off')
+    plt.show()
     return img
 
 
@@ -149,10 +162,9 @@ if __name__ == "__main__":
 
     # Decode the high-probability graph
     hpd = HighProbabilityDecoder(num_modules)
-    robot_graph = hpd.probability_matrices_to_graph(
+    robot = hpd.probability_matrices_to_graph(
         type_probability_space,
         conn_probability_space,
         rotation_probability_space,
     )
-    robot = construct_mjspec_from_graph(robot_graph)
-    view(robot, with_viewer=True)
+    view(robot)
