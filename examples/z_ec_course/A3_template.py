@@ -180,11 +180,17 @@ def experiment(
 def main() -> None:
     """Entry point."""
     # ? ------------------------------------------------------------------ #
+    scale = 8192
     genotype_size = 64
-    type_p_genes = RNG.uniform(-100, 100, genotype_size).astype(np.float32)
-    conn_p_genes = RNG.uniform(-100, 100, genotype_size).astype(np.float32)
-    rot_p_genes = RNG.uniform(-100, 100, genotype_size).astype(np.float32)
-
+    type_p_genes = RNG.uniform(-scale, scale, genotype_size).astype(
+        np.float32,
+    )
+    conn_p_genes = RNG.uniform(-scale, scale, genotype_size).astype(
+        np.float32,
+    )
+    rot_p_genes = RNG.uniform(-scale, scale, genotype_size).astype(
+        np.float32,
+    )
     genotype = [
         type_p_genes,
         conn_p_genes,
@@ -229,7 +235,7 @@ def main() -> None:
         tracker=tracker,
     )
 
-    experiment(robot=core, controller=ctrl, mode="simple")
+    experiment(robot=core, controller=ctrl, mode="launcher")
 
     show_xpos_history(tracker.history["xpos"][0])
 
