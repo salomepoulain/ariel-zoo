@@ -28,15 +28,11 @@ RNG = np.random.default_rng(SEED)
 FORMAT = "%(message)s"
 install()
 console = Console()
-logging_level = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
 logging.basicConfig(
-    level=logging_level,
     format=FORMAT,
     datefmt="[%X]",
-    handlers=[
-        RichHandler(
-            rich_tracebacks=True,
-        ),
-    ],
+    handlers=[RichHandler(rich_tracebacks=True)],
 )
+logging_level = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
 log = logging.getLogger("rich")
+log.setLevel(logging_level)
