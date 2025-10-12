@@ -156,11 +156,16 @@ def experiment(
             video_recorder = VideoRecorder(output_folder=path_to_video_folder)
 
             # Render with video recorder
+            cam_quat = np.zeros(4)
+            mj.mju_euler2Quat(cam_quat, np.deg2rad([30, 0, 0]), "XYZ")
             video_renderer(
                 model,
                 data,
                 duration=duration,
                 video_recorder=video_recorder,
+                cam_fovy=7,
+                cam_pos=[2, -1, 2],
+                cam_quat=cam_quat,
             )
         case "launcher":
             # This opens a liver viewer of the simulation
@@ -236,7 +241,7 @@ def main() -> None:
         tracker=tracker,
     )
 
-    experiment(robot=core, controller=ctrl, mode="launcher")
+    experiment(robot=core, controller=ctrl, mode="video")
 
     show_xpos_history(
         tracker.history["xpos"][0],

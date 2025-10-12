@@ -69,7 +69,7 @@ def single_frame_renderer(
         height=height,
     ) as renderer:
         # Move simulation forward one iteration/step
-        mujoco.mj_forward(model, data)
+        mujoco.mj_step(model, data, nstep=steps)
 
         # Update the renderer's camera
         renderer.update_scene(
@@ -103,6 +103,9 @@ def video_renderer(
     data: mujoco.MjData,
     duration: float = 10.0,
     video_recorder: VideoRecorder | None = None,
+    cam_fovy: float | None = None,
+    cam_pos: tuple[float] | None = None,
+    cam_quat: tuple[float] | None = None,
 ) -> None:
     """
     Render a video of the simulation using MuJoCo's rendering engine.
@@ -138,6 +141,33 @@ def video_renderer(
         options.timestep * duration * video_recorder.fps
     )
 
+    # Update rendering engine
+    camera = mujoco.mj_name2id(
+        model,
+        mujoco.mjtObj.mjOBJ_CAMERA,
+        "ortho-cam",
+    )
+
+    # If camera not found, use default camera
+    if camera == -1:
+        msg = "Camera 'ortho-cam' not found. Using default camera."
+        log.debug(msg)
+        camera = None
+    else:
+        model.cam_fovy[camera] = (
+            cam_fovy if cam_fovy is not None else model.cam_fovy[camera]
+        )
+        model.cam_pos[camera] = (
+            cam_pos if cam_pos is not None else model.cam_pos[camera]
+        )
+        model.cam_quat[camera] = (
+            cam_quat if cam_quat is not None else model.cam_quat[camera]
+        )
+        model.cam_sensorsize[camera] = [
+            video_recorder.width,
+            video_recorder.height,
+        ]
+
     # Call rendering engine
     with mujoco.Renderer(
         model,
@@ -149,7 +179,11 @@ def video_renderer(
             mujoco.mj_step(model, data, nstep=math.floor(steps_per_frame))
 
             # Update rendering engine
-            renderer.update_scene(data, scene_option=viz_options)
+            renderer.update_scene(
+                data,
+                scene_option=viz_options,
+                camera=camera,
+            )
 
             # Save frame
             video_recorder.write(frame=renderer.render())
