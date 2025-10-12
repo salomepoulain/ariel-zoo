@@ -58,7 +58,7 @@ class CoreModule(Module):
         spec = mujoco.MjSpec()
 
         # ========= Core =========
-        core_name = "core"
+        core_name = self.module_type.name.lower()
         core = spec.worldbody.add_body(
             name=core_name,
         )
