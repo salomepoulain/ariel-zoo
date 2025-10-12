@@ -2,46 +2,39 @@
 
 # Standard library
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any
 
-import matplotlib.pyplot as plt
 import mujoco as mj
 import numpy as np
-import numpy.typing as npt
 
 # Local libraries
 from ariel import console
-
 from ariel.body_phenotypes.robogen_lite.constructor import (
     construct_mjspec_from_graph,
 )
-from ariel.body_phenotypes.robogen_lite.decoders.hi_prob_decoding import load_graph_from_json
+from ariel.body_phenotypes.robogen_lite.decoders.hi_prob_decoding import (
+    load_graph_from_json,
+)
 from ariel.simulation.controllers.controller import Controller
 from ariel.simulation.environments import OlympicArena
 from ariel.utils.renderers import video_renderer
-
 from ariel.utils.tracker import Tracker
 from ariel.utils.video_recorder import VideoRecorder
 
-from ariel.body_phenotypes.robogen_lite.decoders.hi_prob_decoding import load_graph_from_json
-
-# Type Checking
-if TYPE_CHECKING:
-    from networkx import DiGraph
-import networkx as nx
-
-# Type Aliases
-type ViewerTypes = Literal["launcher", "video", "simple", "no_control", "frame"]
-
-
-# --- DATA SETUP ---
+# --- DATA SETUP --- #
 SCRIPT_NAME = __file__.split("/")[-1][:-3]
 CWD = Path.cwd()
+DATA = CWD / "__data__"
+DATA.mkdir(exist_ok=True)
 
 # Global variables
 SPAWN_POS = [-0.8, 0, 0.1]
 NUM_OF_MODULES = 30
 TARGET_POSITION = [5, 0, 0.5]
+TIME_OUT = 500
+
+# Local scripts
+from A3_plot_function import show_xpos_history
 
 
 def fitness_function(history: list[tuple[float, float, float]]) -> float:
@@ -54,10 +47,11 @@ def fitness_function(history: list[tuple[float, float, float]]) -> float:
     )
     return -cartesian_distance
 
+
 def experiment(
     robot: Any,
     controller: Controller,
-    duration: int = 60
+    duration: int = TIME_OUT,
 ) -> None:
     """Run the simulation with random movements."""
     # ==================================================================== #
@@ -116,8 +110,6 @@ def experiment(
 
 def main() -> None:
     """Entry point."""
-
-    # ? ------------------------------------------------------------------ #
     # Load your robot graph here
     path_to_graph = CWD / "YOUR_ROBOT_GRAPH.json"
     robot_graph = load_graph_from_json(path_to_graph)
@@ -132,17 +124,15 @@ def main() -> None:
         name_to_bind=name_to_bind,
     )
 
-    # ? ------------------------------------------------------------------ #
     # Simulate the robot
     ctrl = Controller(
         controller_callback_function=YOUR_CONTROLLER,
-        # controller_callback_function=random_move,
         tracker=tracker,
     )
 
-    experiment(robot=core, controller=ctrl, mode="simple")
+    experiment(robot=core, controller=ctrl)
 
-    # show_xpos_history(tracker.history["xpos"][0])
+    show_xpos_history(tracker.history["xpos"][0])
 
     fitness = fitness_function(tracker.history["xpos"][0])
     msg = f"Fitness of generated robot: {fitness}"

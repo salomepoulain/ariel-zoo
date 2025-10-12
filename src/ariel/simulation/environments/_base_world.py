@@ -124,8 +124,8 @@ class BaseWorld:
         for i in range(model.ngeom):
             # Get the geometry
             geom = data.geom(i)
-            bodyid = model.geom_bodyid[geom.id]
-            parentid = model.body(bodyid).parentid
+            bodyid = int(model.geom_bodyid[geom.id])
+            parentid = int(model.body(bodyid).parentid[0])
 
             # Possible names
             name_of_geom = geom.name
@@ -135,8 +135,8 @@ class BaseWorld:
             # If the geom does not belong to the spawned robot, skip it
             if (
                 (spawn_name not in name_of_geom)
-                and (spawn_name not in name_of_parent)
                 and (spawn_name not in name_of_body)
+                and (spawn_name not in name_of_parent)
             ):
                 continue
 
