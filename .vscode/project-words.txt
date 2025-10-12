@@ -844,6 +844,7 @@ tabularray
 Taichi
 talltblr
 tamasfe
+tanh
 tasklist
 tblr
 TBPSA
