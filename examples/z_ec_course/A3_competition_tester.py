@@ -1,4 +1,4 @@
-"""Assignment 3 template code."""
+"""Robot Olympics Competition template code."""
 
 # Standard library
 from pathlib import Path
@@ -53,7 +53,7 @@ def experiment(
     controller: Controller,
     duration: int = TIME_OUT,
 ) -> None:
-    """Run the simulation with random movements."""
+    """Run the simulation with custom controller."""
     # ==================================================================== #
     # Initialise controller to controller to None, always in the beginning.
     mj.set_mjcb_control(None)  # DO NOT REMOVE
