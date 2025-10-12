@@ -274,6 +274,7 @@ FLEXEDGE
 FLEXFACE
 FLEXSKIN
 FLEXVERT
+floatmode
 Floreano
 fontenc
 fontsize
@@ -843,6 +844,7 @@ tabularray
 Taichi
 talltblr
 tamasfe
+tanh
 tasklist
 tblr
 TBPSA

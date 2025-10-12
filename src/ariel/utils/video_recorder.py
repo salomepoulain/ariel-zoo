@@ -14,7 +14,7 @@ class VideoRecorder:
     """Simple video recorder for ariel."""
 
     # Encoding: 'mp4v' or 'avc1' for H.264
-    _video_encoding: str = "mp4v"
+    _video_encoding: str = "avc1"
     _add_timestamp_to_file_name: bool = True
     _file_extension: str = ".mp4"
 

@@ -2,7 +2,6 @@
 
 # Standard library
 from pathlib import Path
-from typing import Literal
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -13,27 +12,17 @@ import numpy as np
 from ariel.simulation.environments import OlympicArena
 from ariel.utils.renderers import single_frame_renderer
 
-# Type Aliases
-type ViewerTypes = Literal["launcher", "video", "simple", "no_control", "frame"]
-
-# --- RANDOM GENERATOR SETUP --- #
-SEED = 42
-RNG = np.random.default_rng(SEED)
-
 # --- DATA SETUP ---
 SCRIPT_NAME = __file__.split("/")[-1][:-3]
 CWD = Path.cwd()
 DATA = CWD / "__data__" / SCRIPT_NAME
 DATA.mkdir(exist_ok=True)
 
-# Global variables
-SPAWN_POS = [-0.8, 0, 0]
-NUM_OF_MODULES = 30
-TARGET_POSITION = [5, 0, 0.5]
-
 
 def show_xpos_history(
     history: list[float],
+    spawn_position: list[float],
+    target_position: list[float],
     *,
     save: bool = True,
     show: bool = True,
@@ -87,7 +76,7 @@ def show_xpos_history(
     pos_data = np.array(history)
 
     # Starting point of robot
-    adjustment = np.array((0, 0, TARGET_POSITION[2] + 1))
+    adjustment = np.array((0, 0, target_position[2] + 1))
     world.spawn(
         mj.MjSpec.from_string(start_sphere),
         position=pos_data[0] + (adjustment * 1.5),
@@ -97,25 +86,28 @@ def show_xpos_history(
     # End point of robot
     world.spawn(
         mj.MjSpec.from_string(end_sphere),
-        position=pos_data[-1] + (adjustment * 1.5),
+        position=pos_data[-1] + (adjustment * 2),
         correct_collision_with_floor=False,
     )
 
     # Target position
     world.spawn(
         mj.MjSpec.from_string(target_box),
-        position=TARGET_POSITION + adjustment,
+        position=target_position + adjustment,
         correct_collision_with_floor=False,
     )
 
     # Spawn position of robot
     world.spawn(
         mj.MjSpec.from_string(spawn_box),
-        position=SPAWN_POS,
+        position=spawn_position,
         correct_collision_with_floor=False,
     )
 
     # Draw the path of the robot
+    smooth = np.linspace(0, 1, len(pos_data))
+    inv_smooth = 1 - smooth
+    smooth_rise = np.linspace(1.25, 1.95, len(pos_data))
     for i in range(1, len(pos_data)):
         # Get the two points to draw the distance between
         pos_i = pos_data[i]
@@ -137,6 +129,8 @@ def show_xpos_history(
             f"{half_way_point[0]} {half_way_point[1]} {half_way_point[2]}"
         )
 
+        # Smooth color transition from green to red
+        geom_rgba = f"{smooth[i]} {inv_smooth[i]} 0 0.75"
         path_box = rf"""
         <mujoco>
             <worldbody>
@@ -144,36 +138,19 @@ def show_xpos_history(
                     type="box"
                     pos="{geom_pos_str}"
                     size="{geom_size_str}"
-                    rgba="1 1 0 0.9"
+                    rgba="{geom_rgba}"
                 />
             </worldbody>
         </mujoco>
         """
         world.spawn(
             mj.MjSpec.from_string(path_box),
-            position=(adjustment * 1.25),
+            position=(adjustment * smooth_rise[i]),
             correct_collision_with_floor=False,
         )
 
-    model = world.spec.compile()
-    data = mj.MjData(model)
-    save_path = str(DATA / "background.png")
-    single_frame_renderer(
-        model,
-        data,
-        save_path=save_path,
-        save=True,
-        width=200,
-        height=600,
-        cam_fovy=8,
-        cam_pos=[2.1, 0, 50],
-        cam_quat=[-0.7071, 0, 0, 0.7071],
-    )
-
-    # Setup background image
-    img = plt.imread(save_path)
+    # Setup the plot
     _, ax = plt.subplots()
-    ax.imshow(img)
 
     # Add legend to the plot
     plt.rc("legend", fontsize="small")
@@ -202,6 +179,26 @@ def show_xpos_history(
 
     # Title
     plt.title("Robot Path in XY Plane")
+
+    # Render the background image
+    model = world.spec.compile()
+    data = mj.MjData(model)
+    save_path = str(DATA / "background.png")
+    single_frame_renderer(
+        model,
+        data,
+        save_path=save_path,
+        save=True,
+        width=200,
+        height=600,
+        cam_fovy=8,
+        cam_pos=[2.1, 0, 50],
+        cam_quat=[-0.7071, 0, 0, 0.7071],
+    )
+
+    # Setup background image
+    img = plt.imread(save_path)
+    ax.imshow(img)
 
     # Save the figure
     if save:

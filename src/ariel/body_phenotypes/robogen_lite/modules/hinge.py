@@ -53,7 +53,7 @@ class HingeModule(Module):
         spec = mujoco.MjSpec()
 
         # ========= Hinge =========
-        hinge_name = "hinge"
+        hinge_name = self.module_type.name.lower()
         hinge = spec.worldbody.add_body(
             name=hinge_name,
             mass=STATOR_MASS + ROTOR_MASS,

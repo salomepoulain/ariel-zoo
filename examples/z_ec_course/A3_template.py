@@ -11,6 +11,7 @@ import numpy.typing as npt
 from mujoco import viewer
 
 # Local libraries
+from ariel import console
 from ariel.body_phenotypes.robogen_lite.constructor import (
     construct_mjspec_from_graph,
 )
@@ -133,7 +134,7 @@ def experiment(
     kwargs: dict[Any, Any] = {}  # IF YOU NEED MORE ARGUMENTS ADD THEM HERE!
 
     mj.set_mjcb_control(
-        lambda m, d: controller.set_control(m, d, *args, **kwargs),  # pyright: ignore[reportUnknownLambdaType]
+        lambda m, d: controller.set_control(m, d, *args, **kwargs),
     )
 
     # ------------------------------------------------------------------ #
@@ -155,11 +156,16 @@ def experiment(
             video_recorder = VideoRecorder(output_folder=path_to_video_folder)
 
             # Render with video recorder
+            cam_quat = np.zeros(4)
+            mj.mju_euler2Quat(cam_quat, np.deg2rad([30, 0, 0]), "XYZ")
             video_renderer(
                 model,
                 data,
                 duration=duration,
                 video_recorder=video_recorder,
+                cam_fovy=7,
+                cam_pos=[2, -1, 2],
+                cam_quat=cam_quat,
             )
         case "launcher":
             # This opens a liver viewer of the simulation
@@ -235,13 +241,19 @@ def main() -> None:
         tracker=tracker,
     )
 
-    experiment(robot=core, controller=ctrl, mode="launcher")
+    experiment(robot=core, controller=ctrl, mode="video")
 
-    show_xpos_history(tracker.history["xpos"][0])
+    show_xpos_history(
+        tracker.history["xpos"][0],
+        spawn_position=SPAWN_POS,
+        target_position=TARGET_POSITION,
+        save=True,
+        show=True,
+    )
 
-    # fitness = fitness_function(tracker.history["xpos"][0])
-    # msg = f"Fitness of generated robot: {fitness}"
-    # console.log(msg)
+    fitness = fitness_function(tracker.history["xpos"][0])
+    msg = f"Fitness of generated robot: {fitness}"
+    console.log(msg)
 
 
 if __name__ == "__main__":

@@ -89,7 +89,7 @@ def experiment(
     kwargs: dict[Any, Any] = {}  # IF YOU NEED MORE ARGUMENTS ADD THEM HERE!
 
     mj.set_mjcb_control(
-        lambda m, d: controller.set_control(m, d, *args, **kwargs),  # pyright: ignore[reportUnknownLambdaType]
+        lambda m, d: controller.set_control(m, d, *args, **kwargs),
     )
 
     # ------------------------------------------------------------------ #
@@ -117,6 +117,7 @@ def main() -> None:
     # Construct the robot from the graph
     core = construct_mjspec_from_graph(robot_graph)
 
+    # Define a tracker to track the x-position of the robot
     mujoco_type_to_find = mj.mjtObj.mjOBJ_GEOM
     name_to_bind = "core"
     tracker = Tracker(
@@ -124,16 +125,26 @@ def main() -> None:
         name_to_bind=name_to_bind,
     )
 
-    # Simulate the robot
+    # !!! Replace None with your controller function !!!
+    your_controller = None
+
+    # Create the controller
     ctrl = Controller(
-        controller_callback_function=YOUR_CONTROLLER,
+        controller_callback_function=your_controller,
         tracker=tracker,
     )
 
+    # Simulate the robot
     experiment(robot=core, controller=ctrl)
 
-    show_xpos_history(tracker.history["xpos"][0])
+    # Plot the x-position history
+    show_xpos_history(
+        tracker.history["xpos"][0],
+        spawn_position=SPAWN_POS,
+        target_position=TARGET_POSITION,
+    )
 
+    # Calculate and print the fitness of your robot
     fitness = fitness_function(tracker.history["xpos"][0])
     msg = f"Fitness of generated robot: {fitness}"
     console.log(msg)
