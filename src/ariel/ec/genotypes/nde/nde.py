@@ -96,6 +96,7 @@ class NeuralDevelopmentalEncoding(nn.Module):
 
         # Activations
         self.relu = nn.ReLU()
+        self.tanh = nn.Tanh()
         self.sigmoid = nn.Sigmoid()
 
         # Disable gradients for all parameters
@@ -115,7 +116,7 @@ class NeuralDevelopmentalEncoding(nn.Module):
                 x = self.relu(x)
 
                 x = self.fc2(x)
-                x = self.relu(x)
+                x = self.tanh(x)
 
                 x = self.fc3(x)
                 x = self.relu(x)
