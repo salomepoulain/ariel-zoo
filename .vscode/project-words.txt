@@ -191,6 +191,7 @@ deepcopy
 defenses
 deflist
 defusedxml
+delaxes
 Deniz
 devcontainers
 dfden
@@ -369,6 +370,7 @@ iniconfig
 INP
 inproceedings
 Ioannis
+ipykernel
 ipynb
 ipython
 isdigit
@@ -772,6 +774,7 @@ seanwu
 SEL
 selectattr
 selectby
+sensorsize
 sessionmaker
 setattr
 setuptools
