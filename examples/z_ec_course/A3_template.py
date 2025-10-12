@@ -11,6 +11,7 @@ import numpy.typing as npt
 from mujoco import viewer
 
 # Local libraries
+from ariel import console
 from ariel.body_phenotypes.robogen_lite.constructor import (
     construct_mjspec_from_graph,
 )
@@ -237,11 +238,17 @@ def main() -> None:
 
     experiment(robot=core, controller=ctrl, mode="launcher")
 
-    show_xpos_history(tracker.history["xpos"][0])
+    show_xpos_history(
+        tracker.history["xpos"][0],
+        spawn_position=SPAWN_POS,
+        target_position=TARGET_POSITION,
+        save=True,
+        show=True,
+    )
 
-    # fitness = fitness_function(tracker.history["xpos"][0])
-    # msg = f"Fitness of generated robot: {fitness}"
-    # console.log(msg)
+    fitness = fitness_function(tracker.history["xpos"][0])
+    msg = f"Fitness of generated robot: {fitness}"
+    console.log(msg)
 
 
 if __name__ == "__main__":
