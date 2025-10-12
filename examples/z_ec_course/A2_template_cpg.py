@@ -50,7 +50,7 @@ def show_xpos_history(history: list[list[float]]) -> None:
     plt.ylabel("Y Position")
     plt.title("Robot Path in XY Plane")
     plt.legend()
-    plt.grid(True)
+    plt.grid(visible=True)
 
     # Set equal aspect ratio and center at (0,0)
     plt.axis("equal")
@@ -58,7 +58,7 @@ def show_xpos_history(history: list[list[float]]) -> None:
 
 
 def main() -> None:
-    """Main function to run the simulation with random movements."""
+    """Entry function to run the simulation with random movements."""
     # Initialise controller to controller to None, always in the beginning.
     mujoco.set_mjcb_control(None)  # DO NOT REMOVE
 
@@ -107,12 +107,18 @@ def main() -> None:
         ha=ng.p.Array(shape=(len(data.ctrl),)).set_bounds(-10, 10),
         b=ng.p.Array(shape=(len(data.ctrl),)).set_bounds(-100, 100),
     )
-    optim = ng.optimizers.DifferentialEvolution()
-    optimizer = optim(parametrization=params, budget=500)
+    num_of_workers = 50
+    budget = 500
+    optim = ng.optimizers.PSO
+    optimizer = optim(
+        parametrization=params,
+        budget=budget,
+        num_workers=num_of_workers,
+    )
 
     # Simulate the robot
     ctrl = Controller(
-        controller_callback_function=lambda _, d: na_cpg_mat.forward(d.time),  # pyright: ignore[reportUnknownLambdaType]
+        controller_callback_function=lambda _, d: na_cpg_mat.forward(d.time),
         tracker=tracker,
     )
 
