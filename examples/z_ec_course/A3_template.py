@@ -134,7 +134,7 @@ def experiment(
     kwargs: dict[Any, Any] = {}  # IF YOU NEED MORE ARGUMENTS ADD THEM HERE!
 
     mj.set_mjcb_control(
-        lambda m, d: controller.set_control(m, d, *args, **kwargs),  # pyright: ignore[reportUnknownLambdaType]
+        lambda m, d: controller.set_control(m, d, *args, **kwargs),
     )
 
     # ------------------------------------------------------------------ #

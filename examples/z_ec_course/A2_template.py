@@ -144,7 +144,7 @@ def main() -> None:
 
     # Set the control callback function
     # This is called every time step to get the next action.
-    mujoco.set_mjcb_control(lambda m, d: random_move(m, d, to_track))  # pyright: ignore[reportUnknownLambdaType]
+    mujoco.set_mjcb_control(lambda m, d: random_move(m, d, to_track))
 
     # This opens a viewer window and runs the simulation with the controller you defined
     # If mujoco.set_mjcb_control(None), then you can control the limbs yourself.
