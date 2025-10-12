@@ -482,6 +482,7 @@ logfilewarninglist
 lognormal
 logscale
 logseries
+logspace
 longtable
 longtblr
 lookat
@@ -536,6 +537,7 @@ modificationdate
 modname
 moredelim
 morekeywords
+mpatches
 mpimg
 MRO
 msg
@@ -914,6 +916,7 @@ Weissl
 worldbody
 WSL
 wxyz
+xaxis
 xbm
 xcb
 xcolor
@@ -932,6 +935,7 @@ xyaxes
 xyflow
 xyzw
 yarl
+yaxis
 Yinyang
 ylabel
 ylim

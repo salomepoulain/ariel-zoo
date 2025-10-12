@@ -32,7 +32,12 @@ NUM_OF_MODULES = 30
 TARGET_POSITION = [5, 0, 0.5]
 
 
-def show_xpos_history(history: list[float]) -> None:
+def show_xpos_history(
+    history: list[float],
+    *,
+    save: bool = True,
+    show: bool = True,
+) -> None:
     # Initialize world to get the background
     mj.set_mjcb_control(None)
     world = OlympicArena(
@@ -110,17 +115,26 @@ def show_xpos_history(history: list[float]) -> None:
         correct_collision_with_floor=False,
     )
 
-    last_value = None
-    for i in range(len(pos_data)):
-        position = pos_data[i]
-        if last_value is not None:
-            distance = np.abs(np.array(position - last_value)) / 2
-        else:
-            distance = np.array((0.01, 0.01, 0.01))
-        last_value = position
+    # Draw the path of the robot
+    for i in range(1, len(pos_data)):
+        # Get the two points to draw the distance between
+        pos_i = pos_data[i]
+        pos_j = pos_data[i - 1]
 
-        distance_as_size: str = (
-            f'"{(distance[0] + 0.01):.2f} 0.05 {(distance[2] + 0.01):.2f}"'
+        # Size of the box to represent the distance
+        distance = pos_i - pos_j
+        minimum_size = 0.05
+        geom_size = np.array([
+            max(abs(distance[0]) / 2, minimum_size),
+            max(abs(distance[1]) / 2, minimum_size),
+            max(abs(distance[2]) / 2, minimum_size),
+        ])
+        geom_size_str: str = f"{geom_size[0]} {geom_size[1]} {geom_size[2]}"
+
+        # Position the box in the middle of the two points
+        half_way_point = (pos_i + pos_j) / 2
+        geom_pos_str = (
+            f"{half_way_point[0]} {half_way_point[1]} {half_way_point[2]}"
         )
 
         path_box = rf"""
@@ -128,7 +142,8 @@ def show_xpos_history(history: list[float]) -> None:
             <worldbody>
                 <geom name="yellow_sphere"
                     type="box"
-                    size={distance_as_size}
+                    pos="{geom_pos_str}"
+                    size="{geom_size_str}"
                     rgba="1 1 0 0.9"
                 />
             </worldbody>
@@ -136,7 +151,7 @@ def show_xpos_history(history: list[float]) -> None:
         """
         world.spawn(
             mj.MjSpec.from_string(path_box),
-            position=position + (adjustment * 1.25),
+            position=(adjustment * 1.25),
             correct_collision_with_floor=False,
         )
 
@@ -188,5 +203,11 @@ def show_xpos_history(history: list[float]) -> None:
     # Title
     plt.title("Robot Path in XY Plane")
 
+    # Save the figure
+    if save:
+        fig_path = DATA / "robot_path.png"
+        plt.savefig(fig_path, bbox_inches="tight", dpi=300)
+
     # Show results
-    plt.show()
+    if show:
+        plt.show()
