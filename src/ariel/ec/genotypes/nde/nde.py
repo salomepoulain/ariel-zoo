@@ -54,10 +54,10 @@ console = Console()
 
 
 class NeuralDevelopmentalEncoding(nn.Module):
-    def __init__(self, number_of_modules: int) -> None:
+    def __init__(self, number_of_modules: int, genotype_size: int = 64) -> None:
         super().__init__()
         # Hidden Layers
-        self.fc1 = nn.Linear(64, 64)
+        self.fc1 = nn.Linear(genotype_size, 64)
         self.fc2 = nn.Linear(64, 32)
         self.fc3 = nn.Linear(32, 64)
         self.fc4 = nn.Linear(64, 128)
