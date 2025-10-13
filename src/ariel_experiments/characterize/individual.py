@@ -568,10 +568,46 @@ def analyze_sensors(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     return {"sensors": 0.0}
 
 
+# Defining the coordinates/vectors that describe individuals
+ANALYZERS: dict[str, PropertyAnalyzer[float]] = {
+    "branching": analyze_branching,
+    "number_of_limbs": analyze_number_of_limbs,
+    "length_of_limbs": analyze_length_of_limbs,
+    "coverage": analyze_coverage,
+    "proportion_spatial": analyze_proportion_spatial,
+    "symmetry": analyze_symmetry,
+    "size": analyze_size,
+    "mass": analyze_mass,
+    "joints": analyze_joints,
+}
+
+def get_morphological_vector(individual: DiGraph) -> np.ndarray:
+    vector = []
+    for name, func in ANALYZERS.items():
+        result = func(individual)
+        value = list(result.values())[0]
+        vector.append(float(value))
+    return np.array(vector, dtype=float)
+
+# Defining the Euclidean distance between two individuals
+def euclidean_distance(ind1: DiGraph, ind2: DiGraph) -> float:
+    v1 = get_morphological_vector(ind1)
+    v2 = get_morphological_vector(ind2)
+    return float(np.linalg.norm(v1 - v2))
+
+
 if __name__ == "__main__":
     from ariel_experiments.utils.initialize import generate_random_individual
 
     graph = generate_random_individual()
     console.print("not none:", analyze_module_counts(graph)["not-none"])
+
+    g1 = generate_random_individual(seed = 5)
+    g2 = generate_random_individual(seed = 30)
+    v1 = get_morphological_vector(g1)
+    v2 = get_morphological_vector(g2)
+    console.print("Feature vector 1:", v1)
+    console.print("Feature vector 2:", v2)
+    console.print("Euclidean distance:", euclidean_distance(g1, g2))
 
     # feel free to test and expand here
