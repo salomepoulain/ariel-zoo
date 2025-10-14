@@ -73,3 +73,6 @@ class AmphitheatreTerrainWorld(CompoundWorld):
             floor_heightmap=self.floor_heightmap,
             load_precompiled=self.load_precompiled,
         )
+        """Post-initialization to set up the amphitheatre terrain world.
+        Combines an amphitheatre heightmap with a rugged heightmap and initializes
+        the CompoundWorld base class."""

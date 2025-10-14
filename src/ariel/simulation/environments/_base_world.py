@@ -46,6 +46,19 @@ class BaseWorld:
         *,
         load_precompiled: bool = True,
     ) -> None:
+        """
+        Initialize the world specification.
+
+        Parameters
+        ----------
+        name : str, optional
+            Name of the world, by default None
+        mujoco_config : MujocoConfig, optional
+            Configuration parameters for MuJoCo, by default None
+        load_precompiled : bool, optional
+            Whether to load a precompiled XML file if available, by default True
+        """
+
         # Use default mujoco config if none is provided
         if mujoco_config is None:
             self.mujoco_config = MujocoConfig()
@@ -70,6 +83,8 @@ class BaseWorld:
         """Expand the world specification with additional elements."""
 
     def _init_spec(self) -> mj.MjSpec:
+        """Initialize the MuJoCo specification."""
+
         spec = mj.MjSpec()
 
         # Model name
@@ -112,6 +127,17 @@ class BaseWorld:
         self,
         spawn_name: str,
     ) -> float:
+        """Find the lowest Z position of the spawned robot.
+
+        Parameters
+        ----------
+        spawn_name : str
+            Prefix name of the spawned robot to identify its geometries.
+        
+        Returns
+        -------
+            float
+                The lowest Z position of the robot in the world."""
         # Generate model and data from a temporary copy of the spec
         model: mj.MjModel = cast("mj.MjModel", self.spec.compile())
         data = mj.MjData(model)
@@ -210,6 +236,24 @@ class BaseWorld:
         *,
         validate_no_collisions: bool = False,
     ) -> None:
+        """
+        Check and correct the spawn position to avoid collisions with the floor.
+
+        
+        Parameters        
+        ----------
+        spawn_site : mj.MjsBody
+            The site where the robot is spawned.
+        spawn_body : mj.MjsBody
+            The body of the spawned robot.
+        spawn_name : str
+            The prefix name of the spawned robot.
+        base_point : float, optional
+            Minimum distance above the lowest point of the robot, by default 0.01
+        validate_no_collisions : bool, optional
+            Whether to validate the spawn position for collisions, by default False
+        """
+
         # Log the correction process
         msg = "-" * 60
         log.debug(msg)
@@ -263,6 +307,31 @@ class BaseWorld:
         validate_no_collisions: bool = False,
         rotation_sequence: str = "XYZ",  # xyzXYZ, assume intrinsic
     ) -> mj.MjSpec:
+        """
+        Spawn a robot into the world at a specified position and orientation.
+        
+        Parameters
+        ----------
+        robot_spec : mj.MjSpec
+            The MuJoCo specification of the robot to be spawned.
+        position : Position, optional
+            The (x, y, z) position to spawn the robot, by default None
+        rotation : Rotation, optional
+            The (x, y, z) Euler angles (in degrees) for the robot's orientation, by default None
+        spawn_prefix : str, optional
+            Prefix for naming the spawned robot, by default None
+        correct_collision_with_floor : bool, optional
+            Whether to adjust the spawn position to avoid collisions with the floor, by default True
+        validate_no_collisions : bool, optional
+            Whether to validate the spawn position for collisions after adjustment, by default False
+        rotation_sequence : str, optional
+            The sequence of axes for Euler to quaternion conversion, by default "XYZ"
+        
+        Returns
+        -------
+            mj.MjSpec
+                The updated MuJoCo world specification with the spawned robot.
+        """
         # Default spawn position
         if position is None:
             position = self.default_spawn_position

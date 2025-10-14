@@ -57,6 +57,30 @@ class CompoundWorld(BaseWorld):
         checker_floor: bool | None = None,
         load_precompiled: bool = False,
     ) -> None:
+        """
+        Initialize a CompoundWorld.
+        
+        Parameters
+        ----------
+        name : str, optional
+            Name of the world, by default None
+        floor_size : Dimension, optional
+            Size of the floor (width, height, depth) in meters, by default None
+        floor_tilt : Rotation, optional
+            Tilt of the floor (x, y, z) in degrees, by default None
+        floor_rot_sequence : str, optional
+            Rotation sequence for the tilt, by default None
+        dims : tuple[int, int], optional
+            Dimensions of the heightmap (rows, cols), by default None
+        floor_heightmap : FloatArray, optional
+            Heightmap array, by default None
+        terrain_color : tuple[float, float, float, float], optional
+            RGBA color of the terrain, by default None
+        checker_floor : bool, optional
+            Whether to use a checker texture for the floor, by default None
+        load_precompiled : bool, optional
+            Whether to load precompiled XML if it exists, by default False
+        """
         # Set name if provided
         if name is not None:
             self.name = name

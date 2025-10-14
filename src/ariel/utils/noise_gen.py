@@ -111,6 +111,33 @@ class PerlinNoise:
         scale: float = 64.0,
         normalize: NormMethod = "none",
     ) -> FloatArray:
+        """
+        Generate a 2D grid of Perlin noise.
+        
+        Parameters
+        ----------
+        width
+            Width of the output grid in pixels.
+        height
+            Height of the output grid in pixels.
+        scale
+            Scale factor for the noise frequency. Larger values result in
+            smoother noise.
+        normalize
+            Normalization method for the output values:
+            - "linear": Scale to [0, 1] linearly.
+            - "clip": Clip values to [0, 1].
+            - "none": No normalization.
+       
+        Returns
+        -------
+            2D array of shape (height, width) with Perlin noise values.
+        
+        Raises
+        ------
+        ValueError
+            If width, height, or scale are not positive.
+        """
         # Check that width height, scale are valid
         for arg in (width, height, scale):
             if arg <= 0:

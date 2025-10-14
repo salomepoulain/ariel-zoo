@@ -63,6 +63,42 @@ class OlympicArena(BaseWorld):
         *,
         load_precompiled: bool = True,
     ) -> None:
+        """
+        Hybrid MuJoCo world combining flat, rugged, and inclined terrain sections.
+        The world is divided into three sections along the X-axis:
+        1. Flat terrain section (left)
+        2. Rugged terrain section (middle)
+        3. Inclined terrain section (right)
+
+        The arena is surrounded by cliffs on all sides which force the robot to stay in bounds. 
+        The robot can fall off the terrain, which results to a "death". No specific 
+
+        Parameters
+        ----------
+        arena_width : float
+            Total width of the arena along the Y-axis (default: 2.0).
+        section_length : float
+            Length of each terrain section along the X-axis (default: 1.0).
+        flat_thickness : float
+            Thickness of the flat terrain section (default: 0.1).
+        rugged_resolution : int
+            Resolution of the rugged terrain heightmap (default: 64).
+        rugged_scale : float
+            Scale of the Perlin noise for rugged terrain (default: 4.0).
+        rugged_hillyness : float
+            Hillyness factor for rugged terrain (default: 5.0).
+        rugged_height : float
+            Maximum height variation of the rugged terrain (default: 0.07).
+        incline_thickness : float
+            Thickness of the inclined terrain section (default: 0.1).
+        incline_degrees : float
+            Angle of inclination in degrees (default: -15.0).
+        incline_axis : str
+            Axis of inclination ('x', 'y', or 'z') (default: 'y').
+        load_precompiled : bool
+            Whether to load a precompiled XML if available (default: True).
+        """
+
         # Initialize base class
         super().__init__(name=self.name, load_precompiled=load_precompiled)
 

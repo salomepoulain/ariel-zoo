@@ -56,6 +56,20 @@ console = Console()
 class NeuralDevelopmentalEncoding(nn.Module):
     def __init__(self, number_of_modules: int, genotype_size: int = 64) -> None:
         super().__init__()
+        """
+        Neural developmental encoder.
+
+        Given a genotype (list of chromosomes), output the phenotype
+        (probability matrices corresponding to module types, connections, rotations).
+
+        Parameters
+        ----------
+        number_of_modules : int
+            Number of modules in the robot.
+        genotype_size : int, optional
+            Size of each genotype chromosome, by default 64.
+        """
+
         # Hidden Layers
         self.fc1 = nn.Linear(genotype_size, 64)
         self.fc2 = nn.Linear(64, 32)
@@ -107,6 +121,19 @@ class NeuralDevelopmentalEncoding(nn.Module):
         self,
         genotype: list[npt.NDArray[np.float32]],
     ) -> list[npt.NDArray[np.float32]]:
+        """
+        Forward pass through the neural developmental encoder.
+
+        Parameters
+        ----------
+        genotype : list[npt.NDArray[np.float32]]
+            List of chromosomes (numpy arrays).
+        Returns
+        -------
+        list[npt.NDArray[np.float32]]
+            List of phenotype outputs (numpy arrays).
+        """
+
         outputs: list[npt.NDArray[np.float32]] = []
         for idx, chromosome in enumerate(genotype):
             with torch.no_grad():  # double safety
