@@ -81,7 +81,7 @@ class Tracker:
                     idx: [] for idx in range(len(self.to_track))
                 }
 
-    def update(self) -> None:
+    def update(self, data: mj.MjData) -> None:
         """
         Update the history of tracked attributes for each bound object.
         """
