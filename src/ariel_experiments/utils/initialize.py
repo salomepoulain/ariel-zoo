@@ -37,7 +37,7 @@ RNG = np.random.default_rng(SEED)
 
 def generate_random_individual(
     num_modules: int = 20,
-    seed: int = SEED,
+    seed: int | None = None,
 ) -> DiGraph:
     """
     Generate a random modular individual as a directed graph.
@@ -64,7 +64,10 @@ def generate_random_individual(
       (num_modules, NUM_OF_ROTATIONS) respectively
     - HighProbabilityDecoder converts probability matrices to graph structure
     """
-    rng = np.random.default_rng(seed)
+    if seed:
+        rng = np.random.default_rng(seed)
+    else:
+        rng = RNG
     type_probability_space = rng.random(
         size=(num_modules, NUM_OF_TYPES_OF_MODULES),
         dtype=np.float32,
