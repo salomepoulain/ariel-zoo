@@ -37,6 +37,22 @@ class Controller:
         *args: Any | None,
         **kwargs: dict[Any, Any] | None,
     ) -> None:
+        """Sets the controller callback function and gives additional arguments.
+
+        Parameters
+        ----------
+        model : mj.MjModel
+            The Mujoco model of the simulation. This will be used to access
+            model parameters, such as the number of actuators.
+        data : mj.MjData
+            The Mujoco data of the simulation. This will be used to access
+            simulation variables, such as the current time and control values.
+        *args : Any
+            Additional arguments to pass to the controller callback function.
+        **kwargs : dict[Any, Any]
+            Additional keyword arguments to pass to the controller callback function.
+        """
+
         # Calculate current time step
         time = data.time
         time_step = model.opt.timestep

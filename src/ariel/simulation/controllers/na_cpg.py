@@ -45,6 +45,20 @@ torch.set_printoptions(precision=4)
 
 
 def create_fully_connected_adjacency(num_nodes: int) -> dict[int, list[int]]:
+    """
+    Create a fully connected adjacency dictionary for the CPG network.
+    
+    Parameters
+    ----------
+    num_nodes : int
+        Number of nodes in the CPG network.
+    
+    Returns
+    -------
+    dict[int, list[int]]
+        Adjacency dictionary where each key is a node index and the value is a list
+        of indices of connected nodes.
+    """
     adjacency_dict = {}
     for i in range(num_nodes):
         adjacency_dict[i] = [j for j in range(num_nodes) if j != i]
@@ -68,10 +82,30 @@ class NaCPG(nn.Module):
         angle_tracking: bool = False,
         seed: int | None = None,
     ) -> None:
+        """Initialize the NA-CPG module. Inherits from **torch.nn.Module**.
+
+        Parameters
+        ----------
+        adjacency_dict : dict[int, list[int]]
+            Dictionary defining the connectivity of the CPG network. Each key is a node
+            index, and the value is a list of indices of connected nodes.
+        alpha : float, optional
+            Learning rate for the CPG dynamics, by default 0.1.
+        dt : float, optional
+            Time step for the CPG updates, by default 0.01.
+        hard_bounds : tuple[float, float] | None, optional
+            If provided, the output angles will be clamped to these bounds. If None,
+            no clamping is applied, by default (-π/2, π/2).
+        angle_tracking : bool, optional
+            If True, the history of output angles will be stored for analysis, by default False.
+        seed : int | None, optional
+            Random seed for reproducibility, by default None.
+        """
+        super().__init__()
+
         # ================================================================== #
         # User parameters
         # ------------------------------------------------------------------ #
-        super().__init__()
         self.adjacency_dict = adjacency_dict
         self.n = len(adjacency_dict)
         self.angle_tracking = angle_tracking
@@ -83,6 +117,7 @@ class NaCPG(nn.Module):
         # ================================================================== #
         # Inherent parameters: do not change during learning
         # ------------------------------------------------------------------ #
+
         # Learning rate (alpha)
         self.alpha = alpha
 
@@ -92,6 +127,7 @@ class NaCPG(nn.Module):
         # ================================================================== #
         # Adaptable parameters
         # ------------------------------------------------------------------ #
+
         scale = torch.pi * 2
         # --- Definitely to adapt --- #
         self.phase = nn.Parameter(
@@ -159,6 +195,19 @@ class NaCPG(nn.Module):
         self,
         params: list[float] | np.ndarray | torch.Tensor,
     ) -> torch.Tensor:
+        """
+        Convert input parameters to torch.Tensor if needed.
+        
+        Parameters
+        ----------
+        params : list[float] | np.ndarray | torch.Tensor
+            Input parameters to convert.
+        
+        Returns
+        -------
+        torch.Tensor
+            Converted parameters as a torch.Tensor.
+        """
         if isinstance(params, list):
             params = torch.tensor(params, dtype=torch.float32)
         elif isinstance(params, np.ndarray):
@@ -166,6 +215,14 @@ class NaCPG(nn.Module):
         return params
 
     def set_flat_params(self, params: torch.Tensor) -> None:
+        """
+        Set all learnable parameters from a flat tensor.
+        
+        Parameters
+        ----------
+        params : torch.Tensor
+            A flat tensor containing all learnable parameters.
+        """
         # Convert params to tensor if needed
         safe_params = self.param_type_converter(params)
 
@@ -185,6 +242,14 @@ class NaCPG(nn.Module):
             pointer += num_param
 
     def set_param_with_dict(self, params: dict[str, torch.Tensor]) -> None:
+        """
+        Set parameters using a dictionary where keys are group names and values are tensors.
+        
+        Parameters
+        ----------
+        params : dict[str, torch.Tensor]
+            Dictionary with parameter group names as keys and parameter tensors as values.
+        """
         for key, value in params.items():
             safe_value = self.param_type_converter(value)
             self.set_params_by_group(key, safe_value)
@@ -194,6 +259,16 @@ class NaCPG(nn.Module):
         group_name: str,
         params: torch.Tensor,
     ) -> None:
+        """
+        Set parameters for a specific group.
+        
+        Parameters
+        ----------
+        group_name : str
+            The name of the parameter group to set.
+        params : torch.Tensor
+            A tensor containing the parameters for the specified group.
+        """
         # Convert params to tensor if needed
         safe_params = self.param_type_converter(params)
 
@@ -214,27 +289,46 @@ class NaCPG(nn.Module):
         param.data = safe_params.view_as(param)
 
     def get_flat_params(self) -> torch.Tensor:
+        """Get all learnable parameters as a flat tensor."""
         return torch.cat([p.flatten() for p in self.parameter_groups.values()])
 
     @staticmethod
     def term_a(alpha: float, r2i: float) -> float:
+        """Term A from the NA-CPG equations."""
         return alpha * (1 - r2i**2)
 
     @staticmethod
     def term_b(zeta_i: float, w_i: float) -> float:
+        """Term B from the NA-CPG equations."""
         return (1 / (zeta_i + E)) * w_i
 
     @staticmethod
     def zeta(ha_i: float, x_dot_old: float) -> float:
+        """Zeta function from the NA-CPG equations."""
         return 1 - ha_i * ((x_dot_old + E) / (torch.abs(x_dot_old) + E))
 
     def reset(self) -> None:
+        """Reset the internal states to their initial values."""
         self.xy.data = self.initial_state["xy"].clone()
         self.xy_dot_old.data = self.initial_state["xy_dot_old"].clone()
         self.angles.data = self.initial_state["angles"].clone()
         self.angle_history = []
 
     def forward(self, time: float | None = None) -> torch.Tensor:
+        """
+        Perform a forward pass to update the CPG states and compute output angles.
+        
+        Parameters
+        ----------
+        time : float | None, optional
+            Current simulation time. If provided and equal to zero, the CPG states
+            will be reset, by default None.
+        
+        Returns
+        -------
+        torch.Tensor
+            The output angles for each CPG node after the update.
+        """
         # Reset if time is zero
         if time is not None and torch.isclose(
             torch.tensor(time),
@@ -352,7 +446,14 @@ class NaCPG(nn.Module):
         return self.angles.clone()
 
     def save(self, path: str | Path) -> None:
-        """Save learnable parameters to file."""
+        """
+        Save learnable parameters to file.
+        
+        Parameters        
+        ----------
+        path : str | Path
+            File path to save the parameters.
+        """
         path = Path(path)
         to_save = {
             "phase": self.phase.detach().cpu(),
@@ -365,7 +466,14 @@ class NaCPG(nn.Module):
         console.log(f"[green]Saved parameters to {path}[/green]")
 
     def load(self, path: str | Path) -> None:
-        """Load learnable parameters from file."""
+        """
+        Load learnable parameters from file.
+        
+        Parameters
+        ----------
+        path : str | Path
+            File path to load the parameters from.
+        """
         path = Path(path)
         loaded = torch.load(path, map_location="cpu")
         self.phase.data = loaded["phase"]
@@ -378,6 +486,7 @@ class NaCPG(nn.Module):
 
 # Example usage
 def main() -> None:
+    """Example usage of the NaCPG class."""
     adj_dict = create_fully_connected_adjacency(3)
     na_cpg_mat = NaCPG(adj_dict, angle_tracking=True)
 
