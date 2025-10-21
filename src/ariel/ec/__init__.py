@@ -1,1 +1,1 @@
-"""EA Framework."""
+"""ARIEL EA Framework package."""

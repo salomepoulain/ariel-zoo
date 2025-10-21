@@ -138,7 +138,8 @@ class IntegerMutator:
         mutation_mask = mutator * sub_mask * do_mask
         new_genotype = ind_arr + mutation_mask
         return cast("Integers", new_genotype.astype(int).tolist())
-                    
+
+
 def main() -> None:
     """Entry point."""
     console.log(IntegersGenerator.integers(-5, 5, 5))

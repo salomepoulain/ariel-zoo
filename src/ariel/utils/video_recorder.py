@@ -14,7 +14,7 @@ class VideoRecorder:
     """Simple video recorder for ariel."""
 
     # Encoding: 'mp4v' or 'avc1' for H.264
-    _video_encoding: str = "mp4v"
+    _video_encoding: str = "avc1"
     _add_timestamp_to_file_name: bool = True
     _file_extension: str = ".mp4"
 
@@ -30,15 +30,16 @@ class VideoRecorder:
 
         Parameters
         ----------
-        file_name : str
+        file_name
             Name of the video file.
-        output_folder : str | Path | None
-            Folder where the video will be saved. If None, saves to current directory.
-        width : int
+        output_folder
+            Folder where the video will be saved.
+            If None, saves to current directory.
+        width
             Width of the video frames.
-        height : int
+        height
             Height of the video frames.
-        fps : int
+        fps
             Frames per second for the video.
         """
         # Save local variables
@@ -82,7 +83,7 @@ class VideoRecorder:
 
         Parameters
         ----------
-        frame : npt.ArrayLike
+        frame
             Frame to write to the video.
         """
         # Convert PIL Image to numpy array (OpenCV uses BGR format)

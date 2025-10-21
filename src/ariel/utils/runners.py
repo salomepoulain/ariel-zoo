@@ -35,7 +35,7 @@ def simple_runner(
     mujoco.mj_resetData(model, data)
 
     # Define action specification and set policy
-    data.ctrl = RNG.normal(scale=0.1, size=model.nu)  # type: ignore
+    data.ctrl = RNG.normal(scale=0.1, size=model.nu)
 
     while data.time < duration:
         mujoco.mj_step(model, data, nstep=steps_per_loop)

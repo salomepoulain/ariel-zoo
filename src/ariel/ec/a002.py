@@ -121,9 +121,7 @@ def test_fetch_logic() -> None:
     threshold = 0.5
     population = fetch_population(
         engine,
-        logic=(
-            (Individual.fitness_ >= threshold),  # type: ignore[operator]
-        ),
+        logic=((Individual.fitness_ >= threshold),),  # pyright: ignore[reportOptionalOperand]
     )
     end = console.get_time()
     console.log(
@@ -135,9 +133,7 @@ def test_fetch_logic() -> None:
     threshold = 0.5
     population = fetch_population(
         engine,
-        logic=(
-            (Individual.fitness_ >= threshold),  # type: ignore[operator]
-        ),
+        logic=((Individual.fitness_ >= threshold),),  # pyright: ignore[reportOptionalOperand]
         constrain_alive=False,
     )
     end = console.get_time()
@@ -227,13 +223,13 @@ def test_kill_mechanics() -> None:
 
 def main() -> None:
     """Entry point."""
-    # --------------------- Test Kill Mechanics ---------------------
+    # --------------------- Test Kill Mechanics --------------------- #
     test_kill_mechanics()
 
-    # --------------------- Test Evaluate Mechanics ---------------------
+    # --------------------- Test Evaluate Mechanics --------------------- #
     test_evaluate_mechanics()
 
-    # --------------------- Test Fetch Logic ---------------------
+    # --------------------- Test Fetch Logic --------------------- #
     test_fetch_logic()
 
 
