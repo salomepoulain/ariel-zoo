@@ -11,7 +11,7 @@ import numpy as np
 from rich.console import Console
 
 # Local libraries
-from ariel.body_phenotypes.robogen_lite.modules.brick import BRICK_MASS
+from ariel.parameters.ariel_modules import ArielModulesConfig
 from ariel.body_phenotypes.robogen_lite.modules.core import CORE_MASS
 from ariel.body_phenotypes.robogen_lite.modules.hinge import (
     ROTOR_MASS,
@@ -31,7 +31,8 @@ SEED = 42
 # Global functions
 console = Console()
 RNG = np.random.default_rng(SEED)
-
+ariel_module_config = ArielModulesConfig()
+BRICK_MASS = ariel_module_config.BRICK_MASS
 
 # Type Aliases and TypeVars
 T = TypeVar("T")

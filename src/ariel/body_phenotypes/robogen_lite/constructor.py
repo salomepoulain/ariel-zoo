@@ -90,8 +90,9 @@ def construct_mjspec_from_graph(graph: DiGraph[Any]) -> CoreModule:
             )
 
     core_module = modules[IDX_OF_CORE]
-    if isinstance(core_module, CoreModule):
-        return core_module
+    return core_module
+    # if isinstance(core_module, CoreModule):
+    #     return core_module
 
-    msg = "The core module is not of type CoreModule."
-    raise ValueError(msg)
+    # msg = "The core module is not of type CoreModule."
+    # raise ValueError(msg)

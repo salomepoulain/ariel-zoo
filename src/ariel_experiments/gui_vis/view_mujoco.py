@@ -1,23 +1,28 @@
 # Standard library
 from pathlib import Path
 
-# Third-party libraries
-from matplotlib import pyplot as plt
 import mujoco
-import numpy as np
-from mujoco import viewer
-from PIL import Image
-from rich.console import Console
 import networkx as nx
+import numpy as np
 
+# Third-party libraries
+from mujoco import viewer
+from rich.console import Console
 
-from ariel.body_phenotypes.robogen_lite.config import NUM_OF_FACES, NUM_OF_ROTATIONS, NUM_OF_TYPES_OF_MODULES
-from ariel.body_phenotypes.robogen_lite.constructor import construct_mjspec_from_graph
-from ariel.body_phenotypes.robogen_lite.decoders.hi_prob_decoding import HighProbabilityDecoder
-from ariel.body_phenotypes.robogen_lite.modules.core import CoreModule
+from ariel.body_phenotypes.robogen_lite.config import (
+    NUM_OF_FACES,
+    NUM_OF_ROTATIONS,
+    NUM_OF_TYPES_OF_MODULES,
+)
+from ariel.body_phenotypes.robogen_lite.constructor import (
+    construct_mjspec_from_graph,
+)
+from ariel.body_phenotypes.robogen_lite.decoders.hi_prob_decoding import (
+    HighProbabilityDecoder,
+)
 
 # Local libraries
-from ariel.simulation.environments.simple_flat_world import SimpleFlatWorld
+from ariel.simulation.environments._simple_flat import SimpleFlatWorld
 from ariel.utils.renderers import single_frame_renderer
 from ariel_experiments.gui_vis.visualize_tree import VisualizationConfig
 
@@ -33,18 +38,19 @@ console = Console()
 RNG = np.random.default_rng(SEED)
 DPI = 300
 
-from IPython.display import Image, display
+from IPython.display import display
+
 
 def view(
-    robot: nx.Graph | nx.DiGraph, # type: ignore
+    robot: nx.Graph | nx.DiGraph,  # type: ignore
     root: int = 0,
     *,
     title: str = "",
     save_file: Path | str | None = None,
     config: VisualizationConfig | None = None,
     make_tree: bool = False,
-    with_viewer: bool = False
-):
+    with_viewer: bool = False,
+) -> None:
     """
     Visualize a robot in a MuJoCo simulation environment.
 
@@ -68,6 +74,9 @@ def view(
     """
     # MuJoCo configuration
     robot = construct_mjspec_from_graph(robot)
+    
+    console.print(robot)
+    
     viz_options = mujoco.MjvOption()  # visualization of various elements
 
     # Visualization of the corresponding model or decoration element
@@ -77,32 +86,44 @@ def view(
 
     # MuJoCo basics
     # world = TiltedFlatWorld()
-    world = SimpleFlatWorld(floor_size=(20, 20, 0.1))
-    
-    for geom in world.spec.worldbody.geoms:
-        if geom.name == "floor":
-            geom.material = "custom_floor_material"
-            break
-    
+    # world = SimpleFlatWorld(floor_size=(20, 20, 0.1))
+        
+    world = SimpleFlatWorld(floor_size=(20, 20, 0.1), checker_floor=False)
+
+
+
+
 
     world.spec.add_texture(
         name="custom_grid",
         type=mujoco.mjtTexture.mjTEXTURE_2D,
-        builtin=mujoco.mjtBuiltin.mjBUILTIN_CHECKER, 
-        rgb1=[0.9, 0.9, 0.9], 
-        rgb2=[0.95, 0.95, 0.95],  
-        width=800, 
-        height=800, 
+        builtin=mujoco.mjtBuiltin.mjBUILTIN_CHECKER,
+        rgb1=[0.9, 0.9, 0.9],
+        rgb2=[0.95, 0.95, 0.95],
+        width=800,
+        height=800,
     )
     world.spec.add_material(
         name="custom_floor_material",
-        textures=["", "custom_grid"],  
-        texrepeat=[5, 5], 
+        textures=["", "custom_grid"],
+        texrepeat=[5, 5],
         texuniform=True,
-        reflectance=0.05,  
+        reflectance=0.05,
     )
+    
+    
+    # Update floor geom
+    for geom in world.spec.worldbody.geoms:
+        if geom.name == "simple-flat-world":  # or whatever the floor_name is
+            geom.material = "custom_floor_material"
+            break
 
-    #Save the model to XML
+    for geom in world.spec.worldbody.geoms:
+        if geom.name == "floor":
+            geom.material = "custom_floor_material"
+            break
+        
+    # Save the model to XML
     if save_file:
         xml = world.spec.to_xml()
         with (DATA / f"{save_file}.xml").open("w", encoding="utf-8") as f:
@@ -119,10 +140,8 @@ def view(
     model = world.spec.compile()
     data = mujoco.MjData(model)
 
-    
-
     # Number of actuators and DoFs
-    console.log(f"DoF (model.nv): {model.nv}, Actuators (model.nu): {model.nu}")
+    # console.log(f"DoF (model.nv): {model.nv}, Actuators (model.nu): {model.nu}")
 
     # Reset state and time of simulation
     mujoco.mj_resetData(model, data)
@@ -133,7 +152,7 @@ def view(
     # View
     if with_viewer:
         viewer.launch(model=model, data=data)
-    
+
     display(img)
     # plt.imshow(img)
     # plt.axis('off')
@@ -144,7 +163,7 @@ def view(
 if __name__ == "__main__":
 
     num_modules = 20
-    
+
     type_probability_space = RNG.random(
         size=(num_modules, NUM_OF_TYPES_OF_MODULES),
         dtype=np.float32,
@@ -169,4 +188,7 @@ if __name__ == "__main__":
         conn_probability_space,
         rotation_probability_space,
     )
+    
+    console.print(robot)
+    
     view(robot)
