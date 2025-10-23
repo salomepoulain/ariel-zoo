@@ -209,7 +209,7 @@ def get_xpos(graph) -> list[list[float]]:
     for edge in graph.edges:
         print(edge)
         id = edge[1]
-        component_type = root.to_graph().nodes(data=True)[id]["type"].lower()
+        component_type = graph.nodes(data=True)[id]["type"].lower()
         if component_type == None:
             continue
         edge = f"{edge[0]}-{edge[1]}"
