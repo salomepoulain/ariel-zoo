@@ -75,7 +75,6 @@ def view(
     # MuJoCo configuration
     robot = construct_mjspec_from_graph(robot)
     
-    console.print(robot)
     
     viz_options = mujoco.MjvOption()  # visualization of various elements
 
@@ -154,10 +153,72 @@ def view(
         viewer.launch(model=model, data=data)
 
     display(img)
-    # plt.imshow(img)
-    # plt.axis('off')
-    # plt.show()
-    # return img
+    return data
+
+
+def get_xpos(graph) -> list[list[float]]:
+
+    robot = construct_mjspec_from_graph(graph)
+    world = SimpleFlatWorld(floor_size=(20, 20, 0.1), checker_floor=False)
+
+    world.spec.add_texture(
+        name="custom_grid",
+        type=mujoco.mjtTexture.mjTEXTURE_2D,
+        builtin=mujoco.mjtBuiltin.mjBUILTIN_CHECKER,
+        rgb1=[0.9, 0.9, 0.9],
+        rgb2=[0.95, 0.95, 0.95],
+        width=800,
+        height=800,
+    )
+    world.spec.add_material(
+        name="custom_floor_material",
+        textures=["", "custom_grid"],
+        texrepeat=[5, 5],
+        texuniform=True,
+        reflectance=0.05,
+    )
+
+        
+    # Update floor geom
+    for geom in world.spec.worldbody.geoms:
+        if geom.name == "simple-flat-world":  # or whatever the floor_name is
+            geom.material = "custom_floor_material"
+            break
+
+    for geom in world.spec.worldbody.geoms:
+        if geom.name == "floor":
+            geom.material = "custom_floor_material"
+            break
+        
+
+
+    # Spawn the robot at the world
+    world.spawn(robot.spec)
+
+    # Compile the model
+    model = world.spec.compile()
+    data = mujoco.MjData(model)
+
+    # Reset state and time of simulation
+    mujoco.mj_resetData(model, data)
+    
+    # need to run to update the data
+    img = single_frame_renderer(model, data, steps=10)
+    
+    xpos_list = []
+    for edge in graph.edges:
+        print(edge)
+        id = edge[1]
+        component_type = root.to_graph().nodes(data=True)[id]["type"].lower()
+        if component_type == None:
+            continue
+        edge = f"{edge[0]}-{edge[1]}"
+        xpos_list.append(data.body(f"robot1_{edge}-{id}-{component_type}").xpos)
+
+    xpos_list.append(data.body(f"robot1_core").xpos)
+
+    return np.array(xpos_list)
+
 
 
 if __name__ == "__main__":
