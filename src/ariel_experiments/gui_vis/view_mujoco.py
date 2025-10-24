@@ -193,7 +193,7 @@ def get_cloud_of_robot_from_graph(graph) -> list[list[float]]:
     this function will then run a simulation to get the position of the robot parts and generate a point cloud with the core of the robot being on 0,0,0
     
     """
-    print(type(graph))
+
     if type(graph) == type(nx.DiGraph()):
         robot = construct_mjspec_from_graph(graph)
     else:
@@ -257,7 +257,7 @@ def get_cloud_of_robot_from_graph(graph) -> list[list[float]]:
         if len(name)>5:
             component_type = name[-5:]
         else:
-            # no clue what it is but not one of the robot components
+            # no clue what it is but not one of the robot components so:
             continue
             
 
