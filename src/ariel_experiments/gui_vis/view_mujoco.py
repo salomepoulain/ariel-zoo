@@ -4,6 +4,7 @@ from pathlib import Path
 import mujoco
 import networkx as nx
 import numpy as np
+import open3d as o3d
 
 # Third-party libraries
 from mujoco import viewer
@@ -22,6 +23,9 @@ from ariel.body_phenotypes.robogen_lite.decoders.hi_prob_decoding import (
 )
 
 # Local libraries
+from ariel.body_phenotypes.robogen_lite.modules.core import CORE_DIMENSIONS
+from ariel.body_phenotypes.robogen_lite.modules.hinge import ROTOR_DIMENSIONS
+from ariel.parameters.ariel_modules import ArielModulesConfig
 from ariel.simulation.environments._simple_flat import SimpleFlatWorld
 from ariel.utils.renderers import single_frame_renderer
 from ariel_experiments.gui_vis.visualize_tree import VisualizationConfig
@@ -33,10 +37,14 @@ DATA = Path(CWD / "__data__")
 DATA.mkdir(exist_ok=True)
 SEED = 42
 
-# Global functions
+# Global variables
 console = Console()
 RNG = np.random.default_rng(SEED)
 DPI = 300
+
+DIMS = {"hinge": ROTOR_DIMENSIONS ,
+"brick": ArielModulesConfig().BRICK_DIMENSIONS,
+"core": CORE_DIMENSIONS}
 
 from IPython.display import display
 
@@ -156,9 +164,29 @@ def view(
     return data
 
 
-def get_xpos(graph) -> list[list[float]]:
+def make_point_cloud(center, type, nr_of_points = 1000):
 
+    width, height,depth = DIMS[type]
+    # making a mesh of the component
+    component_mesh = o3d.geometry.TriangleMesh.create_box(width=width, height=height, depth=depth)
+
+    # sampling points on the mesh, not in the mesh
+    point_cloud = component_mesh.sample_points_poisson_disk(number_of_points=nr_of_points)
+
+    # shifting all points so the center of the point cloud matches the center using absolute coords
+    point_cloud.translate(center, relative=False)
+
+    # to do: rotation, fixing the coords they do not align for some reason
+
+    return point_cloud
+
+
+def get_cloud_of_robot_from_graph(graph) -> list[list[float]]:
+
+    # first we make mjspecs of the robot
     robot = construct_mjspec_from_graph(graph)
+
+    # make a world for simulation
     world = SimpleFlatWorld(floor_size=(20, 20, 0.1), checker_floor=False)
 
     world.spec.add_texture(
@@ -205,19 +233,44 @@ def get_xpos(graph) -> list[list[float]]:
     # need to run to update the data
     img = single_frame_renderer(model, data, steps=10)
     
-    xpos_list = []
+
+
+
+    # get the core position
+    core = data.body(f"robot1_core").xpos 
+
+    cloud_list = []
     for edge in graph.edges:
-        print(edge)
+
+        # part id
         id = edge[1]
-        component_type = graph.nodes(data=True)[id]["type"].lower()
+        
+        component_type = graph.nodes(data=True)[id]["type"]
+
+        # we only want to find hinges and bricks, since the core has no edges going towards it we don't check it
         if component_type == None:
             continue
+
+        component_type = component_type.lower()
+        # data obj has names for each robot part in the form of robot1_edge-partid-component_type 
+        # do make sure the part id is right when errors arise during testing as reusing parts in constructing robots reuses ids which fucks it up
         edge = f"{edge[0]}-{edge[1]}"
-        xpos_list.append(data.body(f"robot1_{edge}-{id}-{component_type}").xpos)
 
-    xpos_list.append(data.body(f"robot1_core").xpos)
+        #substracting the coords of the core to make the core the center at 0,0,0
+        center = data.body(f"robot1_{edge}-{id}-{component_type}").xpos-core
+        point_cloud = make_point_cloud(center,component_type)
 
-    return np.array(xpos_list)
+        
+
+
+        cloud_list.append(point_cloud)
+        
+    
+    cloud_list.append(make_point_cloud([0,0,0],"core"))
+    
+
+    
+    return cloud_list
 
 
 
@@ -250,6 +303,5 @@ if __name__ == "__main__":
         rotation_probability_space,
     )
     
-    console.print(robot)
     
     view(robot)
