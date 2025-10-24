@@ -237,7 +237,7 @@ def get_cloud_of_robot_from_graph(graph) -> list[list[float]]:
 
 
     # get the core position
-    core = data.body(f"robot1_core").xpos 
+    core = data.geom(f"robot1_core").xpos 
 
     cloud_list = []
     for edge in graph.edges:
@@ -257,7 +257,7 @@ def get_cloud_of_robot_from_graph(graph) -> list[list[float]]:
         edge = f"{edge[0]}-{edge[1]}"
 
         #substracting the coords of the core to make the core the center at 0,0,0
-        center = data.body(f"robot1_{edge}-{id}-{component_type}").xpos-core
+        center = (data.geom(f"robot1_{edge}-{id}-{component_type}").xpos-core)/2
         point_cloud = make_point_cloud(center,component_type)
 
         
