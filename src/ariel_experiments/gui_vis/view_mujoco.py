@@ -42,7 +42,7 @@ console = Console()
 RNG = np.random.default_rng(SEED)
 DPI = 300
 
-DIMS = {"hinge": ROTOR_DIMENSIONS ,
+DIMS = {"tator": ROTOR_DIMENSIONS , "rotor": ROTOR_DIMENSIONS , # tator stands for stator but we only look at the last 5 letters
 "brick": ArielModulesConfig().BRICK_DIMENSIONS,
 "core": CORE_DIMENSIONS}
 
@@ -164,7 +164,7 @@ def view(
     return data
 
 
-def make_point_cloud(center, type, nr_of_points = 1000):
+def make_point_cloud(center, type, rotation, nr_of_points = 1000):
 
     width, height,depth = DIMS[type]
     # making a mesh of the component
@@ -176,17 +176,28 @@ def make_point_cloud(center, type, nr_of_points = 1000):
     # shifting all points so the center of the point cloud matches the center using absolute coords
     point_cloud.translate(center, relative=False)
 
-    # to do: rotation, fixing the coords they do not align for some reason
+    # rotating
+    rotation_matrix = point_cloud.get_rotation_matrix_from_quaternion(rotation)
+    point_cloud.rotate(rotation_matrix)
+
 
     return point_cloud
 
 
 def get_cloud_of_robot_from_graph(graph) -> list[list[float]]:
 
-    # first we make mjspecs of the robot
-    robot = construct_mjspec_from_graph(graph)
-
-    # make a world for simulation
+    """
+    graph: is either a graph that can be converted to mjspecs with construct_mjspec_from_graph
+            or is an mjspecs of the robot
+    
+    this function will then run a simulation to get the position of the robot parts and generate a point cloud with the core of the robot being on 0,0,0
+    
+    """
+    print(type(graph))
+    if type(graph) == type(nx.DiGraph()):
+        robot = construct_mjspec_from_graph(graph)
+    else:
+        robot = graph
     world = SimpleFlatWorld(floor_size=(20, 20, 0.1), checker_floor=False)
 
     world.spec.add_texture(
@@ -230,48 +241,50 @@ def get_cloud_of_robot_from_graph(graph) -> list[list[float]]:
     # Reset state and time of simulation
     mujoco.mj_resetData(model, data)
     
-    # need to run to update the data
+    # need to run simulation to update the data
     img = single_frame_renderer(model, data, steps=10)
-    
 
 
 
-    # get the core position
-    core = data.geom(f"robot1_core").xpos 
-
+    core = data.geom(f"robot1_core").xpos #+ [0.000, 0.025, 0.100]
     cloud_list = []
-    for edge in graph.edges:
+    for i in range(model.nbody):
+        name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, i)
 
-        # part id
-        id = edge[1]
-        
-        component_type = graph.nodes(data=True)[id]["type"]
 
-        # we only want to find hinges and bricks, since the core has no edges going towards it we don't check it
-        if component_type == None:
+        # data obj has names for each robot part in the form of robot1_edge-partid-component_type
+        # prebuild robots still have component_type last so it will also work for them
+        if len(name)>5:
+            component_type = name[-5:]
+        else:
+            # no clue what it is but not one of the robot components
             continue
+            
 
         component_type = component_type.lower()
-        # data obj has names for each robot part in the form of robot1_edge-partid-component_type 
-        # do make sure the part id is right when errors arise during testing as reusing parts in constructing robots reuses ids which fucks it up
-        edge = f"{edge[0]}-{edge[1]}"
 
-        #substracting the coords of the core to make the core the center at 0,0,0
-        center = (data.geom(f"robot1_{edge}-{id}-{component_type}").xpos-core)/2
-        point_cloud = make_point_cloud(center,component_type)
+        # hinges are made out of 
+        if component_type not in DIMS:
+            continue
 
+    
+
+        # get center of mass
+        center = (data.geom(name).xpos-core)/2
+
+        # get orientation
+        orientation = data.body(name).xquat
         
+        point_cloud = make_point_cloud(center,component_type,orientation)
+
 
 
         cloud_list.append(point_cloud)
         
     
-    cloud_list.append(make_point_cloud([0,0,0],"core"))
-    
-
+    cloud_list.append(make_point_cloud([0,0,0],"core", [0,0,0,0]))
     
     return cloud_list
-
 
 
 if __name__ == "__main__":
