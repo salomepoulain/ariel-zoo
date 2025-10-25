@@ -1,0 +1,222 @@
+(* Canonical grammar String Representation Grammar *)
+(* ========================================= *)
+(*                                           *)
+(* EBNF Notation: ISO/IEC 14977              *)
+(* This grammar defines the canonical string *)
+(* representation for modular robots.        *)
+(*                                           *)
+(* Author: Salomé Poulain                    *)
+(* Version: 1.0                              *)
+
+(* === Main Structure === *)
+
+tree = module, [radial], [axial], [chain] ;
+
+module = module_letter, [rotation_digit] ;
+
+radial = '[', children, ']' ;
+
+axial = '<', children, '>' ;
+
+chain = tree ;
+
+(* === Children === *)
+
+children = child, {child} ;
+
+child = (faces, '(', tree, ')') 
+      | (count_digit, '-(', tree, ')') ;
+
+faces = face_letter, {face_letter} ;
+
+(* === Terminals === *)
+
+(* Module type letters - uppercase *)
+module_letter = 'C' | 'B' | 'H' ;
+
+(* Face letters - lowercase *)
+face_letter = 'l' | 'f' | 'r' | 'b' | 't' ;
+
+(* Rotation: 0-7 for 8 possible orientations (0°, 45°, 90°, ..., 315°) *)
+rotation_digit = '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' ;
+
+(* Count: 1-4 for number of faces *)
+count_digit = '1' | '2' | '3' | '4' ;
+
+(*
+================================================================================
+GRAMMAR DOCUMENTATION
+================================================================================
+
+MODULE TYPES
+------------
+C - Core    Central hub module
+            Radial faces: LEFT, FRONT, RIGHT, BACK (4 faces)
+            Axial faces: TOP, BOTTOM (2 faces)
+            
+B - Brick   Rigid structural module
+            Radial faces: LEFT, TOP, RIGHT, BOTTOM (4 faces)
+            Axial faces: FRONT, BACK (2 faces)
+            
+H - Hinge   Actuated joint module
+            Radial faces: None (0 faces)
+            Axial faces: FRONT, BACK (2 faces)
+            
+
+NOTATION ELEMENTS
+-----------------
+[...]       Square brackets enclose radial children (side branches)
+<...>       Angle brackets enclose axial children (multiple axial faces)
+XXX         Direct concatenation for chain (single axial face continuation)
+
+FACE LETTERS (Context-Dependent)
+---------------------------------
+l - LEFT     
+    Radial: Core, Brick
+    
+f - FRONT    
+    Radial: Core, Brick
+    Axial: Brick, Hinge
+    
+r - RIGHT    
+    Radial: Core, Brick
+    
+b - BACK or BOTTOM (context determines!)
+    As BACK:
+      Radial: Core
+      Axial: Brick, Hinge
+    As BOTTOM:
+      Radial: Brick
+      Axial: Core
+    
+t - TOP      
+    Radial: Brick
+    Axial: Core
+
+DISAMBIGUATION RULES
+--------------------
+- Inside [...]: 'b' and 't' are radial faces
+- Inside <...>: 'b' and 't' are axial faces  
+- For Brick: 'b' in [...] means BOTTOM (radial)
+- For Core: 'b' in [...] means BACK (radial)
+
+COUNT NOTATION
+--------------
+N-(tree)    Shorthand for "all N faces have identical child"
+            The number N must match the total number of attachment faces in context:
+            - Core radial: N must be 4
+            - Core axial: N must be 2
+            - Brick radial: N must be 4
+            - Brick axial: N must be 2
+            - Hinge axial: N must be 2
+
+ROTATION
+--------
+Modules can have optional rotation specified by a single digit after the letter:
+- 0 = 0° (default, can be omitted)
+- 1 = 45°
+- 2 = 90°
+- 3 = 135°
+- 4 = 180°
+- 5 = 225°
+- 6 = 270°
+- 7 = 315°
+
+
+BRACKET USAGE RULES
+-------------------
+1. [...] required when:
+   - Module has radial faces (Core, Brick)
+   - AND attaching children to radial faces
+
+2. <...> required when:
+   - Module has multiple axial faces
+   - AND attaching children to multiple axial faces
+
+3. No brackets (chain) allowed when:
+   - Module has exactly 1 axial face being used
+   - Children continue in sequence via that face
+
+EXAMPLES
+--------
+Simple Core:
+    C[4-(BH)]
+    - Core module
+    - All 4 radial faces have: Brick -> Hinge (via FRONT attachment)
+
+Mixed Radial:
+    C[lf(BH)rb(BB)]
+    - Core module
+    - LEFT and FRONT faces: Brick -> Hinge
+    - RIGHT and BACK faces: Brick -> Brick
+
+Core with Axial:
+    C<2-(H)>
+    - Core module
+    - Both axial faces (TOP and BOTTOM): Hinge
+
+Core with Both:
+    C[4-(BH)]<bt(HH)>
+    - Core module
+    - All 4 radial: Brick -> Hinge
+    - BOTTOM axial: H -> H
+    - TOP axial: H -> H
+
+Brick Chain:
+    BBH
+    - Brick -> Brick -> Hinge
+    - All via FRONT axial face (chain notation)
+
+Complex Structure:
+    B2[t(H)]BBH
+    - Brick with rotation 2 (90°)
+    - TOP radial: Hinge
+    - Followed by chain: Brick -> Brick -> Hinge
+    - First Brick contains 1 TOP Hinge and 1 FRONT Brick
+
+Hinge Chain:
+    HHH
+    - Hinge -> Hinge -> Hinge
+    - Hinges have no radial faces, so only chain possible
+
+Invalid Examples:
+    C[5-(BH)]     (* Core has 4 radial faces, not 5 *)
+    H[l(B)]       (* Hinge has no radial faces *)
+    CCC           (* Core has 2 axial faces, needs <...> not chain *)
+    C8            (* Rotation must be 0-7 *)
+    B[10-(H)]     (* Count cannot exceed 4 *)
+
+VALIDATION RULES
+----------------
+1. Module type must be valid (C, B, H)
+2. Rotation must be 0-7 (single digit)
+3. Face letters must be valid for the module type and context
+4. Count in N-(...) must be 1-4 and match actual number of faces in context
+5. Radial [...] only valid for modules with radial faces
+6. Chain (no brackets) only valid for modules with single axial face in use
+
+ROUND-TRIP PROPERTY
+-------------------
+Using the CanonicalToolKit API:
+
+For any tree:
+    ctk.from_string(ctk.to_string(tree)) ≅ tree (structurally equivalent)
+
+For canonical strings:
+    ctk.to_canonical_string(ctk.from_string(string)) == canonical_form
+    
+Note: 
+- Multiple string representations can parse to the same tree
+- to_string() preserves the tree structure but may not be canonical
+- to_canonical_string() always produces the canonical form with:
+  * Faces in standardized order
+  * Count notation used when all faces have identical children
+  * Consistent bracket usage
+  
+For true round-trip canonicalization:
+    ctk.to_canonical_string(ctk.from_string(string1)) == 
+    ctk.to_canonical_string(ctk.from_string(string2))
+    (if string1 and string2 represent the same structure)
+    
+================================================================================
+*)
