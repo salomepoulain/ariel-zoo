@@ -42,6 +42,11 @@ console = Console()
 RNG = np.random.default_rng(SEED)
 DPI = 300
 
+
+COLOR = {"tator": [1,0,0] , "rotor": [1,0,0] ,
+"brick": [0,0,1],
+"core": [1,1,0]}
+
 DIMS = {"tator": ROTOR_DIMENSIONS , "rotor": ROTOR_DIMENSIONS , # tator stands for stator but we only look at the last 5 letters
 "brick": ArielModulesConfig().BRICK_DIMENSIONS,
 "core": CORE_DIMENSIONS}
@@ -180,11 +185,13 @@ def make_point_cloud(center, type, rotation, nr_of_points = 1000):
     rotation_matrix = point_cloud.get_rotation_matrix_from_quaternion(rotation)
     point_cloud.rotate(rotation_matrix)
 
+    # making the cloud pretty with colors depending on type
+    point_cloud.paint_uniform_color(COLOR[type])
 
     return point_cloud
 
 
-def get_cloud_of_robot_from_graph(graph) -> list[list[float]]:
+def get_cloud_of_robot_from_graph(graph) -> o3d.geometry.PointCloud:
 
     """
     graph: is either a graph that can be converted to mjspecs with construct_mjspec_from_graph
@@ -242,12 +249,12 @@ def get_cloud_of_robot_from_graph(graph) -> list[list[float]]:
     mujoco.mj_resetData(model, data)
     
     # need to run simulation to update the data
-    img = single_frame_renderer(model, data, steps=10)
+    single_frame_renderer(model, data, steps=10)
 
 
 
     core = data.geom(f"robot1_core").xpos #+ [0.000, 0.025, 0.100]
-    cloud_list = []
+    robot_cloud = make_point_cloud([0,0,0],"core", [0,0,0,0])
     for i in range(model.nbody):
         name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, i)
 
@@ -275,16 +282,12 @@ def get_cloud_of_robot_from_graph(graph) -> list[list[float]]:
         # get orientation
         orientation = data.body(name).xquat
         
-        point_cloud = make_point_cloud(center,component_type,orientation)
-
-
-
-        cloud_list.append(point_cloud)
+        # making cloud and adding it to the core cloud
+        robot_cloud += make_point_cloud(center,component_type,orientation)
         
     
-    cloud_list.append(make_point_cloud([0,0,0],"core", [0,0,0,0]))
     
-    return cloud_list
+    return robot_cloud
 
 
 if __name__ == "__main__":
