@@ -490,6 +490,48 @@ def get_derived_population_properties(
     return derived_pop_props
 
 
+# EUCLIDEAN DISTANCE SETTING & FUNCTION
+from ariel_experiments.characterize.individual import (
+    analyze_branching,
+    analyze_number_of_limbs,
+    analyze_length_of_limbs,
+    analyze_coverage,
+    analyze_proportion_spatial,
+    analyze_symmetry,
+    analyze_size,
+    analyze_mass,
+    analyze_joints,
+)
+
+
+# Defining the coordinates/vectors that describe individuals
+ANALYZERS: dict[str, PropertyAnalyzer[float]] = {
+    "branching": analyze_branching,
+    "number_of_limbs": analyze_number_of_limbs,
+    "length_of_limbs": analyze_length_of_limbs,
+    "coverage": analyze_coverage,
+    "proportion_spatial": analyze_proportion_spatial,
+    "symmetry": analyze_symmetry,
+    "size": analyze_size,
+    "mass": analyze_mass,
+    "joints": analyze_joints,
+}
+
+def get_morphological_vector(individual: DiGraph) -> np.ndarray:
+    vector = []
+    for name, func in ANALYZERS.items():
+        result = func(individual)
+        value = list(result.values())[0]
+        vector.append(float(value))
+    return np.array(vector, dtype=float)
+
+# Defining the Euclidean distance between two individuals
+def euclidean_distance(ind1: DiGraph, ind2: DiGraph) -> float:
+    v1 = get_morphological_vector(ind1)
+    v2 = get_morphological_vector(ind2)
+    return float(np.linalg.norm(v1 - v2))
+
+
 # TODO: add a way to apply custom derivations that dont map 1:1 on property
 def get_custom_derived_population_properties(
     raw_ppulation_properties: RawPopulationProperties,
