@@ -169,14 +169,18 @@ def view(
     return data
 
 
-def make_point_cloud(center, type, rotation, nr_of_points = 1000):
+def make_point_cloud(center, type, rotation, nr_of_points = 1_000) -> o3d.geometry.PointCloud:
 
-    width, height,depth = DIMS[type]
-    # making a mesh of the component
-    component_mesh = o3d.geometry.TriangleMesh.create_box(width=width, height=height, depth=depth)
+    # making the outline of component
+    cube_max = np.array(DIMS[type])     # upper corner
 
-    # sampling points on the mesh, not in the mesh
-    point_cloud = component_mesh.sample_points_poisson_disk(number_of_points=nr_of_points)
+    # sampeling points in the outlined area
+    points = np.random.uniform(high=cube_max, size=(nr_of_points, 3))
+
+    # transforming to pointcloud object
+    point_cloud = o3d.geometry.PointCloud()
+    point_cloud.points = o3d.utility.Vector3dVector(points)
+
 
     # shifting all points so the center of the point cloud matches the center using absolute coords
     point_cloud.translate(center, relative=False)
@@ -191,7 +195,7 @@ def make_point_cloud(center, type, rotation, nr_of_points = 1000):
     return point_cloud
 
 
-def get_cloud_of_robot_from_graph(graph) -> o3d.geometry.PointCloud:
+def get_cloud_of_robot_from_graph(graph:nx.DiGraph) -> o3d.geometry.PointCloud: 
 
     """
     graph: is either a graph that can be converted to mjspecs with construct_mjspec_from_graph
@@ -253,7 +257,7 @@ def get_cloud_of_robot_from_graph(graph) -> o3d.geometry.PointCloud:
 
 
 
-    core = data.geom(f"robot1_core").xpos #+ [0.000, 0.025, 0.100]
+    core = data.geom(f"robot1_core").xpos 
     robot_cloud = make_point_cloud([0,0,0],"core", [0,0,0,0])
     for i in range(model.nbody):
         name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, i)
@@ -289,6 +293,19 @@ def get_cloud_of_robot_from_graph(graph) -> o3d.geometry.PointCloud:
     
     return robot_cloud
 
+
+def simple_cloud_distance(graph1:nx.DiGraph, graph2:nx.DiGraph) -> float:
+    """
+    Calculates distance between the pointcloud of 2 robots
+
+    """
+
+    cloud1 = get_cloud_of_robot_from_graph(graph1)
+    cloud2 = get_cloud_of_robot_from_graph(graph2)
+
+
+    # currently returns the Chamfer distance
+    return (np.sum(cloud1.compute_point_cloud_distance(cloud2)) + np.sum(cloud2.compute_point_cloud_distance(cloud1)))
 
 if __name__ == "__main__":
 
