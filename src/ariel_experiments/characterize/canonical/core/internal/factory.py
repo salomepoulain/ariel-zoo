@@ -8,8 +8,8 @@ from ariel.body_phenotypes.robogen_lite.config import (
     ModuleRotationsIdx,
     ModuleType,
 )
-from ariel_experiments.characterize.canonical.canonical_node import (
-    CanonicalNode,
+from ariel_experiments.characterize.canonical.core.node import (
+    CanonicalizableNode,
 )
 from ariel_experiments.characterize.canonical.configs.canonical_config import (
     CANONICAL_CONFIGS,
@@ -28,7 +28,7 @@ class TreeFactory:
     }
 
     @staticmethod
-    def id_assigner(node: CanonicalNode) -> None:
+    def id_assigner(node: CanonicalizableNode) -> None:
         if "max_id" not in node.tree_tags:
             node.tree_tags["max_id"] = 0
 
@@ -60,7 +60,7 @@ class TreeFactory:
         rotation: int = 0,
         *,
         auto_ids: bool = True,
-    ) -> CanonicalNode:
+    ) -> CanonicalizableNode:
         """
         Create a root CanonicalNode.
 
@@ -70,7 +70,7 @@ class TreeFactory:
 
         kwargs = {
             "module_type": module_type,
-            "rotation": ModuleRotationsIdx(rotation).value,
+            "local_rotation_state": ModuleRotationsIdx(rotation).value,
             "config": cls.pre_defined_configs[module_type],
         }
 
@@ -79,7 +79,7 @@ class TreeFactory:
             kwargs["node_tags"] = {"id": 0}
             kwargs["tree_tags"] = {"max_id": 0}
 
-        return CanonicalNode(**kwargs)
+        return CanonicalizableNode(**kwargs)
 
     @classmethod
     def node(
@@ -88,13 +88,13 @@ class TreeFactory:
         rotation: int = 0,
         *,
         node_tags: dict[str, Any] | None = None,
-    ) -> CanonicalNode:
+    ) -> CanonicalizableNode:
         module_type = TreeFactory._string_to_module_type(module_type_str)
         if not node_tags:
             node_tags = {}
-        return CanonicalNode(
+        return CanonicalizableNode(
             module_type=module_type,
-            rotation=ModuleRotationsIdx(rotation).value,
+            local_rotation_state=ModuleRotationsIdx(rotation).value,
             config=cls.pre_defined_configs[module_type],
             node_tags=node_tags,
         )
@@ -102,12 +102,12 @@ class TreeFactory:
     @classmethod
     def brick(
         cls, rotation: int = 0, *, node_tags: dict[str, Any] | None = None,
-    ) -> CanonicalNode:
+    ) -> CanonicalizableNode:
         if not node_tags:
             node_tags = {}
-        return CanonicalNode(
+        return CanonicalizableNode(
             module_type=ModuleType.BRICK,
-            rotation=ModuleRotationsIdx(rotation).value,
+            local_rotation_state=ModuleRotationsIdx(rotation).value,
             config=cls.pre_defined_configs[ModuleType.BRICK],
             node_tags=node_tags,
         )
@@ -115,12 +115,12 @@ class TreeFactory:
     @classmethod
     def hinge(
         cls, rotation: int = 0, *, node_tags: dict[str, Any] | None = None,
-    ) -> CanonicalNode:
+    ) -> CanonicalizableNode:
         if not node_tags:
             node_tags = {}
-        return CanonicalNode(
+        return CanonicalizableNode(
             module_type=ModuleType.HINGE,
-            rotation=ModuleRotationsIdx(rotation).value,
+            local_rotation_state=ModuleRotationsIdx(rotation).value,
             config=cls.pre_defined_configs[ModuleType.HINGE],
             node_tags=node_tags,
         )
@@ -132,9 +132,9 @@ class TreeFactory:
         *,
         auto_id: bool = False,
         skip_type: ModuleType = ModuleType.NONE,
-    ) -> CanonicalNode:
+    ) -> CanonicalizableNode:
 
-        node_map: dict[int, CanonicalNode] = {}
+        node_map: dict[int, CanonicalizableNode] = {}
 
         def _fill_in(parent_id: int) -> None:
             parent = node_map[parent_id]
@@ -172,8 +172,9 @@ class TreeFactory:
         return node_map[root_id]
 
     # TODO: fix the crazy complexity
+    # TODO: fix the bug for core b -> should be back/bottom
     @classmethod
-    def from_string(cls, s: str) -> CanonicalNode:
+    def from_string(cls, s: str) -> CanonicalizableNode:
         """
         Parse a string into a CanonicalNode tree.
         See docs/GRAMMAR.ebnf for the complete canonical string grammar specification.
@@ -186,7 +187,7 @@ class TreeFactory:
         ord_ = ord
         min_ = min
 
-        def parse_node(i: int) -> tuple[CanonicalNode, int]:
+        def parse_node(i: int) -> tuple[CanonicalizableNode, int]:
             """Parse a single node and return (node, next_index)."""
             # Create node from letter
             c = s[i]
@@ -199,14 +200,14 @@ class TreeFactory:
                 rotation = rotation * 10 + int(s[i])
                 i += 1
             if rotation:
-                node.rotation = rotation
+                node.local_rotation_state = rotation
 
             # Cache face orders
             radial_faces = node.config.radial_face_order
             axial_faces = node.config.axial_face_order
 
             def parse_children_group(
-                i: int, parent: CanonicalNode, faces: list, end_char: str,
+                i: int, parent: CanonicalizableNode, faces: list, end_char: str,
             ) -> int:
                 """Parse a [...] or <...> group and attach children."""
                 while i < s_len and s[i] != end_char:

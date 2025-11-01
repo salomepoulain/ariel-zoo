@@ -1,4 +1,4 @@
-from __future__ import annotations 
+from __future__ import annotations
 
 from typing import Any
 
@@ -9,12 +9,12 @@ from ariel.body_phenotypes.robogen_lite.config import (
     ModuleRotationsIdx,
     ModuleType,
 )
-from ariel_experiments.characterize.canonical.canonical_node import (
-    CanonicalNode,
+from ariel_experiments.characterize.canonical.core.node import (
+    CanonicalizableNode,
 )
 
 
-class TreeExporter:
+class TreeSerializer:
     """
     Constructs CanonicalNode trees from various formats.
     Handles all ID generation, string parsing, and config lookups.
@@ -22,43 +22,51 @@ class TreeExporter:
 
     @staticmethod
     def to_graph(
-        root_node: CanonicalNode, skip_type: ModuleType = ModuleType.NONE
+        root_node: CanonicalizableNode, skip_type: ModuleType = ModuleType.NONE
     ) -> nx.DiGraph[Any]:
         """
         Adds id's if there aren't any, then converts to graph.
         """
+
         # Ensure all nodes have IDs
         if not root_node.node_tags or "id" not in root_node.node_tags:
-            id_counter = [0]
+            def id_assigner(node: CanonicalizableNode) -> None:
+                if "max_id" not in node.tree_tags:
+                    node.tree_tags["max_id"] = 0
 
-            def assign_id(node: CanonicalNode):
-                if not node.node_tags or "id" not in node.node_tags:
-                    if not node.node_tags:
-                        node.node_tags = {}
-                    node.node_tags["id"] = id_counter[0]
-                    id_counter[0] += 1
+                if "id" in node.node_tags:
+                    node.tree_tags["max_id"] = max(node.tree_tags["max_id"], node.node_tags["id"])
+                else:
+                    node.tree_tags["max_id"] += 1
+                    node.node_tags["id"] = node.tree_tags["max_id"]
 
-            root_node.traverse_depth_first(assign_id, pre_order=True)
+            # leave original one unchanged
+            root_node = root_node.copy()
+            root_node.node_tags = {"id": 0}
+            root_node.tree_tags = {"max_id": 0}
+            root_node.attach_process_fn = id_assigner
+            # copy_node will
+            root_node = root_node.copy()
 
         graph = nx.DiGraph()
 
-        def _add_node_and_edge(node: CanonicalNode) -> None:
+        def _add_node_and_edge(node: CanonicalizableNode) -> None:
             """Visitor function executed once per node during traversal."""
             node_attrs = {
                 "type": node.module_type.name,
-                "rotation": ModuleRotationsIdx(node.rotation).name,
+                "rotation": ModuleRotationsIdx(node.local_rotation_state).name,
             }
             graph.add_node(node.node_tags["id"], **node_attrs)
 
             if skip_type == ModuleType.NONE:
-                for face, child_node in node.children:
+                for face, child_node in node.children_items:
                     graph.add_edge(
                         node.node_tags["id"],
                         child_node.node_tags["id"],
                         face=face.name,
                     )
             else:
-                for face, child_node in node.children:
+                for face, child_node in node.children_items:
                     if child_node.module_type != skip_type:
                         graph.add_edge(
                             node.node_tags["id"],
@@ -70,17 +78,17 @@ class TreeExporter:
         return graph
 
     @classmethod
-    def to_string(cls, node: CanonicalNode) -> str:
+    def to_string(cls, node: CanonicalizableNode) -> str:
         """Generates the canonical string representation."""
         name = node.module_type.name[0]
-        if node.rotation != 0:
-            name += str(int(node.rotation))
+        if node.local_rotation_state != 0:
+            name += str(int(node.local_rotation_state))
 
         # Separate axial and radial children
         axial_children = []
         radial_children = []
 
-        for face, child in node.children:
+        for face, child in node.children_items:
             if face in node.config.axial_face_order:
                 axial_children.append((face, child))
             else:
@@ -111,8 +119,8 @@ class TreeExporter:
     @classmethod
     def _format_children_group(
         cls,
-        node: CanonicalNode,
-        children: list[tuple[ModuleFaces, CanonicalNode]],
+        node: CanonicalizableNode,
+        children: list[tuple[ModuleFaces, CanonicalizableNode]],
         uppercase: bool,
     ) -> str:
         """Helper for to_string: Formats children with smart deduplication."""
