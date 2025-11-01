@@ -218,8 +218,9 @@ def make_point_cloud(center, type, rotation, nr_of_points = 1_000) -> o3d.geomet
 def get_cloud_of_robot_from_graph(graph:nx.DiGraph, node:int = 0) -> o3d.geometry.PointCloud: 
 
     """
-    graph: is either a graph that can be converted to mjspecs with construct_mjspec_from_graph
-            or is an mjspecs of the robot
+    graph: is a DiGraph of a robot
+    node: the node id from which to go down to generate the robot, primarily used for recursion of this function
+            can be used for to generate point clouds of a specific subtree in the DiGraph
     
     this will make point clouds and apply translation and rotation to make it match the simulations
     
@@ -280,18 +281,48 @@ def get_cloud_of_robot_from_graph(graph:nx.DiGraph, node:int = 0) -> o3d.geometr
     return cloud
 
 
-def simple_cloud_distance(graph1:nx.DiGraph, graph2:nx.DiGraph) -> float:
+def simple_cloud_distance(graph1:nx.DiGraph|o3d.geometry.PointCloud, graph2:nx.DiGraph|o3d.geometry.PointCloud) -> float:
     """
-    Calculates distance between the pointcloud of 2 robots
-
+    Calculates distance between the point cloud of 2 robots
+    graph1: either a graph or point cloud of a robot to be compared with graph 2
+    graph2: either a graph or point cloud of a robot to be compared with graph 1
     """
 
-    cloud1 = get_cloud_of_robot_from_graph(graph1)
-    cloud2 = get_cloud_of_robot_from_graph(graph2)
+    # checks whether we got point clouds or graphs as input, if graphs are given point clouds are generated
+    if type(graph1) == nx.DiGraph:
+        cloud1 = get_cloud_of_robot_from_graph(graph1)
+    else:
+        cloud1 = graph1
+    
+    if type(graph2) == nx.DiGraph:
+        cloud2 = get_cloud_of_robot_from_graph(graph2)
+    else:
+        cloud2 = graph2
 
+    # set max distance
+    distance = float("inf")
 
-    # currently returns the Chamfer distance
-    return (np.sum(cloud1.compute_point_cloud_distance(cloud2)) + np.sum(cloud2.compute_point_cloud_distance(cloud1)))
+    # compare 24 different orientations to see which orientation has the smallest distance
+    for direction in BASE_ANGLES:
+        # using base angles to make it all 6 directions
+        cloud1.rotate(cloud1.get_rotation_matrix_from_quaternion(BASE_ANGLES[direction]), center=[0,0,0])
+
+        for i in range(4):
+            # "rolling" the robot for the other 4 orientations
+            quat = np.roll((qnp.as_float_array(qnp.from_euler_angles([
+                np.deg2rad(180),
+                -np.deg2rad(180 - 90*i),
+                np.deg2rad(0),
+                ]))), shift=-1)
+            cloud1.rotate(cloud1.get_rotation_matrix_from_quaternion(quat), center=[0,0,0])
+
+            # find smallest distance
+            distance2 = (np.sum(cloud1.compute_point_cloud_distance(cloud2)) + np.sum(cloud2.compute_point_cloud_distance(cloud1)))
+            if distance > distance2:
+                distance = distance2
+
+    # currently returns the smallest Chamfer distance
+    return distance
 
 if __name__ == "__main__":
 
