@@ -4,6 +4,7 @@ from pathlib import Path
 import mujoco
 import networkx as nx
 import numpy as np
+import quaternion as qnp
 import open3d as o3d
 
 # Third-party libraries
@@ -43,13 +44,7 @@ RNG = np.random.default_rng(SEED)
 DPI = 300
 
 
-COLOR = {"tator": [1,0,0] , "rotor": [1,0,0] ,
-"brick": [0,0,1],
-"core": [1,1,0]}
 
-DIMS = {"tator": ROTOR_DIMENSIONS , "rotor": ROTOR_DIMENSIONS , # tator stands for stator but we only look at the last 5 letters
-"brick": ArielModulesConfig().BRICK_DIMENSIONS,
-"core": CORE_DIMENSIONS}
 
 from IPython.display import display
 
@@ -168,6 +163,31 @@ def view(
     display(img)
     return data
 
+# coloring for each component
+COLOR = { "hinge":[1,0,0] , 
+"brick": [0,0,1],
+"core": [1,1,0]}
+
+# translation to move component to the correct face
+SPACING = {"TOP": [0,0,0.5] ,
+"BOTTOM": [0,0,-0.5],
+"RIGHT": [0.5,0,0],
+"LEFT": [-0.5,0,0] ,
+"FRONT": [0,0.5,0],
+"BACK": [0,-0.5,0]}
+
+# size of each component
+DIMS = {"hinge": [0.025,0.05,0.025] , # place holder dim for now will import later
+"brick": ArielModulesConfig().BRICK_DIMENSIONS,
+"core": CORE_DIMENSIONS}
+
+# angles associated with the different faces, used to make components face the right direction
+BASE_ANGLES = {'TOP': [0.707, 0.707, 0.0, 0.0],
+ 'BOTTOM': [-0.0, 0.0, -0.707, 0.707],
+ 'LEFT': [0.707, -0.0, 0.0, 0.707],
+ 'RIGHT': [-0.707, 0.0, 0.0, 0.707],
+ 'FRONT': [1.0, 0.0, 0.0, 0.0],
+ 'BACK': [-0.0, 0.0, 0.0, 1.0]}
 
 def make_point_cloud(center, type, rotation, nr_of_points = 1_000) -> o3d.geometry.PointCloud:
 
@@ -195,103 +215,69 @@ def make_point_cloud(center, type, rotation, nr_of_points = 1_000) -> o3d.geomet
     return point_cloud
 
 
-def get_cloud_of_robot_from_graph(graph:nx.DiGraph) -> o3d.geometry.PointCloud: 
+def get_cloud_of_robot_from_graph(graph:nx.DiGraph, node:int = 0) -> o3d.geometry.PointCloud: 
 
     """
     graph: is either a graph that can be converted to mjspecs with construct_mjspec_from_graph
             or is an mjspecs of the robot
     
-    this function will then run a simulation to get the position of the robot parts and generate a point cloud with the core of the robot being on 0,0,0
+    this will make point clouds and apply translation and rotation to make it match the simulations
     
     """
-
-    if type(graph) == type(nx.DiGraph()):
-        robot = construct_mjspec_from_graph(graph)
-    else:
-        robot = graph
-    world = SimpleFlatWorld(floor_size=(20, 20, 0.1), checker_floor=False)
-
-    world.spec.add_texture(
-        name="custom_grid",
-        type=mujoco.mjtTexture.mjTEXTURE_2D,
-        builtin=mujoco.mjtBuiltin.mjBUILTIN_CHECKER,
-        rgb1=[0.9, 0.9, 0.9],
-        rgb2=[0.95, 0.95, 0.95],
-        width=800,
-        height=800,
-    )
-    world.spec.add_material(
-        name="custom_floor_material",
-        textures=["", "custom_grid"],
-        texrepeat=[5, 5],
-        texuniform=True,
-        reflectance=0.05,
-    )
-
-        
-    # Update floor geom
-    for geom in world.spec.worldbody.geoms:
-        if geom.name == "simple-flat-world":  # or whatever the floor_name is
-            geom.material = "custom_floor_material"
-            break
-
-    for geom in world.spec.worldbody.geoms:
-        if geom.name == "floor":
-            geom.material = "custom_floor_material"
-            break
-        
-
-
-    # Spawn the robot at the world
-    world.spawn(robot.spec)
-
-    # Compile the model
-    model = world.spec.compile()
-    data = mujoco.MjData(model)
-
-    # Reset state and time of simulation
-    mujoco.mj_resetData(model, data)
+    # collect orientation and type of parent
+    orientation = int(graph.nodes(data=True)[node]["rotation"].lower()[4:])
     
-    # need to run simulation to update the data
-    single_frame_renderer(model, data, steps=10)
+    node_type = graph.nodes(data=True)[node]["type"].lower()
+    cloud = make_point_cloud([0,0,0], node_type, [0,0,0,0], nr_of_points=1_000)
+    
+    for i in graph.edges(node, data=True):
 
+        # collect orientation and type of child component
+        component_type = graph.nodes(data=True)[i[1]]["type"].lower()
+        direction = i[-1]["face"]
 
-
-    core = data.geom(f"robot1_core").xpos 
-    robot_cloud = make_point_cloud([0,0,0],"core", [0,0,0,0])
-    for i in range(model.nbody):
-        name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, i)
-
-
-        # data obj has names for each robot part in the form of robot1_edge-partid-component_type
-        # prebuild robots still have component_type last so it will also work for them
-        if len(name)>5:
-            component_type = name[-5:]
-        else:
-            # no clue what it is but not one of the robot components so:
-            continue
-            
-
-        component_type = component_type.lower()
-
-        # hinges are made out of 
+        # check for none types
         if component_type not in DIMS:
             continue
 
-    
+        # makes point cloud
+        sub_cloud = get_cloud_of_robot_from_graph(graph,i[1])
 
-        # get center of mass
-        center = (data.geom(name).xpos-core)/2
+        # rotation matrix
+        rotation_matrix = sub_cloud.get_rotation_matrix_from_quaternion(BASE_ANGLES[direction])
 
-        # get orientation
-        orientation = data.body(name).xquat
+        # calculating movement to correct face, aka 0.5 own size + 0.5 parent size in a direction
+        translation = (np.array(DIMS[component_type][1]) * SPACING[direction] ) + (np.array(DIMS[node_type][1]) * SPACING[direction])
+
+        # core attachment point is not always centered
+        if node_type == "core" and direction not in ["TOP","BOTTOM"]:
+            # moving component down so it touches the ground
+            translation += (np.array(DIMS["core"]) * [0,0,-0.25])
+
         
-        # making cloud and adding it to the core cloud
-        robot_cloud += make_point_cloud(center,component_type,orientation)
+        # rotating to face the correct way
         
-    
-    
-    return robot_cloud
+        sub_cloud.rotate(rotation_matrix, center=[0,0,0])
+
+        # moving cloud to the correct face
+        sub_cloud.translate(translation)
+
+
+        # merging cloud
+        cloud += sub_cloud
+        
+        
+    # rotations of components around their parent
+    quat = np.roll((qnp.as_float_array(qnp.from_euler_angles([
+    np.deg2rad(180),
+    -np.deg2rad(180 - orientation),
+    np.deg2rad(0),
+    ]))), shift=-1)
+
+    rotation_matrix = cloud.get_rotation_matrix_from_quaternion(quat)
+    cloud.rotate(rotation_matrix, center=[0,0,0])
+
+    return cloud
 
 
 def simple_cloud_distance(graph1:nx.DiGraph, graph2:nx.DiGraph) -> float:
