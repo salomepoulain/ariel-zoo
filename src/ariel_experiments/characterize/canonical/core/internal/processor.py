@@ -2,33 +2,50 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     import networkx as nx
 
+    from ariel.body_phenotypes.robogen_lite.config import ModuleFaces
     from ariel_experiments.characterize.canonical.core.node import (
         CanonicalizableNode,
     )
 
 
 class TreeProcessor:
-
     @staticmethod
-    def _canonicalize_child_order(node: CanonicalizableNode) -> None:
-        highest_face = node.highest_priority_child_face
+    def _calc_highest_priority_child_face(
+        node: CanonicalizableNode,
+    ) -> ModuleFaces | None:
+        """Returns the face where the child is attached with the higest priority."""
+        if not node.has_children or len(node.config.radial_face_order) == 0:
+            return None
 
+        max_priority = 0
+        winning_face = None
+        for face, child in node.radial_children_items:
+            if child.full_priority > max_priority:
+                max_priority = child.full_priority
+                winning_face = face
+        return winning_face
+
+    @classmethod
+    def _canonicalize_child_order(cls, node: CanonicalizableNode) -> None:
+        """How many shifts are needed to get 1 face to a different face?"""
+        highest_face: ModuleFaces | None = (
+            cls._calc_highest_priority_child_face(node)
+        )
         if highest_face is None or highest_face == node.priority_face:
             return
 
         shift = node.calc_shift_face_to_target(highest_face, node.priority_face)
-        node.shift_radial_children_local(shift)
+        node.shift_visual_rotation(shift)
 
     @staticmethod
     def _normalize_rotations(node: CanonicalizableNode) -> CanonicalizableNode:
-        shift = node.global_rotation_state
-        node.shift_radial_children_local(shift)
+        shift = node.internal_rotation // node.config.unique_rotation_amt
+        node.shift_internal_rotation(shift)
         return node
 
     @classmethod
@@ -53,7 +70,7 @@ class TreeProcessor:
         )
 
         if zero_root_angle:
-            node.local_rotation_state = 0
+            node.internal_rotation = 0
 
         return node
 
@@ -206,7 +223,7 @@ class TreeProcessor:
         return result_per_radius
 
     @classmethod
-    def collect_tree_neighbourhoods(
+    def collect_neighbourhoods(
         cls,
         tree: CanonicalizableNode,
         serializer_fn: Callable[[CanonicalizableNode], Any] | None = None,
@@ -285,6 +302,8 @@ class TreeProcessor:
 
 
 if __name__ == "__main__":
+    from rich.console import Console
+
     from ariel_experiments.characterize.canonical.core.internal.serializer import (
         TreeSerializer,
     )
@@ -294,7 +313,7 @@ if __name__ == "__main__":
     from ariel_experiments.utils.initialize import (
         generate_random_individual,
     )
-    from rich.console import Console
+
     console = Console()
 
     individual = generate_random_individual(seed=41)

@@ -22,21 +22,10 @@ class TreeFactory:
     Handles all ID generation, string parsing, and config lookups.
     """
 
-    pre_defined_configs = CANONICAL_CONFIGS
-    module_by_letter: dict[str, ModuleType] = {
+    PRE_DEFINED_CONFIGS = CANONICAL_CONFIGS
+    MODULE_BY_LETTER: dict[str, ModuleType] = {
         mt.name[0]: mt for mt in ModuleType
     }
-
-    @staticmethod
-    def id_assigner(node: CanonicalizableNode) -> None:
-        if "max_id" not in node.tree_tags:
-            node.tree_tags["max_id"] = 0
-
-        if "id" in node.node_tags:
-            node.tree_tags["max_id"] = max(node.tree_tags["max_id"], node.node_tags["id"])
-        else:
-            node.tree_tags["max_id"] += 1
-            node.node_tags["id"] = node.tree_tags["max_id"]
 
     @staticmethod
     def _string_to_module_type(s: str) -> ModuleType:
@@ -67,19 +56,17 @@ class TreeFactory:
         If auto_ids=True, child id's will automatically increment using a shared ID counter.
         """
         module_type = cls._string_to_module_type(module_type_str)
-
         kwargs = {
             "module_type": module_type,
-            "local_rotation_state": ModuleRotationsIdx(rotation).value,
-            "config": cls.pre_defined_configs[module_type],
+            "internal_rotation": ModuleRotationsIdx(rotation).value,
+            "config": cls.PRE_DEFINED_CONFIGS[module_type],
         }
+        root = CanonicalizableNode(**kwargs)
 
         if auto_ids:
-            kwargs["attach_process_fn"] = cls.id_assigner
-            kwargs["node_tags"] = {"id": 0}
-            kwargs["tree_tags"] = {"max_id": 0}
+            root.add_id_tags()
 
-        return CanonicalizableNode(**kwargs)
+        return root
 
     @classmethod
     def node(
@@ -92,38 +79,47 @@ class TreeFactory:
         module_type = TreeFactory._string_to_module_type(module_type_str)
         if not node_tags:
             node_tags = {}
-        return CanonicalizableNode(
+        node = CanonicalizableNode(
             module_type=module_type,
-            local_rotation_state=ModuleRotationsIdx(rotation).value,
-            config=cls.pre_defined_configs[module_type],
-            node_tags=node_tags,
+            internal_rotation=ModuleRotationsIdx(rotation).value,
+            config=cls.PRE_DEFINED_CONFIGS[module_type],
         )
+        node.node_tags.update(node_tags)
+        return node
 
     @classmethod
     def brick(
-        cls, rotation: int = 0, *, node_tags: dict[str, Any] | None = None,
+        cls,
+        rotation: int = 0,
+        *,
+        node_tags: dict[str, Any] | None = None,
     ) -> CanonicalizableNode:
         if not node_tags:
             node_tags = {}
-        return CanonicalizableNode(
+        brick_node = CanonicalizableNode(
             module_type=ModuleType.BRICK,
-            local_rotation_state=ModuleRotationsIdx(rotation).value,
-            config=cls.pre_defined_configs[ModuleType.BRICK],
-            node_tags=node_tags,
+            internal_rotation=ModuleRotationsIdx(rotation).value,
+            config=cls.PRE_DEFINED_CONFIGS[ModuleType.BRICK],
         )
+        brick_node.node_tags.update(node_tags)
+        return brick_node
 
     @classmethod
     def hinge(
-        cls, rotation: int = 0, *, node_tags: dict[str, Any] | None = None,
+        cls,
+        rotation: int = 0,
+        *,
+        node_tags: dict[str, Any] | None = None,
     ) -> CanonicalizableNode:
         if not node_tags:
             node_tags = {}
-        return CanonicalizableNode(
+        hinge_node = CanonicalizableNode(
             module_type=ModuleType.HINGE,
-            local_rotation_state=ModuleRotationsIdx(rotation).value,
-            config=cls.pre_defined_configs[ModuleType.HINGE],
-            node_tags=node_tags,
+            internal_rotation=ModuleRotationsIdx(rotation).value,
+            config=cls.PRE_DEFINED_CONFIGS[ModuleType.HINGE],
         )
+        hinge_node.node_tags.update(node_tags)
+        return hinge_node
 
     @classmethod
     def from_graph(
@@ -133,12 +129,31 @@ class TreeFactory:
         auto_id: bool = False,
         skip_type: ModuleType = ModuleType.NONE,
     ) -> CanonicalizableNode:
-
         node_map: dict[int, CanonicalizableNode] = {}
 
-        def _fill_in(parent_id: int) -> None:
-            parent = node_map[parent_id]
-            for _, child_id, edge_data in graph.out_edges(parent_id, data=True):
+        # Find and create root node
+        root_id = next(n for n in graph.nodes() if graph.in_degree(n) == 0)
+        root_attrs = graph.nodes[root_id]
+
+        node_map[root_id] = cls.create_root(
+            module_type_str=root_attrs["type"],
+            rotation=ModuleRotationsIdx[root_attrs["rotation"]].value,
+            auto_ids=auto_id,
+        )
+
+        if auto_id:
+            root = node_map[root_id]
+            root.node_tags["id"] = root_id
+            root.tree_tags["max_id"] = root_id
+
+        # Build tree structure - process nodes in topological order
+        for node_id in nx.topological_sort(graph):
+            if node_id not in node_map:
+                continue
+
+            parent = node_map[node_id]
+
+            for _, child_id, edge_data in graph.out_edges(node_id, data=True):
                 child_type = ModuleType[graph.nodes[child_id]["type"]]
                 if child_type == skip_type:
                     continue
@@ -148,28 +163,26 @@ class TreeFactory:
                     node_map[child_id] = cls.node(
                         module_type_str=attrs["type"],
                         rotation=ModuleRotationsIdx[attrs["rotation"]].value,
-                        node_tags={"id": child_id} if auto_id else {},
+                        node_tags={"id": child_id} if auto_id else None,
                     )
+
+                    if auto_id:
+                        parent.tree_tags["max_id"] = max(
+                            parent.tree_tags["max_id"],
+                            child_id
+                        )
 
                 child_node = node_map[child_id]
                 parent[ModuleFaces[edge_data["face"]]] = child_node
-                _fill_in(child_id)
-
-        # (just to assume it doesnt always start with id = 0)
-        root_id = next(n for n in graph.nodes() if graph.in_degree(n) == 0)
-        root_attrs = graph.nodes[root_id]
-        node_map[root_id] = cls.create_root(
-            module_type_str=root_attrs["type"],
-            rotation=ModuleRotationsIdx[root_attrs["rotation"]].value,
-            auto_ids=auto_id,
-        )
-
-        if auto_id:
-            node_map[root_id].node_tags["id"] = root_id
-
-        _fill_in(root_id)
 
         return node_map[root_id]
+
+
+    # def from_string(cls, s: str) -> CanonicalizableNode:
+    #     module_type_parent = cls.MODULE_BY_LETTER[s[0]]
+    #     rotation= s[1] if # it can convert to a number between 0 and 7, else rottaion=0
+    #     axial_children =
+
 
     # TODO: fix the crazy complexity
     # TODO: fix the bug for core b -> should be back/bottom
@@ -200,14 +213,17 @@ class TreeFactory:
                 rotation = rotation * 10 + int(s[i])
                 i += 1
             if rotation:
-                node.local_rotation_state = rotation
+                node.internal_rotation = rotation
 
             # Cache face orders
             radial_faces = node.config.radial_face_order
             axial_faces = node.config.axial_face_order
 
             def parse_children_group(
-                i: int, parent: CanonicalizableNode, faces: list, end_char: str,
+                i: int,
+                parent: CanonicalizableNode,
+                faces: list[ModuleFaces],
+                end_char: str,
             ) -> int:
                 """Parse a [...] or <...> group and attach children."""
                 while i < s_len and s[i] != end_char:
@@ -240,8 +256,12 @@ class TreeFactory:
                     i += 1  # Skip ')'
 
                     # Attach child to each specified face
+                    # Attach child to each specified face
                     for letter in face_letters:
-                        parent[letter] = child
+                        for face in faces:
+                            if letter == face.name[0].lower():
+                                parent[face.name] = child
+                                break  # Move to next letter after first match
 
                 return i + 1  # Skip ']' or '>'
 

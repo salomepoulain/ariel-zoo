@@ -7,7 +7,6 @@ import networkx as nx
 from ariel.body_phenotypes.robogen_lite.config import (
     ModuleFaces,
     ModuleRotationsIdx,
-    ModuleType,
 )
 from ariel_experiments.characterize.canonical.core.node import (
     CanonicalizableNode,
@@ -22,69 +21,47 @@ class TreeSerializer:
 
     @staticmethod
     def to_graph(
-        root_node: CanonicalizableNode, skip_type: ModuleType = ModuleType.NONE
+        root_node: CanonicalizableNode
     ) -> nx.DiGraph[Any]:
         """
         Adds id's if there aren't any, then converts to graph.
+        Creates a copy to avoid modifying the original tree.
         """
-
-        # Ensure all nodes have IDs
-        if not root_node.node_tags or "id" not in root_node.node_tags:
-            def id_assigner(node: CanonicalizableNode) -> None:
-                if "max_id" not in node.tree_tags:
-                    node.tree_tags["max_id"] = 0
-
-                if "id" in node.node_tags:
-                    node.tree_tags["max_id"] = max(node.tree_tags["max_id"], node.node_tags["id"])
-                else:
-                    node.tree_tags["max_id"] += 1
-                    node.node_tags["id"] = node.tree_tags["max_id"]
-
-            # leave original one unchanged
-            root_node = root_node.copy()
-            root_node.node_tags = {"id": 0}
-            root_node.tree_tags = {"max_id": 0}
-            root_node.attach_process_fn = id_assigner
-            # copy_node will
-            root_node = root_node.copy()
-
-        print(root_node.node_tags)
-    
+        root_copy = root_node.copy(deep=True, copy_children=True)
         graph = nx.DiGraph()
 
-        def _add_node_and_edge(node: CanonicalizableNode) -> None:
-            """Visitor function executed once per node during traversal."""
-            node_attrs = {
-                "type": node.module_type.name,
-                "rotation": ModuleRotationsIdx(node.local_rotation_state).name,
-            }
-            graph.add_node(node.node_tags["id"], **node_attrs)
+        max_attempts = 2
+        for attempt in range(max_attempts):
+            try:
+                for node in root_copy:
+                    node_id = node.node_tags["id"]
 
-            if skip_type == ModuleType.NONE:
-                for face, child_node in node.children_items:
-                    graph.add_edge(
-                        node.node_tags["id"],
-                        child_node.node_tags["id"],
-                        face=face.name,
-                    )
-            else:
-                for face, child_node in node.children_items:
-                    if child_node.module_type != skip_type:
+                    node_attrs = {
+                        "type": node.module_type.name,
+                        "rotation": ModuleRotationsIdx(node.internal_rotation).name,
+                    }
+                    graph.add_node(node_id, **node_attrs)
+
+                    for face, child_node in node.children_items:
                         graph.add_edge(
-                            node.node_tags["id"],
+                            node_id,
                             child_node.node_tags["id"],
                             face=face.name,
                         )
-
-        root_node.traverse_depth_first(_add_node_and_edge, pre_order=True)
+                break
+            except KeyError as e:
+                if attempt == 0:
+                    root_copy.add_id_tags()
+                else:
+                    raise KeyError('id not found, even after 2 attempts') from e
         return graph
 
     @classmethod
     def to_string(cls, node: CanonicalizableNode) -> str:
         """Generates the canonical string representation."""
         name = node.module_type.name[0]
-        if node.local_rotation_state != 0:
-            name += str(int(node.local_rotation_state))
+        if node.internal_rotation != 0:
+            name += str(int(node.internal_rotation))
 
         # Separate axial and radial children
         axial_children = []
