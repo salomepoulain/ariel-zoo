@@ -30,7 +30,7 @@ class CanonicalToolKit:
 
     canonicalize = TreeProcessor.canonicalize
     collect_subtrees = TreeProcessor.collect_subtrees
-    collect_neighbours = TreeProcessor.collect_full_tree_neighbourhoods
+    collect_neighbours = TreeProcessor.collect_tree_neighbourhoods
 
     @classmethod
     def to_canonical_string(
@@ -43,7 +43,7 @@ class CanonicalToolKit:
         canonical_tree = cls.canonicalize(
             node, zero_root_angle=zero_root_angle, child_order=child_order
         )
-
+                
         return cls.to_string(canonical_tree)
 
     @classmethod
@@ -62,8 +62,10 @@ class CanonicalToolKit:
 
     @classmethod
     def tanimoto(cls, node1: CanonicalizableNode, node2: CanonicalizableNode, *, max_radius: int = 5, analysis_type: Literal["set", "count"] = "count") -> dict[int, float]:
-        dict1 = cls.collect_neighbours(node1, max_radius=max_radius)
-        dict2 = cls.collect_neighbours(node2, max_radius=max_radius)
+        raise DeprecationWarning("heavily WIP")
+
+        dict1 = cls.collect_tree_neighbourhoods(node1, max_radius=max_radius)
+        dict2 = cls.collect_tree_neighbourhoods(node2, max_radius=max_radius)
 
         return cls.tanimoto_all_radii(dict1, dict2, analysis_type)
 

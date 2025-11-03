@@ -48,6 +48,8 @@ class TreeSerializer:
             # copy_node will
             root_node = root_node.copy()
 
+        print(root_node.node_tags)
+    
         graph = nx.DiGraph()
 
         def _add_node_and_edge(node: CanonicalizableNode) -> None:
