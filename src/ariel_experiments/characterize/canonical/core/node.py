@@ -1,59 +1,44 @@
 from __future__ import annotations
 
-# Third-party libraries
-from dataclasses import dataclass, field
-
-# Standard library
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator, Mapping
+    from collections.abc import Callable, Generator
+
+    from networkx import DiGraph
 
     from ariel_experiments.characterize.canonical.configs.canonical_config import (
         CanonicalConfig,
     )
 
-from typing import ClassVar
-
 # Global constants
 from ariel.body_phenotypes.robogen_lite.config import (
     ModuleFaces,
+    ModuleRotationsIdx,
     ModuleType,
 )
 
 
 # MARK class ----
-@dataclass(slots=True)
 class CanonicalizableNode:
-    """make the tree tags not accesible from the outside"""
+    """
+    A node in a canonical tree structure.
 
-    """if its in the same tree, it should have the same tree tags"""
-    """adding """
+    Core attributes (config, rotation, parent) are private and accessed via properties.
+    Module type is derived from the config.
+    """
 
-    module_type: ModuleType
-    internal_rotation: int
-    config: CanonicalConfig
-
-    # references to connections
-    parent: CanonicalizableNode | None = field(
-        kw_only=True,
-        default=None,
-        repr=False,
+    __slots__ = (
+        "__face_to_placement",
+        "_axial_list",
+        "_config",
+        "_full_priority",
+        "_internal_rotation",
+        "_node_tags",
+        "_parent",
+        "_radial_list",
+        "_tree_tags",
     )
-    _axial_list: list[CanonicalizableNode | None] = field(init=False)
-    _radial_list: list[CanonicalizableNode | None] = field(init=False)
-
-    # to customize stuff
-    _node_tags: dict[str, Any] = field(default_factory=dict)
-    _tree_tags: dict[str, Any] = field(default_factory=dict)
-
-    # private property so it cant be modified publically
-    _full_priority: int = field(init=False)
-
-    # constants
-    __face_to_placement: Mapping[
-        ModuleFaces, tuple[list[CanonicalizableNode | None], int]
-    ] = field(init=False, repr=False)
 
     _STRING_TO_FACE: ClassVar[dict[str, ModuleFaces]] = {
         **{face.name.lower(): face for face in ModuleFaces},
@@ -61,15 +46,47 @@ class CanonicalizableNode:
     }
     _MAX_ROTATIONS: ClassVar[int] = 8
 
-    def __post_init__(self) -> None:
-        self._axial_list = [None] * len(self.config.axial_face_order)
-        self._radial_list = [None] * len(self.config.radial_face_order)
-        self._full_priority = self.config.priority
+    def __init__(
+        self,
+        config: CanonicalConfig,
+        rotation: int,
+        *,
+        parent: CanonicalizableNode | None = None,
+    ) -> None:
+        """
+        Initialize a CanonicalizableNode.
 
-        mapping = {}
-        for i, f in enumerate(self.config.axial_face_order):
+        Args:
+            config: Canonical configuration for this node
+            internal_rotation: Internal rotation value
+            parent: Optional parent node
+        """
+        self._config = config
+        self._internal_rotation = int(ModuleRotationsIdx(rotation).value)
+        self._parent = parent
+
+        # Initialize child lists based on config
+        self._axial_list: list[CanonicalizableNode | None] = [None] * len(
+            config.axial_face_order,
+        )
+        self._radial_list: list[CanonicalizableNode | None] = [None] * len(
+            config.radial_face_order,
+        )
+
+        # Initialize tags
+        self._node_tags: dict[str, Any] = {}
+        self._tree_tags: dict[str, Any] = {}
+
+        # Set priority from config
+        self._full_priority = config.priority
+
+        # Build face to placement mapping
+        mapping: dict[
+            ModuleFaces, tuple[list[CanonicalizableNode | None], int],
+        ] = {}
+        for i, f in enumerate(config.axial_face_order):
             mapping[f] = (self._axial_list, i)
-        for i, f in enumerate(self.config.radial_face_order):
+        for i, f in enumerate(config.radial_face_order):
             mapping[f] = (self._radial_list, i)
         self.__face_to_placement = mapping
 
@@ -78,21 +95,72 @@ class CanonicalizableNode:
     def __getitem__(
         self,
         face: ModuleFaces | str,
-    ) -> CanonicalizableNode | None:
-        """What the public api should use to get the child at a certain face."""
+    ) -> CanonicalizableNode:
+        """
+        Get the child at a certain face.
+
+        Args:
+            face: Face to get child from
+            strict: If True, raises KeyError when no child exists at face
+
+        Returns
+        -------
+            Child node, or None if no child exists (when strict=False)
+
+        Raises
+        ------
+            FaceNotFoundError: When face is not written correctly
+            ChildNotFoundError: When there is no child
+        """
         if isinstance(face, str):
-            face = self._STRING_TO_FACE[face.lower()]
-        return self._get_child(face)
+            face_lower = face.lower()
+            try:
+                face = self._STRING_TO_FACE[face_lower]
+            except KeyError:
+                from ariel_experiments.characterize.canonical.core.utils.exceptions import (
+                    FaceNotFoundError,
+                )
+
+                raise FaceNotFoundError(face, self) from None
+
+        child = self._get_child(face)
+
+        if child is None:
+            from ariel_experiments.characterize.canonical.core.utils.exceptions import (
+                ChildNotFoundError,
+            )
+
+            raise ChildNotFoundError(face, self)
+
+        return child
 
     def __setitem__(
         self,
         face: ModuleFaces | str,
-        child: CanonicalizableNode,
+        child: CanonicalizableNode | None,
     ) -> None:
-        """What the public api should use to set the child at a certain face."""
+        """
+        Set a child at a face, or detach by setting to None.
+
+        Args:
+            face: Face to set/detach child at
+            child: Node to attach, or None to detach
+        """
         if isinstance(face, str):
-            face = self._STRING_TO_FACE[face.lower()]
-        self._set_child(face, child)
+            face_lower = face.lower()
+            try:
+                face = self._STRING_TO_FACE[face_lower]
+            except KeyError:
+                from ariel_experiments.characterize.canonical.core.utils.exceptions import (
+                    FaceNotFoundError,
+                )
+
+                raise FaceNotFoundError(face, self) from None
+
+        if child is None:
+            self._detatch_child(face)
+        else:
+            self._set_child(face, child)
 
     def __iter__(self) -> Generator[CanonicalizableNode, None, None]:
         """Iterate over all nodes in the tree (depth-first)."""
@@ -100,7 +168,7 @@ class CanonicalizableNode:
         for child in self.children:
             yield from child
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Detailed attachment structure representation."""
         axial_parts = []
         for face, child in self.axial_children_items:
@@ -120,20 +188,20 @@ class CanonicalizableNode:
         if self.parent and self.parent_attachment_face:
             prefix_str = f"{self.parent.module_type.name[0].upper()}{self.parent.internal_rotation}:{self.parent_attachment_face.name.lower()} → "
         else:
-            prefix_str =""
+            prefix_str = ""
 
-        return f"{prefix_str}{self.module_type.name[0].upper()}{self.internal_rotation} → axial[{axial_str}] radial<{radial_str}>"
+        return f"{prefix_str}{self.module_type.name[0].upper()}{self._internal_rotation} → radial[{radial_str}] axial<{axial_str}>"
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Compact version."""
-        return f"{self.module_type.name[0].upper()}{self.internal_rotation}° (↑{len(self.axial_children)} ○{sum(1 for c in self._radial_list if c)})"
+        return f"{self.module_type.name[0].upper()}{self._internal_rotation} (↑{sum(1 for c in self._axial_list if c)} ○{sum(1 for c in self._radial_list if c)})"
 
     # endregion
 
     # region internal helpers -----
 
     def _update_parent_priorites(
-        self, delta_priority: int
+        self, delta_priority: int,
     ) -> CanonicalizableNode | None:
         def _priority_updater(n: CanonicalizableNode) -> None:
             n._full_priority += delta_priority
@@ -169,19 +237,64 @@ class CanonicalizableNode:
 
         child.traverse_depth_first(_propagate)
 
+    def _detatch_child(
+        self,
+        face: ModuleFaces | str,
+    ) -> CanonicalizableNode | None:
+        """Returns the child detatched."""
+        if isinstance(face, str):
+            face = self._STRING_TO_FACE[face.lower()]
+
+        child = self[face]
+        if not child:
+            return None
+
+        self._update_parent_priorites(-child.full_priority)
+
+        child.parent = None
+        self._set_child_raw(face, None)
+        return child
+
     # endregion
 
     # region properties ----
 
     @property
+    def config(self) -> CanonicalConfig:
+        """Get the node's canonical configuration."""
+        return self._config
+
+    @property
+    def module_type(self) -> ModuleType:
+        """Get the module type (derived from config)."""
+        return self._config.module_type
+
+    @property
+    def internal_rotation(self) -> int:
+        """Get the internal rotation value."""
+        return self._internal_rotation
+
+    @property
+    def parent(self) -> CanonicalizableNode | None:
+        """Get the parent node."""
+        return self._parent
+
+    @parent.setter
+    def parent(self, value: CanonicalizableNode | None) -> None:
+        """Set the parent node."""
+        self._parent = value
+
+    @property
     def full_priority(self) -> int:
+        """Get the full priority value."""
         return self._full_priority
 
     @property
     def parent_attachment_face(self) -> ModuleFaces | None:
-        if self.parent is None:
+        """Get the face on the parent where this node is attached."""
+        if self._parent is None:
             return None
-        for face, child in self.parent.children_items:
+        for face, child in self._parent.children_items:
             if child is self:
                 return face
         return None
@@ -257,9 +370,7 @@ class CanonicalizableNode:
 
     @property
     def is_root(self) -> bool:
-        if self.parent is None:
-            return True
-        return False
+        return self.parent is None
 
     @property
     def node_tags(self) -> dict[str, Any]:
@@ -279,17 +390,19 @@ class CanonicalizableNode:
     def node_tags(self, value: Any) -> None:
         """Set node tags (accepts dict only)."""
         if not isinstance(value, dict):
+            msg = f"node_tags must be dict, got {type(value).__name__}"
             raise TypeError(
-                f"node_tags must be dict, got {type(value).__name__}"
+                msg,
             )
         self._node_tags = value
 
     @tree_tags.setter
     def tree_tags(self, value: Any) -> None:
-        """tree tags is encapsulated and must not be replaced, insatnce is shared across tree"""
+        """Tree tags is encapsulated and must not be replaced, insatnce is shared across tree."""
         if not isinstance(value, dict):
+            msg = f"tree_tags must be dict, got {type(value).__name__}"
             raise TypeError(
-                f"tree_tags must be dict, got {type(value).__name__}"
+                msg,
             )
 
         self._tree_tags.update(value)
@@ -298,59 +411,48 @@ class CanonicalizableNode:
 
     # region modifyers -----
 
-    def attach_parent(
-        self,
-        face: ModuleFaces | str,
-        parent: CanonicalizableNode,
-    ) -> None:
-        if isinstance(face, str):
-            face = self._STRING_TO_FACE[face.lower()]
-        parent._set_child(face, self)
+    def detatch_from_parent(self) -> CanonicalizableNode | None:
+        """
+        Detach this node from its parent.
 
-    def detatch_parent(self) -> CanonicalizableNode | None:
-        """Returns the parent."""
+        Returns
+        -------
+            The parent node that was detached from, or None if no parent
+        """
         parent = self.parent
         if not parent:
             return None
-        parent.detatch_child(self.parent_attachment_face)
+        parent[self.parent_attachment_face] = None
         return parent
 
-    # TODO: add this for the set_item when setting None?
-    def detatch_child(
-        self,
-        face: ModuleFaces | str,
-    ) -> CanonicalizableNode | None:
-        """Returns the child detatched."""
-        if isinstance(face, str):
-            face = self._STRING_TO_FACE[face.lower()]
+    def detatch_children(self) -> list[CanonicalizableNode]:
+        """
+        Detach all children from this node.
 
-        child = self[face]
-        if not child:
-            return None
+        Returns
+        -------
+            List of all detached children (axial first, then radial)
+        """
+        detached = list(self.children)
 
-        self._update_parent_priorites(-child.full_priority)
-
-        child.parent = None
-        self._set_child_raw(face, None)
-        return child
-
-    def detatch_children(self) -> None:
         delta_priority = 0
-        for child in self.children:
-            child.parent = None
+        for child in detached:
+            child.detatch_from_parent()
             delta_priority -= child.full_priority
         self._update_parent_priorites(delta_priority)
 
         self._radial_list[:] = [None] * len(self._radial_list)
         self._axial_list[:] = [None] * len(self._axial_list)
 
+        return detached
+
     def rotate_amt(self, delta: int = 1) -> None:
-        self.internal_rotation = (
-            self.internal_rotation + delta
+        self._internal_rotation = (
+            self._internal_rotation + delta
         ) % CanonicalizableNode._MAX_ROTATIONS
 
     def shift_visual_rotation(self, shift: int) -> None:
-        """i.e. visually! rotates the root and everything attached, without losing its shape"""
+        """i.e. visually! rotates the root and everything attached, without losing its shape."""
         rotation_change = shift * self.config.unique_rotation_amt
 
         for child in self.axial_children:
@@ -409,10 +511,9 @@ class CanonicalizableNode:
             copy_children: If True, recursively copy all descendants.
         """
         new_node = CanonicalizableNode(
-            module_type=self.module_type,
-            internal_rotation=self.internal_rotation,
-            parent=None,
             config=self.config,
+            rotation=self._internal_rotation,
+            parent=None,
         )
 
         new_node._node_tags = {} if empty else self._node_tags.copy()
@@ -441,7 +542,7 @@ class CanonicalizableNode:
         pre_order: bool = True,
         post_order: bool = False,
     ) -> None:
-        """will start at node being called"""
+        """Will start at node being called."""
         functions = visit_fn if isinstance(visit_fn, list) else [visit_fn]
 
         if pre_order:
@@ -467,7 +568,7 @@ class CanonicalizableNode:
         pre_order: bool = True,
         post_order: bool = False,
     ) -> None:
-        """will start at node being called"""
+        """Will start at node being called."""
         functions = visit_fn if isinstance(visit_fn, list) else [visit_fn]
 
         if pre_order:
@@ -501,15 +602,15 @@ class CanonicalizableNode:
 
         return (to_index - from_index) % len(self.config.radial_face_order)
 
-    def add_id_tags(self):
-        """gives each node its own id, using a shared tree_tag tag"""
+    def add_id_tags(self) -> None:
+        """Gives each node its own id, using a shared tree_tag tag."""
 
         def _tag_id_assigner(node: CanonicalizableNode) -> None:
             if "max_id" not in node.tree_tags:
                 node.tree_tags["max_id"] = -1
             if "id" in node.node_tags:
                 node.tree_tags["max_id"] = max(
-                    node.tree_tags["max_id"], node.node_tags["id"]
+                    node.tree_tags["max_id"], node.node_tags["id"],
                 )
             else:
                 node.tree_tags["max_id"] += 1
@@ -519,7 +620,7 @@ class CanonicalizableNode:
             self.traverse_depth_first(_tag_id_assigner)
             return
 
-        def _find_root_to_start(node: CanonicalizableNode):
+        def _find_root_to_start(node: CanonicalizableNode) -> None:
             if node.is_root:
                 node.add_id_tags()
 
@@ -529,13 +630,47 @@ class CanonicalizableNode:
 
     # region toolkit importations? -----
 
-    def canonicalize(self, *args: Any, **kwargs: Any) -> CanonicalizableNode:
-        from ariel_experiments.characterize.canonical.core.internal.processor import (
-            TreeProcessor,
+    def canonicalize(self) -> None:
+        from ariel_experiments.characterize.canonical.core.tools.deriver import (
+            TreeDeriver,
         )
 
-        return TreeProcessor.canonicalize(self, *args, **kwargs)
+        TreeDeriver.canonicalize(self, return_copy=False)
+
+    def to_graph(self) -> DiGraph[Any]:
+        from ariel_experiments.characterize.canonical.core.tools.serializer import (
+            TreeSerializer,
+        )
+
+        return TreeSerializer.to_graph(self)
+
+    def to_string(self) -> str:
+        from ariel_experiments.characterize.canonical.core.tools.serializer import (
+            TreeSerializer,
+        )
+
+        return TreeSerializer.to_string(self)
 
     # TODO add more??? or not?? what is good design choice?
 
     # endregion
+
+
+if __name__ == "__main__":
+    from ariel_experiments.characterize.canonical.core.toolkit import (
+        CanonicalToolKit as ctk,
+    )
+
+    root = ctk.create_root()
+
+    root["front"] = ctk.create_brick(1)
+
+    root.rotate_amt(3)
+
+    root["tosdfp"] = ctk.hinge
+
+    root["top"]["fr"] = ctk.hinge
+
+    root.canonicalize()
+
+    children = root.detatch_children()

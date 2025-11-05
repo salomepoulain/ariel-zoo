@@ -51,6 +51,7 @@ class CanonicalConfigFactory:
     @classmethod
     def create(
         cls,
+        module_type: ModuleType,
         axial_faces: set[ModuleFaces] | None,
         radial_faces: set[ModuleFaces] | None,
         attachment_face: ModuleFaces | None,
@@ -88,6 +89,7 @@ class CanonicalConfigFactory:
         )
 
         return CanonicalConfig(
+            module_type=module_type,
             axial_face_order=tuple(axial_face_order),
             radial_face_order=tuple(radial_face_order),
             unique_rotation_amt=unique_rotation_amt,
@@ -444,6 +446,7 @@ class CanonicalConfigFactory:
 
 CANONICAL_PRE_CONFIG: dict[ModuleType, CanonicalConfig] = {
     ModuleType.CORE: CanonicalConfigFactory.create(
+        module_type=ModuleType.CORE,
         axial_faces={ModuleFaces.TOP, ModuleFaces.BOTTOM},
         radial_faces={
             ModuleFaces.LEFT,
@@ -460,6 +463,7 @@ CANONICAL_PRE_CONFIG: dict[ModuleType, CanonicalConfig] = {
         priority=Priority.FIRST,
     ),
     ModuleType.BRICK: CanonicalConfigFactory.create(
+        module_type=ModuleType.BRICK,
         axial_faces={ModuleFaces.FRONT, ModuleFaces.BACK},
         radial_faces={
             ModuleFaces.LEFT,
@@ -474,6 +478,7 @@ CANONICAL_PRE_CONFIG: dict[ModuleType, CanonicalConfig] = {
         priority=Priority.SECOND,
     ),
     ModuleType.HINGE: CanonicalConfigFactory.create(
+        module_type=ModuleType.HINGE,
         axial_faces={ModuleFaces.FRONT, ModuleFaces.BACK},
         radial_faces=None,
         face_quats=FACE_QUATS,
@@ -483,6 +488,7 @@ CANONICAL_PRE_CONFIG: dict[ModuleType, CanonicalConfig] = {
         priority=Priority.THIRD,
     ),
     ModuleType.NONE: CanonicalConfigFactory.create(
+        module_type=ModuleType.NONE,
         axial_faces=None,
         radial_faces=None,
         face_quats=None,

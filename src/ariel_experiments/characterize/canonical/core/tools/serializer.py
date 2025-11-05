@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import networkx as nx
 
@@ -8,9 +8,11 @@ from ariel.body_phenotypes.robogen_lite.config import (
     ModuleFaces,
     ModuleRotationsIdx,
 )
-from ariel_experiments.characterize.canonical.core.node import (
-    CanonicalizableNode,
-)
+
+if TYPE_CHECKING:
+    from ariel_experiments.characterize.canonical.core.node import (
+        CanonicalizableNode,
+    )
 
 
 class TreeSerializer:
@@ -21,7 +23,7 @@ class TreeSerializer:
 
     @staticmethod
     def to_graph(
-        root_node: CanonicalizableNode
+        root_node: CanonicalizableNode,
     ) -> nx.DiGraph[Any]:
         """
         Adds id's if there aren't any, then converts to graph.
@@ -38,7 +40,9 @@ class TreeSerializer:
 
                     node_attrs = {
                         "type": node.module_type.name,
-                        "rotation": ModuleRotationsIdx(node.internal_rotation).name,
+                        "rotation": ModuleRotationsIdx(
+                            node.internal_rotation
+                        ).name,
                     }
                     graph.add_node(node_id, **node_attrs)
 
@@ -53,7 +57,8 @@ class TreeSerializer:
                 if attempt == 0:
                     root_copy.add_id_tags()
                 else:
-                    raise KeyError('id not found, even after 2 attempts') from e
+                    msg = "id not found, even after 2 attempts"
+                    raise KeyError(msg) from e
         return graph
 
     @classmethod
@@ -78,7 +83,9 @@ class TreeSerializer:
         # Radial children with smart grouping
         if radial_children:
             result += cls._format_children_group(
-                node, radial_children, uppercase=False
+                node,
+                radial_children,
+                uppercase=False,
             )
 
         # Axial children with smart grouping
@@ -86,7 +93,9 @@ class TreeSerializer:
             needs_labels = len(node.config.axial_face_order) > 1
             if needs_labels:
                 result += cls._format_children_group(
-                    node, axial_children, uppercase=True
+                    node,
+                    axial_children,
+                    uppercase=True,
                 )
             else:
                 # Single axial face: just concatenate

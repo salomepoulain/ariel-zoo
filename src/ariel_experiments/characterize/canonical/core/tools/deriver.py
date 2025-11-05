@@ -13,7 +13,9 @@ if TYPE_CHECKING:
     )
 
 
-class TreeProcessor:
+class TreeDeriver:
+    _ARB_MAX_RADIUS = 50
+
     @staticmethod
     def _calc_highest_priority_child_face(
         node: CanonicalizableNode,
@@ -70,7 +72,7 @@ class TreeProcessor:
         )
 
         if zero_root_angle:
-            node.internal_rotation = 0
+            node.rotate_amt(-node.internal_rotation)
 
         return node
 
@@ -107,6 +109,10 @@ class TreeProcessor:
         radius: int,
     ) -> None:
         if distance_from_center + 1 > radius or not current.has_children:
+            canon_current.tree_tags["MAX_D"] = max(
+                canon_current.tree_tags.get("MAX_D", 0),
+                distance_from_center,
+            )
             return
 
         distance_from_center += 1
@@ -114,7 +120,7 @@ class TreeProcessor:
             canon_child = child.copy(empty=True, copy_children=False)
             canon_current[face] = canon_child
 
-            hash_str = f"r_{radius}_dist_{distance_from_center}_CHILD"
+            hash_str = f"dist_{distance_from_center}_CHILD"
             canon_current.tree_tags.setdefault(hash_str, []).append(canon_child)
 
             cls._expand_downward(
@@ -131,17 +137,21 @@ class TreeProcessor:
         canon_current: CanonicalizableNode,
         distance_from_center: int,
         radius: int,
-    ) -> CanonicalizableNode:
+    ) -> int | None:
         if distance_from_center + 1 > radius or not current.parent:
-            return canon_current
+            canon_current.tree_tags["MAX_D"] = max(
+                canon_current.tree_tags.get("MAX_D", 0),
+                distance_from_center,
+            )
+            return distance_from_center
 
         distance_from_center += 1
         parent = current.parent
         par_face = current.parent_attachment_face
         canon_parent = parent.copy(empty=True, copy_children=False)
-        canon_current.attach_parent(par_face, canon_parent)
+        canon_parent[par_face] = canon_current
 
-        hash_str: str = f"r_{radius}_dist_{distance_from_center}_PARENT"
+        hash_str: str = f"dist_{distance_from_center}_PARENT"
         canon_current.tree_tags[hash_str] = canon_parent
 
         if distance_from_center + 1 <= radius and parent.has_children:
@@ -151,7 +161,7 @@ class TreeProcessor:
                 canon_sibling = sibling.copy(empty=True, copy_children=False)
                 canon_parent[face] = canon_sibling
 
-                hash_str = f"r_{radius}_dist_{distance_from_center + 1}_CHILD"
+                hash_str = f"dist_{distance_from_center + 1}_CHILD"
                 canon_current.tree_tags.setdefault(hash_str, []).append(
                     canon_sibling,
                 )
@@ -162,19 +172,19 @@ class TreeProcessor:
                     distance_from_center + 1,
                     radius,
                 )
-
-        return cls._expand_upward(
+        cls._expand_upward(
             parent,
             canon_parent,
             distance_from_center,
             radius,
         )
+        return None
 
     @classmethod
     def _collect_node_neighbourhood(
         cls,
         node: CanonicalizableNode,
-        radius: int = 5,
+        radius: int,
     ) -> CanonicalizableNode:
         canon_center = node.copy(empty=True, copy_children=False)
         canon_center.tree_tags["CENTER"] = canon_center
@@ -182,12 +192,12 @@ class TreeProcessor:
         distance_from_center = 0
 
         cls._expand_downward(node, canon_center, distance_from_center, radius)
-        return cls._expand_upward(
-            node,
-            canon_center,
-            distance_from_center,
-            radius,
-        )
+        cls._expand_upward(node, canon_center, distance_from_center, radius)
+
+        while canon_center.parent:
+            canon_center = canon_center.parent
+
+        return canon_center
 
     @classmethod
     def collect_tree_neighbourhoods_old(
@@ -202,9 +212,7 @@ class TreeProcessor:
 
         for node in tree:
             for radius in range(max_radius):
-                neighborhood: CanonicalizableNode = (
-                    cls._collect_node_neighbourhood(node, radius)
-                )
+                neighborhood = cls._collect_node_neighbourhood(node, radius)
 
                 if canonicalized:
                     neighborhood = cls.canonicalize(
@@ -228,22 +236,44 @@ class TreeProcessor:
         tree: CanonicalizableNode,
         serializer_fn: Callable[[CanonicalizableNode], Any] | None = None,
         *,
-        max_radius: int = 10,
+        use_node_max_radius: bool = False,
+        tree_max_radius: int | None = None,
         canonicalized: bool = True,
     ) -> dict[int, list[Any]]:
-        result_per_radius = {r: [] for r in range(max_radius)}
+        """
+        use_node_max_radius:
+            If True, uses each node's own local max radius (no node neighbourhood duplicates).
+            If False, uses (global) tree_max_radius (can result in neighbourhood duplicates per node).
+        tree_max_radius:
+            If an int is given (e.g., 10), use it as a STATIC global radius.
+            If None, CALCULATE a DYNAMIC global radius from the tree.
+            (Only used when use_node_max_radius=False).
+        """
+        max_distance_per_node = []
+        result_per_radius = {r: [] for r in range(cls._ARB_MAX_RADIUS)}
 
         for node in tree:
-            neighborhood = cls._collect_node_neighbourhood(node, max_radius - 1)
+            # Collect the full neighborhood once, up to an arbitrary limit
+            neighborhood = cls._collect_node_neighbourhood(
+                node,
+                cls._ARB_MAX_RADIUS - 1,
+            )
+            node_max_dist = neighborhood.tree_tags["MAX_D"]
+            max_distance_per_node.append(node_max_dist)
 
-            for radius in range(max_radius - 1, -1, -1):
+            if use_node_max_radius:
+                loop_max_dist = node_max_dist
+            else:
+                loop_max_dist = cls._ARB_MAX_RADIUS - 1
+
+            for radius in range(loop_max_dist, -1, -1):
                 if radius == 0:
                     root = neighborhood.tree_tags["CENTER"]
                     root.detatch_children()
                 else:
-                    parent_key = f"r_{max_radius - 1}_dist_{radius}_PARENT"
+                    parent_key = f"dist_{radius}_PARENT"
                     root = neighborhood.tree_tags.get(parent_key, neighborhood)
-                    cls._prune_neighborhood_to_radius(root, radius, max_radius)
+                    cls._prune_neighborhood_to_radius(root, radius)
 
                 serialized = cls._serialize(
                     root,
@@ -253,6 +283,21 @@ class TreeProcessor:
                 )
                 result_per_radius[radius].append(serialized)
 
+        if not use_node_max_radius:
+            final_max_radius = (
+                max(max_distance_per_node)
+                if tree_max_radius is None
+                else tree_max_radius
+            )
+        elif not max_distance_per_node:
+            final_max_radius = -1
+        else:
+            final_max_radius = max(max_distance_per_node)
+
+        for radius in range(final_max_radius + 1, cls._ARB_MAX_RADIUS):
+            if radius in result_per_radius:
+                result_per_radius.pop(radius)
+
         return result_per_radius
 
     @classmethod
@@ -260,17 +305,16 @@ class TreeProcessor:
         cls,
         neighborhood: CanonicalizableNode,
         radius: int,
-        max_radius: int,
     ) -> None:
         if radius == 0:
             return
 
         # Get children at current radius boundary
-        current_level_key = f"r_{max_radius - 1}_dist_{radius}_CHILD"
+        current_level_key = f"dist_{radius}_CHILD"
         current_level_children = neighborhood.tree_tags.get(current_level_key)
 
         # Get children at next level (siblings beyond radius)
-        next_level_key = f"r_{max_radius - 1}_dist_{radius + 1}_CHILD"
+        next_level_key = f"dist_{radius + 1}_CHILD"
         next_level_children = neighborhood.tree_tags.get(next_level_key, [])
 
         # Remove descendants from current level boundary children (fast)
@@ -284,7 +328,7 @@ class TreeProcessor:
         siblings = neighborhood.tree_tags.get(next_level_key)
         if siblings:
             for sibling in siblings:
-                sibling.detatch_parent()
+                sibling.detatch_from_parent()
 
     @classmethod
     def _serialize(
@@ -304,11 +348,11 @@ class TreeProcessor:
 if __name__ == "__main__":
     from rich.console import Console
 
-    from ariel_experiments.characterize.canonical.core.internal.serializer import (
-        TreeSerializer,
-    )
     from ariel_experiments.characterize.canonical.core.toolkit import (
         CanonicalToolKit as ctk,
+    )
+    from ariel_experiments.characterize.canonical.core.tools.serializer import (
+        TreeSerializer,
     )
     from ariel_experiments.utils.initialize import (
         generate_random_individual,
@@ -321,16 +365,15 @@ if __name__ == "__main__":
     max_radius = 10
 
     canonicalnode = ctk.from_graph(individual, auto_id=True)
-    neighbours = TreeProcessor.collect_tree_neighbourhoods_old(
+    neighbours = TreeDeriver.collect_tree_neighbourhoods_old(
         canonicalnode,
         TreeSerializer.to_string,
         max_radius=max_radius,
     )
 
-    neighbours_new = TreeProcessor.collect_tree_neighbourhoods(
+    neighbours_new = TreeDeriver.collect_neighbourhoods(
         canonicalnode,
         TreeSerializer.to_string,
-        max_radius=max_radius,
     )
 
     console.print(neighbours)

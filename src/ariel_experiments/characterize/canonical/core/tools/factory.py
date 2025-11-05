@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
+
 import networkx as nx
 
 from ariel.body_phenotypes.robogen_lite.config import (
@@ -8,11 +9,11 @@ from ariel.body_phenotypes.robogen_lite.config import (
     ModuleRotationsIdx,
     ModuleType,
 )
-from ariel_experiments.characterize.canonical.core.node import (
-    CanonicalizableNode,
-)
 from ariel_experiments.characterize.canonical.configs.canonical_config import (
     CANONICAL_CONFIGS,
+)
+from ariel_experiments.characterize.canonical.core.node import (
+    CanonicalizableNode,
 )
 
 
@@ -56,12 +57,10 @@ class TreeFactory:
         If auto_ids=True, child id's will automatically increment using a shared ID counter.
         """
         module_type = cls._string_to_module_type(module_type_str)
-        kwargs = {
-            "module_type": module_type,
-            "internal_rotation": ModuleRotationsIdx(rotation).value,
-            "config": cls.PRE_DEFINED_CONFIGS[module_type],
-        }
-        root = CanonicalizableNode(**kwargs)
+        root = CanonicalizableNode(
+            config=cls.PRE_DEFINED_CONFIGS[module_type],
+            rotation=ModuleRotationsIdx(rotation).value,
+        )
 
         if auto_ids:
             root.add_id_tags()
@@ -80,9 +79,8 @@ class TreeFactory:
         if not node_tags:
             node_tags = {}
         node = CanonicalizableNode(
-            module_type=module_type,
-            internal_rotation=ModuleRotationsIdx(rotation).value,
             config=cls.PRE_DEFINED_CONFIGS[module_type],
+            rotation=ModuleRotationsIdx(rotation).value,
         )
         node.node_tags.update(node_tags)
         return node
@@ -97,9 +95,8 @@ class TreeFactory:
         if not node_tags:
             node_tags = {}
         brick_node = CanonicalizableNode(
-            module_type=ModuleType.BRICK,
-            internal_rotation=ModuleRotationsIdx(rotation).value,
             config=cls.PRE_DEFINED_CONFIGS[ModuleType.BRICK],
+            rotation=ModuleRotationsIdx(rotation).value,
         )
         brick_node.node_tags.update(node_tags)
         return brick_node
@@ -114,8 +111,7 @@ class TreeFactory:
         if not node_tags:
             node_tags = {}
         hinge_node = CanonicalizableNode(
-            module_type=ModuleType.HINGE,
-            internal_rotation=ModuleRotationsIdx(rotation).value,
+            rotation=ModuleRotationsIdx(rotation).value,
             config=cls.PRE_DEFINED_CONFIGS[ModuleType.HINGE],
         )
         hinge_node.node_tags.update(node_tags)
@@ -169,20 +165,13 @@ class TreeFactory:
                     if auto_id:
                         parent.tree_tags["max_id"] = max(
                             parent.tree_tags["max_id"],
-                            child_id
+                            child_id,
                         )
 
                 child_node = node_map[child_id]
                 parent[ModuleFaces[edge_data["face"]]] = child_node
 
         return node_map[root_id]
-
-
-    # def from_string(cls, s: str) -> CanonicalizableNode:
-    #     module_type_parent = cls.MODULE_BY_LETTER[s[0]]
-    #     rotation= s[1] if # it can convert to a number between 0 and 7, else rottaion=0
-    #     axial_children =
-
 
     # TODO: fix the crazy complexity
     # TODO: fix the bug for core b -> should be back/bottom
@@ -213,7 +202,7 @@ class TreeFactory:
                 rotation = rotation * 10 + int(s[i])
                 i += 1
             if rotation:
-                node.internal_rotation = rotation
+                node.rotate_amt(rotation)
 
             # Cache face orders
             radial_faces = node.config.radial_face_order
