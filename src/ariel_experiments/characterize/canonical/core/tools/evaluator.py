@@ -155,7 +155,7 @@ class Evaluator:
         weight_fn: WeightCalculator,
         aggregation_fn: SimilarityAggregator,
         skip_missing_radii: bool = True,
-    ) -> float:
+    ) -> tuple[float, dict[int, float | None], list[int], list[float]]:
         """
         Base similarity calculator that uses provided callables for computation.
 
@@ -176,23 +176,19 @@ class Evaluator:
             Similarity score between 0 and 1
         """
         # Step 1: Calculate Tanimoto for all radii
-        results_dict = cls._tanimoto_all_radii(nh1_dict, nh2_dict, tanimoto_fn)
+        tanimoto_dict = cls._tanimoto_all_radii(nh1_dict, nh2_dict, tanimoto_fn)
 
         # Step 2: Extract valid data
         radii, similarities = cls._extract_valid_data(
-            results_dict,
+            tanimoto_dict,
             skip_none=skip_missing_radii,
         )
-
-        # If no radii overlap, similarity is 0
-        if not radii:
-            return 0.0
 
         # Step 3: Calculate weights
         weights = weight_fn(radii)
 
         # Step 4: Aggregate similarities
-        return aggregation_fn(similarities, weights)
+        return aggregation_fn(similarities, weights), tanimoto_dict, radii, weights
 
     # endregion
 
@@ -218,17 +214,7 @@ class Evaluator:
         result_dict: dict[int, float | None],
         skip_none: bool = True,
     ) -> tuple[list[int], list[float]]:
-        """
-        Extract valid radii and similarities from result dictionary.
-
-        Args:
-            result_dict: Dictionary mapping radius to similarity score
-            skip_none: If True, ignore None values; if False, treat None as 0.0
-
-        Returns
-        -------
-            Tuple of (radii, similarities) lists with valid data only
-        """
+        """Extract chosen radii and similarities from result dictionary."""
         radii = []
         similarities = []
 

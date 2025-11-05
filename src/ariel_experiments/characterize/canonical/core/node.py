@@ -96,22 +96,6 @@ class CanonicalizableNode:
         self,
         face: ModuleFaces | str,
     ) -> CanonicalizableNode:
-        """
-        Get the child at a certain face.
-
-        Args:
-            face: Face to get child from
-            strict: If True, raises KeyError when no child exists at face
-
-        Returns
-        -------
-            Child node, or None if no child exists (when strict=False)
-
-        Raises
-        ------
-            FaceNotFoundError: When face is not written correctly
-            ChildNotFoundError: When there is no child
-        """
         if isinstance(face, str):
             face_lower = face.lower()
             try:
@@ -131,7 +115,6 @@ class CanonicalizableNode:
             )
 
             raise ChildNotFoundError(face, self)
-
         return child
 
     def __setitem__(
@@ -412,13 +395,7 @@ class CanonicalizableNode:
     # region modifyers -----
 
     def detatch_from_parent(self) -> CanonicalizableNode | None:
-        """
-        Detach this node from its parent.
-
-        Returns
-        -------
-            The parent node that was detached from, or None if no parent
-        """
+        """Detach this node from its parent. Returns parent."""
         parent = self.parent
         if not parent:
             return None
@@ -426,13 +403,7 @@ class CanonicalizableNode:
         return parent
 
     def detatch_children(self) -> list[CanonicalizableNode]:
-        """
-        Detach all children from this node.
-
-        Returns
-        -------
-            List of all detached children (axial first, then radial)
-        """
+        """Detach all children from this node, return the list."""
         detached = list(self.children)
 
         delta_priority = 0

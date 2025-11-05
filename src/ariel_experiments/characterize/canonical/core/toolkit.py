@@ -25,11 +25,11 @@ from ariel_experiments.characterize.canonical.core.utils.exceptions import (
     FaceNotFoundError,
 )
 
+from networkx import DiGraph
+
 if TYPE_CHECKING:
     from collections.abc import Callable
     from types import TracebackType
-
-    from networkx import DiGraph
 
     from ariel_experiments.characterize.canonical.core.node import (
         CanonicalizableNode,
@@ -83,7 +83,8 @@ class AggregationMode(Enum):
     POWER_MEAN = auto()
 
 
-@dataclass(frozen=True)
+# @dataclass(frozen=True)
+@dataclass(slots=True)
 class SimilarityConfig:
     """Configuration for calculating neighborhood similarity."""
 
@@ -96,6 +97,14 @@ class SimilarityConfig:
     max_tree_radius: int | None = None
     softmax_beta: float = 1.0
     power_mean_p: float = 1.0
+
+@dataclass(frozen=True, slots=True)
+class SimilarityResults:
+    similarity_value: float
+    tanimoto_dict: dict[int, float | None]
+    selected_radii: list[int]
+    obtained_weights: list[float]
+
 
 # endregion
 
@@ -124,6 +133,9 @@ class CanonicalToolKit:
     WeightingMode = WeightingMode
     MissingDataMode = MissingDataMode
     AggregationMode = AggregationMode
+
+    SimilarityConfig = SimilarityConfig
+    SimilarityResults = SimilarityResults
 
     # Factory methods
     create_root: Callable[..., CanonicalizableNode] = TreeFactory.create_root
@@ -344,13 +356,21 @@ class CanonicalToolKit:
     @classmethod
     def calculate_similarity(
         cls,
-        node1: CanonicalizableNode,
-        node2: CanonicalizableNode,
+        individual1: CanonicalizableNode | DiGraph[Any],
+        individual2: CanonicalizableNode | DiGraph[Any],
         config: SimilarityConfig | None = None,
         *,
         decimals: int = 3,
-    ) -> float:
+        return_all: bool = False
+    ) -> float | SimilarityResults:
         """Calculate similarity between two nodes based on neighbourhoods."""
+        node1 = individual1
+        node2 = individual2
+        if isinstance(node1, DiGraph):
+            node1 = cls.from_graph(node1)
+        if isinstance(node2, DiGraph):
+            node2 = cls.from_graph(node2)
+
         if config is None:
             config = SimilarityConfig()
 
@@ -375,12 +395,14 @@ class CanonicalToolKit:
 
         # Resolve similarity calculation functions from config
         tanimoto_fn = cls._resolve_tanimoto_function(config)
+
         weight_fn = cls._resolve_weight_function(config)
+
         aggregation_fn = cls._resolve_aggregation_function(config)
         skip_missing = config.missing_data_mode == MissingDataMode.SKIP_RADIUS
 
         # Delegate to base similarity calculator
-        value = Evaluator.similarity_calculator(
+        results = Evaluator.similarity_calculator(
             nh1_dict,
             nh2_dict,
             tanimoto_fn=tanimoto_fn,
@@ -389,7 +411,10 @@ class CanonicalToolKit:
             skip_missing_radii=skip_missing,
         )
 
-        return round(value, decimals)
+        if not return_all:
+            return round(results[0], decimals)
+
+        return SimilarityResults(*results)
 
     #TODO: make some of the similarity helper methods public, so these can also be easily used and just pass the config
 
