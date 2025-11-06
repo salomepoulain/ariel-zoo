@@ -1,4 +1,4 @@
-![ariel-header](./docs/resources/ariel_header.svg)
+![ariel-header](./docs/resources/ariel_logo.svg)
 
 # ARIEL: Autonomous Robots through Integrated Evolution and Learning
 
