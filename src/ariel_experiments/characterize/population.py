@@ -1,18 +1,25 @@
 from __future__ import annotations
 
+import itertools
+
 # Standard library imports
 from collections import defaultdict
 from os import cpu_count
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, TypedDict, TypeVar, cast
-
+import numpy as np
+from tqdm.auto import tqdm
 # Third-party imports
 import numpy as np
+import pandas as pd
 from joblib import Parallel, delayed  # type: ignore[import]
 from rich.console import Console
 from rich.progress import track
 from rich.tree import Tree
-import pandas as pd
+
+from ariel_experiments.characterize.canonical.core.toolkit import (
+    CanonicalToolKit as ctk,
+)
 
 if TYPE_CHECKING:
     from networkx import DiGraph
@@ -20,10 +27,12 @@ if TYPE_CHECKING:
 # Global constants
 # SCRIPT_NAME = Path(__file__).stem
 CWD = Path.cwd()
-DATA = CWD / "__data__" 
+DATA = CWD / "__data__"
 DATA.mkdir(parents=True, exist_ok=True)
 # console.log(f"DATA dir = {DATA}")
 SEED = 42
+import pickle
+from multiprocessing import shared_memory
 
 # Global functions
 console = Console()
@@ -62,6 +71,7 @@ type DerivedPopulationProperties = dict[GraphPropertyName, NamedDerivedPropertie
 # Used to doctate if derived population properties map on 1:1 on graph properties, or different
 B = TypeVar("B", bound=str)
 DerivedPopulationPropertiesT = dict[B, NamedDerivedProperties]
+
 
 # CustomDerivedPopulationProperties = dict[str, NamedDerivedProperties]
 
@@ -105,10 +115,19 @@ Uniques = dict[GraphProperty, UniqueEntry]
 
 class MinFirstIdx(TypedDict):
     idxs: IndexMappings
+    values: list[GraphProperty]
 
 
 class MaxFirstIdx(TypedDict):
     idxs: IndexMappings
+    values: list[GraphProperty]
+
+
+class SimilarityMatrix(TypedDict, total=False):
+    full: list[list[float]]  # or np array
+    matrix_stats: dict[int, NumericPropertyStats]
+    matrix_min_first_idx: dict[int, MinFirstIdx]
+    matrix_max_first_idx: dict[int, MaxFirstIdx]
 
 
 # ----------------------------------------
@@ -167,6 +186,96 @@ def _find_property_list[T](
 # endregion
 
 # region PropertyDerivers
+
+def matrix_derive_neighbourhood[T](
+    named_props: NamedGraphPropertiesT[T],
+    key: GraphPropertyName = "neighbourhood",
+    *,
+    config: ctk.SimilarityConfig,
+    symmetric: bool = True,
+    n_jobs: int = -1,
+    batch_size: int = 5000,
+) -> NamedDerivedPropertiesT[SimilarityMatrix]:
+    if key not in named_props:
+        msg = f"Property '{key}' not found in raw properties"
+        raise KeyError(msg)
+
+    if n_jobs == -1:
+        cpus = cpu_count()
+        if cpus is None:
+            cpus = 1
+        n_jobs = max(1, cpus - (cpus // 4))
+
+    property_values = named_props[key]
+    n = len(property_values)
+    matrix = np.full((n, n), 1.0, dtype=np.float32)
+
+    # Calculate total pairs without storing them
+    n_pairs = n * (n - 1) // 2 if symmetric else n * (n - 1)
+    n_batches = (n_pairs + batch_size - 1) // batch_size
+
+    # Create shared memory for property_values
+    data_bytes = pickle.dumps(property_values)
+    shm = shared_memory.SharedMemory(create=True, size=len(data_bytes))
+    shm.buf[:len(data_bytes)] = data_bytes
+    shm_name = shm.name
+    shm_size = len(data_bytes)
+
+    try:
+        # Generator for pair batches - no memory accumulation
+        def batch_generator():
+            if symmetric:
+                pair_gen = itertools.combinations(range(n), 2)
+            else:
+                pair_gen = itertools.permutations(range(n), 2)
+
+            batch = []
+            for pair in pair_gen:
+                batch.append(pair)
+                if len(batch) >= batch_size:
+                    yield batch
+                    batch = []
+            if batch:
+                yield batch
+
+        def compute_batch_shared(batch_pairs):
+            """Compute using shared memory."""
+            shm = shared_memory.SharedMemory(name=shm_name)
+            prop_vals = pickle.loads(bytes(shm.buf[:shm_size]))
+
+            return [
+                float(ctk.calculate_similarity_from_dicts(
+                    prop_vals[i], prop_vals[j], config,
+                ))
+                for i, j in batch_pairs
+            ]
+
+        # Process batches with streaming
+        with tqdm(total=n_batches, desc=f"Computing {key}", unit="batch") as pbar:
+            for batch_pairs, batch_result in zip(
+                batch_generator(),
+                Parallel(
+                    n_jobs=n_jobs,
+                    backend="loky",
+                    return_as="generator",
+                )(
+                    delayed(compute_batch_shared)(batch)
+                    for batch in batch_generator()
+                ), strict=False,
+            ):
+                # Fill matrix immediately
+                for (i, j), value in zip(batch_pairs, batch_result, strict=False):
+                    matrix[i, j] = value
+                    if symmetric:
+                        matrix[j, i] = value
+                pbar.update(1)
+
+    finally:
+        # Clean up shared memory
+        shm.close()
+        shm.unlink()
+
+    return {"similarity_matrix": SimilarityMatrix(full=matrix)}
 
 
 def derive_numeric_summary(
@@ -311,7 +420,9 @@ def derive_min_first_idx[T](
     except TypeError:
         sorted_indexes = sorted(range(len(value_list)), key=lambda i: (repr(value_list[i]), i))
 
-    return {"min_first_idx": MinFirstIdx(idxs=sorted_indexes)}
+    sorted_values = [value_list[i] for i in sorted_indexes]
+
+    return {"min_first_idx": MinFirstIdx(idxs=sorted_indexes, values=sorted_values)}
 
 
 def derive_max_first_idx[T](
@@ -356,7 +467,65 @@ def derive_max_first_idx[T](
     except TypeError:
         sorted_indexes = sorted(range(len(value_list)), key=lambda i: (repr(value_list[i]), i), reverse=True)
 
-    return {"max_first_idx": MaxFirstIdx(idxs=sorted_indexes)}
+    sorted_values = [value_list[i] for i in sorted_indexes]
+
+    return {"max_first_idx": MaxFirstIdx(idxs=sorted_indexes, values=sorted_values)}
+
+
+def derive_matrix_numerics(
+    named_props: NamedGraphPropertiesT[Any],
+    key: GraphPropertyName,
+    *,
+    row_idx: int | None = None,
+) -> NamedDerivedPropertiesT[SimilarityMatrix]:
+    """
+    Compute numeric stats and sorted indices for similarity matrix rows.
+    Adds the stats directly to the SimilarityMatrix structure.
+
+    If row_idx is specified, computes stats for that row only.
+    Otherwise computes stats for all rows.
+    """
+    if key not in named_props:
+        msg = f"Property '{key}' not found"
+        raise KeyError(msg)
+
+    matrix_data = named_props[key].get("similarity_matrix", {})
+    matrix = matrix_data.get("full")
+
+    if matrix is None:
+        msg = f"No similarity matrix found for '{key}'"
+        raise ValueError(msg)
+
+    if isinstance(matrix, list):
+        matrix = np.array(matrix)
+
+    def _stats_for_row(row: np.ndarray) -> tuple[NumericPropertyStats, MinFirstIdx, MaxFirstIdx]:
+        temp = {"row": row.tolist()}
+        stats = derive_numeric_summary(temp, "row")["numeric_stats"]
+        min_idx = derive_min_first_idx(temp, "row")["min_first_idx"]
+        max_idx = derive_max_first_idx(temp, "row")["max_first_idx"]
+        return stats, min_idx, max_idx
+
+    if row_idx is not None:
+        stats, min_idx, max_idx = _stats_for_row(matrix[row_idx, :])
+        matrix_data["matrix_stats"] = {row_idx: stats}
+        matrix_data["matrix_min_first_idx"] = {row_idx: min_idx}
+        matrix_data["matrix_max_first_idx"] = {row_idx: max_idx}
+    else:
+        all_stats = {}
+        all_min = {}
+        all_max = {}
+        for i in range(matrix.shape[0]):
+            stats, min_idx, max_idx = _stats_for_row(matrix[i, :])
+            all_stats[i] = stats
+            all_min[i] = min_idx
+            all_max[i] = max_idx
+
+        matrix_data["matrix_stats"] = all_stats
+        matrix_data["matrix_min_first_idx"] = all_min
+        matrix_data["matrix_max_first_idx"] = all_max
+
+    return {"similarity_matrix": matrix_data}
 
 # endregion
 
@@ -493,16 +662,15 @@ def get_derived_population_properties(
 # EUCLIDEAN DISTANCE SETTING & FUNCTION
 from ariel_experiments.characterize.individual import (
     analyze_branching,
-    analyze_number_of_limbs,
-    analyze_length_of_limbs,
     analyze_coverage,
-    analyze_proportion_spatial,
-    analyze_symmetry,
-    analyze_size,
-    analyze_mass,
     analyze_joints,
+    analyze_length_of_limbs,
+    analyze_mass,
+    analyze_number_of_limbs,
+    analyze_proportion_spatial,
+    analyze_size,
+    analyze_symmetry,
 )
-
 
 # Defining the coordinates/vectors that describe individuals
 ANALYZERS: dict[str, PropertyAnalyzer[float]] = {
@@ -517,13 +685,15 @@ ANALYZERS: dict[str, PropertyAnalyzer[float]] = {
     "joints": analyze_joints,
 }
 
+
 def get_morphological_vector(individual: DiGraph) -> np.ndarray:
     vector = []
-    for name, func in ANALYZERS.items():
+    for func in ANALYZERS.values():
         result = func(individual)
-        value = list(result.values())[0]
+        value = next(iter(result.values()))
         vector.append(float(value))
     return np.array(vector, dtype=float)
+
 
 # Defining the Euclidean distance between two individuals
 def euclidean_distance(ind1: DiGraph, ind2: DiGraph) -> float:
@@ -664,7 +834,7 @@ class AnalyzedPopulation:
                         f"[yellow]Warning:[/] derived '{derived_property_name}' for property '{prop}' "
                         f"contains {len(deriv_prop)} top-level keys and would produce many columns. "
                         f"Skipping detailed flattening for this property. "
-                        f"Consider excluding it from `keys` if you don't want it in the table."
+                        f"Consider excluding it from `keys` if you don't want it in the table.",
                     )
                     rows.append({"property": prop, f"{derived_property_name}_map_len": len(deriv_prop)})
                     continue
@@ -723,12 +893,12 @@ class AnalyzedPopulation:
             except Exception:
                 # fallback: leave whatever pandas produced
                 pass
-        
+
         if save_file:
             path = DATA / Path(save_file)
             console.log(f"saving file to {path}")
             df.to_csv(path)
-                
+
         return df
 
     def update_derived_with_deriver(
@@ -868,13 +1038,13 @@ if __name__ == "__main__":
     population = generate_random_population_parallel(population_size)
     analyzed_population = get_full_analyzed_population(population, individual_analyzers, derivation_analyzers)
     analyzed_population.show_tree()
-    
+
     df1 = analyzed_population.df_from_derived("numeric_stats")
     df2 = analyzed_population.df_from_derived(
-        "uniques", 
-        keys=["core", "brick", "hinge", "none"], 
+        "uniques",
+        keys=["core", "brick", "hinge", "none"],
         sort_columns=True,
-        save_file="test.csv"
+        save_file="test.csv",
     )
     console.print(df1)
     console.print(df2)

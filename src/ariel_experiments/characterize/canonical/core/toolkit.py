@@ -34,7 +34,9 @@ if TYPE_CHECKING:
     from ariel_experiments.characterize.canonical.core.node import (
         CanonicalizableNode,
     )
-
+    
+    
+type NeighbourhoodDict = dict[int, list[str]]
 
 # region config enums -----
 
@@ -100,6 +102,7 @@ class SimilarityConfig:
 
 @dataclass(frozen=True, slots=True)
 class SimilarityResults:
+    neighbourhood_dicts: tuple[NeighbourhoodDict, NeighbourhoodDict]
     similarity_value: float
     tanimoto_dict: dict[int, float | None]
     selected_radii: list[int]
@@ -254,6 +257,45 @@ class CanonicalToolKit:
                 msg = f"Unknown output_type: {output_type}"
                 raise ValueError(msg)
 
+
+    @classmethod
+    def collect_neighbours_config_mode(
+        cls,
+        node: CanonicalizableNode,
+        *,
+        config: SimilarityConfig,
+        output_type: OutputType = OutputType.STRING,
+    ) -> dict[int, list[str | DiGraph[Any] | CanonicalizableNode]]:
+        """Collect neighbourhoods around each node in the tree."""
+        
+        use_node_max_radius, tree_max_radius = cls._resolve_radius_params(config)
+        
+        match output_type:
+            case OutputType.STRING:
+                return TreeDeriver.collect_neighbourhoods(
+                    node,
+                    cls.to_string,
+                    use_node_max_radius=use_node_max_radius,
+                    tree_max_radius=tree_max_radius,
+                )
+            case OutputType.NODE:
+                return TreeDeriver.collect_neighbourhoods(
+                    node,
+                    cls.to_graph,
+                    use_node_max_radius=use_node_max_radius,
+                    tree_max_radius=tree_max_radius,
+                )
+            case OutputType.GRAPH:
+                return TreeDeriver.collect_neighbourhoods(
+                    node,
+                    use_node_max_radius=use_node_max_radius,
+                    tree_max_radius=tree_max_radius,
+                )
+            case _:
+                msg = f"Unknown output_type: {output_type}"
+                raise ValueError(msg)
+
+
     @classmethod
     def to_canonical_string(
         cls,
@@ -290,15 +332,20 @@ class CanonicalToolKit:
     def _resolve_radius_params(
         config: SimilarityConfig,
     ) -> tuple[bool, int | None]:
-        """Convert radius strategy enum to concrete parameters."""
-        match config.radius_strategy:
-            case RadiusStrategy.NODE_LOCAL:
-                return True, None
-            case RadiusStrategy.TREE_GLOBAL:
-                return False, config.max_tree_radius
-            case _:
-                # Fallback to node local if unknown strategy
-                return True, None
+        """Convert radius strategy enum to concrete parameters.
+
+        Priority:
+        - If config.max_tree_radius is set it is returned as the global cap.
+        - use_node_max_radius follows the radius_strategy (NODE_LOCAL -> True, TREE_GLOBAL -> False).
+
+        This ensures a provided max_tree_radius always takes priority as a global cap,
+        while use_node_max_radius controls whether each node only produces its local radii
+        (subject to the global cap).
+        """
+        use_node_local = config.radius_strategy == RadiusStrategy.NODE_LOCAL
+        tree_max = config.max_tree_radius if config.max_tree_radius is not None else None
+
+        return use_node_local, tree_max
 
     @staticmethod
     def _resolve_tanimoto_function(
@@ -352,6 +399,45 @@ class CanonicalToolKit:
             case _:
                 msg = f"Unknown AggregationMode: {config.aggregation_mode}"
                 raise ValueError(msg)
+
+    @classmethod 
+    def calculate_similarity_from_dicts(
+        cls,
+        nh1_dict: NeighbourhoodDict,
+        nh2_dict: NeighbourhoodDict,
+        config: SimilarityConfig,
+        *,
+        decimals: int = 3,
+        return_all: bool = False
+    ):
+        # Resolve similarity calculation functions from config
+        tanimoto_fn = cls._resolve_tanimoto_function(config)
+
+        weight_fn = cls._resolve_weight_function(config)
+
+        aggregation_fn = cls._resolve_aggregation_function(config)
+        skip_missing = config.missing_data_mode == MissingDataMode.SKIP_RADIUS
+
+        # Delegate to base similarity calculator
+        results = Evaluator.similarity_calculator(
+            nh1_dict,
+            nh2_dict,
+            tanimoto_fn=tanimoto_fn,
+            weight_fn=weight_fn,
+            aggregation_fn=aggregation_fn,
+            skip_missing_radii=skip_missing,
+        )
+
+        if not return_all:
+            return round(results[0], decimals)
+        
+        return SimilarityResults(
+            neighbourhood_dicts=(nh1_dict, nh2_dict),
+            similarity_value=results[0],
+            tanimoto_dict=results[1],
+            selected_radii=results[2],
+            obtained_weights=results[3],
+        )
 
     @classmethod
     def calculate_similarity(
@@ -414,7 +500,13 @@ class CanonicalToolKit:
         if not return_all:
             return round(results[0], decimals)
 
-        return SimilarityResults(*results)
+        return SimilarityResults(
+            neighbourhood_dicts=(nh1_dict, nh2_dict),
+            similarity_value=results[0],
+            tanimoto_dict=results[1],
+            selected_radii=results[2],
+            obtained_weights=results[3],
+        )
 
     #TODO: make some of the similarity helper methods public, so these can also be easily used and just pass the config
 

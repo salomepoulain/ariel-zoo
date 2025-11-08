@@ -601,12 +601,12 @@ class CanonicalizableNode:
 
     # region toolkit importations? -----
 
-    def canonicalize(self) -> None:
+    def canonicalize(self) -> CanonicalizableNode:
         from ariel_experiments.characterize.canonical.core.tools.deriver import (
             TreeDeriver,
         )
 
-        TreeDeriver.canonicalize(self, return_copy=False)
+        return TreeDeriver.canonicalize(self, return_copy=False)
 
     def to_graph(self) -> DiGraph[Any]:
         from ariel_experiments.characterize.canonical.core.tools.serializer import (
@@ -621,6 +621,8 @@ class CanonicalizableNode:
         )
 
         return TreeSerializer.to_string(self)
+
+
 
     # TODO add more??? or not?? what is good design choice?
 

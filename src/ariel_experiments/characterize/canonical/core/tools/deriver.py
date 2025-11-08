@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from ariel_experiments.characterize.canonical.core.node import CanonicalizableNode
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -229,7 +231,43 @@ class TreeDeriver:
                 result_per_radius[radius].append(serialized)
 
         return result_per_radius
-
+    
+    @classmethod
+    def _determine_max_distance(
+        cls,
+        tree_root: CanonicalizableNode,
+    ) -> int:
+        tree_root.tree_tags["_temp_max_diameter"] = 0
+        
+        def _calc_height_and_diameter(node: CanonicalizableNode) -> int:
+            if not node.has_children:
+                return 0
+            
+            child_heights = []
+            for child in node.children:
+                height = _calc_height_and_diameter(child)
+                child_heights.append(height + 1)
+            
+            child_heights.sort(reverse=True)
+            
+            if len(child_heights) >= 2:
+                diameter_through_node = child_heights[0] + child_heights[1]
+            elif len(child_heights) == 1:
+                diameter_through_node = child_heights[0]
+            else:
+                diameter_through_node = 0
+            
+            node.tree_tags["_temp_max_diameter"] = max(
+                node.tree_tags["_temp_max_diameter"], 
+                diameter_through_node
+            )
+            
+            return child_heights[0] if child_heights else 0
+        
+        _calc_height_and_diameter(tree_root)
+        result = tree_root.tree_tags.pop("_temp_max_diameter")  # Clean up
+        return result
+    
     @classmethod
     def collect_neighbourhoods(
         cls,
@@ -249,22 +287,26 @@ class TreeDeriver:
             If None, CALCULATE a DYNAMIC global radius from the tree.
             (Only used when use_node_max_radius=False).
         """
+        if tree_max_radius is None:
+            tree_max_radius = cls._determine_max_distance(tree)
+        
         max_distance_per_node = []
-        result_per_radius = {r: [] for r in range(cls._ARB_MAX_RADIUS)}
+        result_per_radius = {r: [] for r in range(tree_max_radius + 1)}
 
         for node in tree:
             # Collect the full neighborhood once, up to an arbitrary limit
             neighborhood = cls._collect_node_neighbourhood(
                 node,
-                cls._ARB_MAX_RADIUS - 1,
+                tree_max_radius,
             )
             node_max_dist = neighborhood.tree_tags["MAX_D"]
+                        
             max_distance_per_node.append(node_max_dist)
 
             if use_node_max_radius:
-                loop_max_dist = node_max_dist
+                loop_max_dist = min(node_max_dist, tree_max_radius)
             else:
-                loop_max_dist = cls._ARB_MAX_RADIUS - 1
+                loop_max_dist = tree_max_radius
 
             for radius in range(loop_max_dist, -1, -1):
                 if radius == 0:
@@ -283,22 +325,27 @@ class TreeDeriver:
                 )
                 result_per_radius[radius].append(serialized)
 
-        if not use_node_max_radius:
-            final_max_radius = (
-                max(max_distance_per_node)
-                if tree_max_radius is None
-                else tree_max_radius
-            )
-        elif not max_distance_per_node:
-            final_max_radius = -1
-        else:
-            final_max_radius = max(max_distance_per_node)
-
-        for radius in range(final_max_radius + 1, cls._ARB_MAX_RADIUS):
-            if radius in result_per_radius:
-                result_per_radius.pop(radius)
-
+        
         return result_per_radius
+        # if use_node_max_radius
+
+
+        # if not use_node_max_radius:
+        #     final_max_radius = (
+        #         max(max_distance_per_node)
+        #         if tree_max_radius is None
+        #         else tree_max_radius
+        #     )
+        # elif not max_distance_per_node:
+        #     tree_max_radius = -1
+        # else:
+        #     tree_max_radius = max(max_distance_per_node)
+
+        # for radius in range(final_max_radius + 1, tree_max_radius):
+        #     if radius in result_per_radius:
+        #         result_per_radius.pop(radius)
+
+
 
     @classmethod
     def _prune_neighborhood_to_radius(
@@ -360,11 +407,13 @@ if __name__ == "__main__":
 
     console = Console()
 
-    individual = generate_random_individual(seed=41)
+    individual = generate_random_individual(num_modules=4, seed=41)
 
     max_radius = 10
 
-    canonicalnode = ctk.from_graph(individual, auto_id=True)
+    canonicalnode: CanonicalizableNode = ctk.from_graph(individual, auto_id=True)
+    
+    
     neighbours = TreeDeriver.collect_tree_neighbourhoods_old(
         canonicalnode,
         TreeSerializer.to_string,
@@ -374,6 +423,8 @@ if __name__ == "__main__":
     neighbours_new = TreeDeriver.collect_neighbourhoods(
         canonicalnode,
         TreeSerializer.to_string,
+        use_node_max_radius=True,
+        tree_max_radius=2
     )
 
     console.print(neighbours)

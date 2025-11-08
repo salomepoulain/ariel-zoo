@@ -18,7 +18,17 @@ from ariel.body_phenotypes.robogen_lite.modules.hinge import (
     STATOR_MASS,
 )
 
+
+from typing import Any, cast
+
+
+from ariel_experiments.characterize.canonical.core.toolkit import CanonicalToolKit as ctk, NeighbourhoodDict
+
+
+
 if TYPE_CHECKING:
+
+    
     from networkx import DiGraph
 
 # Global constants
@@ -36,6 +46,7 @@ BRICK_MASS = ariel_module_config.BRICK_MASS
 
 # Type Aliases and TypeVars
 T = TypeVar("T")
+
 
 # Concrete value aliases (don't use TypeVar for concrete aliases)
 NumericProperty = int | float
@@ -61,10 +72,20 @@ type NamedGraphProperties = dict[GraphPropertyName, GraphProperty]
 
 # Generic analyzer Protocol: callable that returns dict[str, T]
 class PropertyAnalyzer(Protocol[T]):
-    def __call__(self, individual: DiGraph) -> NamedGraphPropertiesT[T]: ...
+    def __call__(self, individual: DiGraph[Any]) -> NamedGraphPropertiesT[T]: ...
 
 
-def analyze_module_counts(individual: DiGraph) -> NamedGraphPropertiesT[int]:
+def analyze_neighbourhood(individual: DiGraph[Any], config: ctk.SimilarityConfig) -> NamedGraphPropertiesT[NeighbourhoodDict]:
+    node = ctk.from_graph(individual)
+    obtained_dict = ctk.collect_neighbours_config_mode(node, config=config)
+    return {"neighbourhood": cast(NeighbourhoodDict, obtained_dict)} 
+
+def analyze_canonical_string(individual: DiGraph[Any]) -> NamedGraphPropertiesT[str]:
+    node = ctk.from_graph(individual)
+    string = ctk.to_canonical_string(node)
+    return {"canonical_string": string}
+
+def analyze_module_counts(individual: DiGraph[Any]) -> NamedGraphPropertiesT[int]:
     """
     Count different module types and edges in a directed graph individual.
 
@@ -109,7 +130,7 @@ def analyze_module_counts(individual: DiGraph) -> NamedGraphPropertiesT[int]:
     return result
 
 
-def analyze_mass(individual: DiGraph) -> NamedGraphPropertiesT[float]:
+def analyze_mass(individual: DiGraph[Any]) -> NamedGraphPropertiesT[float]:
     """
     Calculate the total mass of a modular robot individual.
 
@@ -138,7 +159,7 @@ def analyze_mass(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     return {"mass": total_mass}
 
 
-def analyze_json_hash(individual: DiGraph) -> NamedGraphPropertiesT[str]:
+def analyze_json_hash(individual: DiGraph[Any]) -> NamedGraphPropertiesT[str]:
     """
     Compute a canonical hash for a directed graph based on its structure.
 
@@ -171,7 +192,7 @@ def analyze_json_hash(individual: DiGraph) -> NamedGraphPropertiesT[str]:
     return {"hash": hash_string}
 
 
-def analyze_json_hash_no_id(individual: DiGraph) -> NamedGraphPropertiesT[str]:
+def analyze_json_hash_no_id(individual: DiGraph[Any]) -> NamedGraphPropertiesT[str]:
     """
     Generate a canonical hash for a directed graph excluding node identifiers.
 
@@ -209,10 +230,9 @@ def analyze_json_hash_no_id(individual: DiGraph) -> NamedGraphPropertiesT[str]:
 
 
 # -----------------------------------------------------------------
-# TODO: @savio @sara
 
 
-def analyze_branching(individual: DiGraph) -> NamedGraphPropertiesT[float]:
+def analyze_branching(individual: DiGraph[Any]) -> NamedGraphPropertiesT[float]:
     """
     Measures the relative level of branching in the robot's morphology.
 
@@ -297,7 +317,7 @@ def analyze_length_of_limbs(
     return {"length_of_limbs": e/emax}
 
 
-def analyze_coverage(individual: DiGraph) -> NamedGraphPropertiesT[float]:
+def analyze_coverage(individual: DiGraph[Any]) -> NamedGraphPropertiesT[float]:
     """
     Measures how much of the morphology space is covered (M4).
 
@@ -310,7 +330,7 @@ def analyze_coverage(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     return {"coverage": m/(w*l*h)}
 
 
-def analyze_joints(individual: DiGraph) -> NamedGraphPropertiesT[float]:
+def analyze_joints(individual: DiGraph[Any]) -> NamedGraphPropertiesT[float]:
     """
     Measures the number of effective joints in the morphology (M5).
 
@@ -458,7 +478,7 @@ def find_length(graph, direction, node) -> int:
     #   - strictly follow the same logic as the paper, simply evaluating the ratio between the smallest and the largest dimension [analyze_proportion_literature]
     #   - don't leave out any information about the third dimension and define the proportion variable as 1 - std(w,l,h) / mean(w,l,h)
 
-def analyze_proportion_literature(individual: DiGraph) -> NamedGraphPropertiesT[float]:
+def analyze_proportion_literature(individual: DiGraph[Any]) -> NamedGraphPropertiesT[float]:
     """
     Measures the proportionality or balance of the robot's shape (M6).
 
@@ -478,7 +498,7 @@ def analyze_proportion_literature(individual: DiGraph) -> NamedGraphPropertiesT[
     return {"proportion_literature": proportion_literature}
 
 
-def analyze_proportion_spatial(individual: DiGraph) -> NamedGraphPropertiesT[float]:
+def analyze_proportion_spatial(individual: DiGraph[Any]) -> NamedGraphPropertiesT[float]:
     w,l,h = give_dim(individual)
     dims = np.array([w, l, h])
     mean = np.mean(dims)
@@ -489,7 +509,7 @@ def analyze_proportion_spatial(individual: DiGraph) -> NamedGraphPropertiesT[flo
     return {"proportion_spatial": proportion_spatial}
 
 
-def analyze_symmetry(individual: DiGraph) -> NamedGraphPropertiesT[float]:
+def analyze_symmetry(individual: DiGraph[Any]) -> NamedGraphPropertiesT[float]:
     """
     Measures the symmetry of the robot's structure (M7).
 
@@ -538,7 +558,7 @@ def analyze_symmetry(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     return {"symmetry": symmetry_value}
 
 
-def analyze_size(individual: DiGraph) -> NamedGraphPropertiesT[float]:
+def analyze_size(individual: DiGraph[Any]) -> NamedGraphPropertiesT[float]:
     """
     Measures the overall size of the robot's morphology (M8).
 
@@ -554,7 +574,7 @@ def analyze_size(individual: DiGraph) -> NamedGraphPropertiesT[float]:
     return {"size": float(min(1.0, size_ratio))}
 
 
-def analyze_sensors(individual: DiGraph) -> NamedGraphPropertiesT[float]:
+def analyze_sensors(individual: DiGraph[Any]) -> NamedGraphPropertiesT[float]:
     """
     Measures the ratio of sensors to available slots in the morphology (M9).
 

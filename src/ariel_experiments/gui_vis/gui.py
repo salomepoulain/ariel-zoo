@@ -16,6 +16,7 @@ from rich.console import Console
 from ariel_experiments.gui_vis.visualize_tree import (
     visualize_tree_from_graph,
 )
+from ariel_experiments.gui_vis.view_mujoco import view
 
 # Global constants
 # SCRIPT_NAME = __file__.split("/")[-1][:-3]
@@ -29,6 +30,9 @@ SEED = 42
 console = Console()
 RNG = np.random.default_rng(SEED)
 
+from collections.abc import Callable
+
+from ariel_experiments.characterize.canonical.core.toolkit import CanonicalToolKit as ctk
 
 class IndividualVisualizer:
     """
@@ -42,7 +46,7 @@ class IndividualVisualizer:
         population: list,
         console: Console | None = None,
         gui: bool = True,
-        visualize_fn = visualize_tree_from_graph,
+        visualize_fn: Callable | None = None,
     ) -> None:
         self._visualize_fn = visualize_fn
         self._population = population
@@ -285,8 +289,15 @@ class IndividualVisualizer:
                     title = (
                         self._get_path() + f" | Individual {idx}{pin_marker}"
                     )
-                    
-                    self._visualize_fn(self._population[idx], title=title)
+                    if self._visualize_fn is visualize_tree_from_graph:
+                        node = ctk.from_graph(self._population[idx])
+                        node.canonicalize()
+                        self._visualize_fn(node.to_graph(), title=node.to_string())
+                    else:
+                        node = ctk.from_graph(self._population[idx])
+                        node.canonicalize()
+                        view(node.to_graph())
+                        
 
     def backward(self) -> None:
         # when viewing individuals
