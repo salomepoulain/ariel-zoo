@@ -1,0 +1,18 @@
+
+
+EA tasks:
+    ☐ make dynamic selection to decrease population size   [savio]
+    ☐ fitness score graphing function                      [sara]
+    ✔ make the list appending a bit more optimized         [salome] @done(25-11-10 21:56)
+    ✔ normalize the fitness fitness function               [salome] @done(25-11-10 21:56)
+
+EA PLAN
+- start with random (1000)
+- stop at reaching 50
+
+
+10_000 results:
+    ☐ run it
+    ☐ fitness score per individual
+    ☐ add baseline from nx TED
+    ☐ add gecko mutation demonstration

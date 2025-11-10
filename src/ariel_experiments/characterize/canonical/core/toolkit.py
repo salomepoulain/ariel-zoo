@@ -5,6 +5,11 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any
 
+from networkx import DiGraph
+
+from ariel_experiments.characterize.canonical.core.node import (
+    CanonicalizableNode,
+)
 from ariel_experiments.characterize.canonical.core.tools.deriver import (
     TreeDeriver,
 )
@@ -25,17 +30,11 @@ from ariel_experiments.characterize.canonical.core.utils.exceptions import (
     FaceNotFoundError,
 )
 
-from networkx import DiGraph
-
 if TYPE_CHECKING:
     from collections.abc import Callable
     from types import TracebackType
 
-    from ariel_experiments.characterize.canonical.core.node import (
-        CanonicalizableNode,
-    )
-    
-    
+
 type NeighbourhoodDict = dict[int, list[str]]
 
 # region config enums -----
@@ -100,6 +99,7 @@ class SimilarityConfig:
     softmax_beta: float = 1.0
     power_mean_p: float = 1.0
 
+
 @dataclass(frozen=True, slots=True)
 class SimilarityResults:
     neighbourhood_dicts: tuple[NeighbourhoodDict, NeighbourhoodDict]
@@ -112,6 +112,7 @@ class SimilarityResults:
 # endregion
 
 # region class toolkit -----
+
 
 class _FreshInstanceDescriptor:
     """Descriptor that returns a fresh instance each time it's accessed."""
@@ -128,6 +129,8 @@ class _FreshInstanceDescriptor:
 
 class CanonicalToolKit:
     """Unified API for tree operations."""
+
+    Node = CanonicalizableNode
 
     # Enum Config Settings
     OutputType = OutputType
@@ -257,7 +260,6 @@ class CanonicalToolKit:
                 msg = f"Unknown output_type: {output_type}"
                 raise ValueError(msg)
 
-
     @classmethod
     def collect_neighbours_config_mode(
         cls,
@@ -267,9 +269,10 @@ class CanonicalToolKit:
         output_type: OutputType = OutputType.STRING,
     ) -> dict[int, list[str | DiGraph[Any] | CanonicalizableNode]]:
         """Collect neighbourhoods around each node in the tree."""
-        
-        use_node_max_radius, tree_max_radius = cls._resolve_radius_params(config)
-        
+        use_node_max_radius, tree_max_radius = cls._resolve_radius_params(
+            config,
+        )
+
         match output_type:
             case OutputType.STRING:
                 return TreeDeriver.collect_neighbourhoods(
@@ -294,7 +297,6 @@ class CanonicalToolKit:
             case _:
                 msg = f"Unknown output_type: {output_type}"
                 raise ValueError(msg)
-
 
     @classmethod
     def to_canonical_string(
@@ -343,7 +345,11 @@ class CanonicalToolKit:
         (subject to the global cap).
         """
         use_node_local = config.radius_strategy == RadiusStrategy.NODE_LOCAL
-        tree_max = config.max_tree_radius if config.max_tree_radius is not None else None
+        tree_max = (
+            config.max_tree_radius
+            if config.max_tree_radius is not None
+            else None
+        )
 
         return use_node_local, tree_max
 
@@ -400,7 +406,7 @@ class CanonicalToolKit:
                 msg = f"Unknown AggregationMode: {config.aggregation_mode}"
                 raise ValueError(msg)
 
-    @classmethod 
+    @classmethod
     def calculate_similarity_from_dicts(
         cls,
         nh1_dict: NeighbourhoodDict,
@@ -408,7 +414,7 @@ class CanonicalToolKit:
         config: SimilarityConfig,
         *,
         decimals: int = 3,
-        return_all: bool = False
+        return_all: bool = False,
     ):
         # Resolve similarity calculation functions from config
         tanimoto_fn = cls._resolve_tanimoto_function(config)
@@ -430,7 +436,7 @@ class CanonicalToolKit:
 
         if not return_all:
             return round(results[0], decimals)
-        
+
         return SimilarityResults(
             neighbourhood_dicts=(nh1_dict, nh2_dict),
             similarity_value=results[0],
@@ -447,7 +453,7 @@ class CanonicalToolKit:
         config: SimilarityConfig | None = None,
         *,
         decimals: int = 3,
-        return_all: bool = False
+        return_all: bool = False,
     ) -> float | SimilarityResults:
         """Calculate similarity between two nodes based on neighbourhoods."""
         node1 = individual1
@@ -508,7 +514,8 @@ class CanonicalToolKit:
             obtained_weights=results[3],
         )
 
-    #TODO: make some of the similarity helper methods public, so these can also be easily used and just pass the config
+    # TODO: make some of the similarity helper methods public, so these can also be easily used and just pass the config
+
 
 # endregion
 

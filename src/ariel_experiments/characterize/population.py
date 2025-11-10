@@ -195,6 +195,7 @@ def matrix_derive_neighbourhood[T](
     symmetric: bool = True,
     n_jobs: int = -1,
     batch_size: int = 5000,
+    hide_tracker: bool = False
 ) -> NamedDerivedPropertiesT[SimilarityMatrix]:
     if key not in named_props:
         msg = f"Property '{key}' not found in raw properties"
@@ -251,7 +252,7 @@ def matrix_derive_neighbourhood[T](
             ]
 
         # Process batches with streaming
-        with tqdm(total=n_batches, desc=f"Computing {key}", unit="batch") as pbar:
+        with tqdm(total=n_batches, desc=f"Computing {key}", unit="batch", disable=hide_tracker) as pbar:
             for batch_pairs, batch_result in zip(
                 batch_generator(),
                 Parallel(
@@ -472,6 +473,12 @@ def derive_max_first_idx[T](
     return {"max_first_idx": MaxFirstIdx(idxs=sorted_indexes, values=sorted_values)}
 
 
+def analyze_matrix_fitness(
+    population
+):
+    pass
+
+
 def derive_matrix_numerics(
     named_props: NamedGraphPropertiesT[Any],
     key: GraphPropertyName,
@@ -489,7 +496,8 @@ def derive_matrix_numerics(
         msg = f"Property '{key}' not found"
         raise KeyError(msg)
 
-    matrix_data = named_props[key].get("similarity_matrix", {})
+    matrix_data = named_props[key]
+    # matrix_data = named_props[key].get("similarity_matrix", {})
     matrix = matrix_data.get("full")
 
     if matrix is None:
@@ -537,6 +545,7 @@ def get_raw_population_properties(
     analyzers: list[PropertyAnalyzer[Any]],
     *,
     n_jobs: int = -1,
+    hide_tracker: bool = False
 ) -> RawPopulationProperties:
     """
     Analyze a population of directed graphs using multiple property analyzers.
@@ -582,7 +591,7 @@ def get_raw_population_properties(
         n_jobs=n_jobs, batch_size="auto",
     )(
         delayed(_analyze)(ind)
-        for ind in track(population, description=f"Analyzing population (n_jobs={n_jobs})")
+        for ind in track(population, description=f"Analyzing population (n_jobs={n_jobs})", disable=hide_tracker)
     )
     results = cast("list[RawPopulationProperties]", parallel_results)
 
@@ -600,6 +609,7 @@ def get_derived_population_properties(
     *,
     specific_keys: list[GraphPropertyName] | None = None,
     n_jobs: int = -1,
+    hide_tracker: bool = False
 ) -> DerivedPopulationPropertiesT[GraphPropertyName]:
     """
     Derive population properties using multiple derivers in parallel.
@@ -616,6 +626,7 @@ def get_derived_population_properties(
     n_jobs : int, default -1
         Number of parallel jobs. If -1, uses CPU count minus 25% for
         optimal performance.
+    hide_tracker : bool, default False
 
     Returns
     -------
@@ -649,7 +660,7 @@ def get_derived_population_properties(
         return key, derived
 
     parallel_results: Any = Parallel(n_jobs=n_jobs, batch_size="auto")(
-        delayed(_derive_all_for_property)(raw_ppulation_properties, k) for k in track(keys, description=f"Deriving properties (n_keys={len(keys)})")
+        delayed(_derive_all_for_property)(raw_ppulation_properties, k) for k in track(keys, description=f"Deriving properties (n_keys={len(keys)})", disable=hide_tracker)
     )
 
     derived_pop_props: DerivedPopulationProperties = {}
@@ -719,6 +730,7 @@ def get_full_analyzed_population(
     derivers: list[PropertyDeriver[Any]],
     *,
     n_jobs: int = -1,
+    hide_tracker: bool = False
 ) -> AnalyzedPopulation:
     """
     Analyze a population of graphs with both raw and derived properties.
@@ -739,8 +751,8 @@ def get_full_analyzed_population(
     AnalyzedPopulation
         Container with both raw and derived population properties.
     """
-    raw = get_raw_population_properties(population, analyzers, n_jobs=n_jobs)
-    derived = get_derived_population_properties(raw, derivers, n_jobs=n_jobs)
+    raw = get_raw_population_properties(population, analyzers, n_jobs=n_jobs, hide_tracker=hide_tracker)
+    derived = get_derived_population_properties(raw, derivers, n_jobs=n_jobs, hide_tracker=hide_tracker)
     return AnalyzedPopulation(raw=raw, derived=derived)
 
 
@@ -964,7 +976,9 @@ class AnalyzedPopulation:
             raw_node.add(f"{key}: len={length}, type={typ_label}", style=style)
 
         derived_node = root.add("derived")
-        for key in sorted(raw.keys()):
+        # Use all keys from both raw and derived
+        all_keys = sorted(set(raw.keys()) | set(derived.keys()))
+        for key in all_keys:
             named = derived.get(key, {})
             prop_node = derived_node.add(f"{key}")
             if not named:
@@ -973,6 +987,7 @@ class AnalyzedPopulation:
             for dname in sorted(named.keys()):
                 dstyle = derive_colors.get(dname, "white")
                 prop_node.add(str(dname), style=dstyle)
+
 
         console.print(root)
 
