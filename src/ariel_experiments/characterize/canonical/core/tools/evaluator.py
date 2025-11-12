@@ -6,11 +6,11 @@ from collections.abc import Callable
 import numpy as np
 from scipy.special import softmax
 
-type NeighbourhoodDict = dict[int, list[str]]
+type TreeHashDict = dict[int, list[str]]
 type ValidData = tuple[list[int], list[float]]
 
 type TanimotoCalculator = Callable[
-    [NeighbourhoodDict, NeighbourhoodDict, int],
+    [TreeHashDict, TreeHashDict, int],
     float | None,
 ]
 type WeightCalculator = Callable[[list[int]], list[float]]
@@ -24,8 +24,8 @@ class Evaluator:
 
     @staticmethod
     def tanimoto_strings_set(
-        fp1_dict: NeighbourhoodDict,
-        fp2_dict: NeighbourhoodDict,
+        fp1_dict: TreeHashDict,
+        fp2_dict: TreeHashDict,
         radius: int,
     ) -> float | None:
         if radius not in fp1_dict or radius not in fp2_dict:
@@ -44,8 +44,8 @@ class Evaluator:
 
     @staticmethod
     def tanimoto_strings_with_counts(
-        fp1_dict: NeighbourhoodDict,
-        fp2_dict: NeighbourhoodDict,
+        fp1_dict: TreeHashDict,
+        fp2_dict: TreeHashDict,
         radius: int,
     ) -> float | None:
         """Tanimoto with fragment counts (bag of words approach)."""
@@ -148,8 +148,8 @@ class Evaluator:
     @classmethod
     def similarity_calculator(
         cls,
-        nh1_dict: NeighbourhoodDict,
-        nh2_dict: NeighbourhoodDict,
+        nh1_dict: TreeHashDict,
+        nh2_dict: TreeHashDict,
         *,
         tanimoto_fn: TanimotoCalculator,
         weight_fn: WeightCalculator,

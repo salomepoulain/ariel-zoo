@@ -22,20 +22,20 @@ from ariel.body_phenotypes.robogen_lite.modules.hinge import (
 from typing import Any, cast
 
 
-from ariel_experiments.characterize.canonical.core.toolkit import CanonicalToolKit as ctk, NeighbourhoodDict
+from ariel_experiments.characterize.canonical.core.toolkit import CanonicalToolKit as ctk, TreeHashDict
 
 
 
 if TYPE_CHECKING:
 
-    
+
     from networkx import DiGraph
 
 # Global constants
-SCRIPT_NAME = __file__.split("/")[-1][:-3]
-CWD = Path.cwd()
-DATA = Path(CWD / "__data__" / SCRIPT_NAME)
-DATA.mkdir(exist_ok=True)
+# SCRIPT_NAME = __file__.split("/")[-1][:-3]
+# CWD = Path.cwd()
+# DATA = Path(CWD / "__data__" / SCRIPT_NAME)
+# DATA.mkdir(exist_ok=True)
 SEED = 42
 
 # Global functions
@@ -75,10 +75,10 @@ class PropertyAnalyzer(Protocol[T]):
     def __call__(self, individual: DiGraph[Any]) -> NamedGraphPropertiesT[T]: ...
 
 
-def analyze_neighbourhood(individual: DiGraph[Any], config: ctk.SimilarityConfig) -> NamedGraphPropertiesT[NeighbourhoodDict]:
+def analyze_neighbourhood(individual: DiGraph[Any], config: ctk.SimilarityConfig) -> NamedGraphPropertiesT[TreeHashDict]:
     node = ctk.from_graph(individual)
-    obtained_dict = ctk.collect_neighbours_config_mode(node, config=config)
-    return {"neighbourhood": cast(NeighbourhoodDict, obtained_dict)} 
+    obtained_dict = ctk.collect_tree_hash_config_mode(node, config=config)
+    return {"neighbourhood": cast(TreeHashDict, obtained_dict)}
 
 def analyze_canonical_string(individual: DiGraph[Any]) -> NamedGraphPropertiesT[str]:
     node = ctk.from_graph(individual)
@@ -258,7 +258,7 @@ def analyze_branching(individual: DiGraph[Any]) -> NamedGraphPropertiesT[float]:
         return {"branching": 0.0}
     # max possible modules that could have 6 connected faces
     bmax = int((m-2)/5)
-     
+
     return {"branching": b/bmax}
 
 
@@ -306,14 +306,14 @@ def analyze_length_of_limbs(
         # 1 means 2 modules are connected to it since they are always connected in the back
         if len(list(individual.successors(node))) == 1 and individual.nodes(data=True)[node]["type"] != "CORE":
             e +=1
-        
+
     if m <3:
         return {"length_of_limbs": 0.0}
-    
+
     # thoretical maximum length of a limb of robot size m
     emax = m-2
-    
-    
+
+
     return {"length_of_limbs": e/emax}
 
 
@@ -326,7 +326,7 @@ def analyze_coverage(individual: DiGraph[Any]) -> NamedGraphPropertiesT[float]:
 
     w,l,h = give_dim(individual)
     m = len(individual.nodes())
-    
+
     return {"coverage": m/(w*l*h)}
 
 
@@ -353,7 +353,7 @@ def analyze_joints(individual: DiGraph[Any]) -> NamedGraphPropertiesT[float]:
 
     jmax = sum(data.get("type") == "HINGE" for _, data in individual.nodes(data=True))
     joints_ratio = j / jmax if jmax > 0 else 0.0
-    
+
     return {"joints": joints_ratio}
 
 def give_dim(graph):
@@ -362,7 +362,7 @@ def give_dim(graph):
 
     will find the length, width and heigt by looking how far its limbs stretches in opposit directions and adding them togther
 
-    
+
     """
     w = []
     l = []
@@ -378,7 +378,7 @@ def give_dim(graph):
     h.append(find_length(graph, "TOP", 0))
     h.append(find_length(graph, "BOTTOM", 0))
 
-    
+
 
     # connecting the 2 largest values from each list, subtracting 1 since the core got counted double
     cw = w[0] + w[1] - 1
@@ -408,7 +408,7 @@ def find_length(graph, direction, node) -> int:
 
     # oriantation fixing by changing direction, 45 degrees maybe needs to be expanded upon later
     if (direction != 'FRONT' and direction != 'BACK') and rot != "DEG_0":
-        match rot: 
+        match rot:
             case "DEG_90":
                 direction = faces[(faces.index(direction)+1)%4]
             case "DEG_180":
@@ -421,7 +421,7 @@ def find_length(graph, direction, node) -> int:
                 direction = faces[(faces.index(direction)+2)%4]
             case "DEG_315":
                 direction = faces[(faces.index(direction)+3)%4]
-    
+
     faces = ['RIGHT', 'TOP', 'FRONT', 'LEFT', 'BOTTOM', 'BACK']
     for index, child in enumerate(graph.successors(node)):
 
@@ -436,7 +436,7 @@ def find_length(graph, direction, node) -> int:
         # completly the wrong way subtract 2 to penalize
         elif face == opposite:
 
-            length.append(find_length(graph, 'BACK', child)- 2) 
+            length.append(find_length(graph, 'BACK', child)- 2)
 
 
         # back means it needs to do an 180 by going left for the next block if its not the front or back

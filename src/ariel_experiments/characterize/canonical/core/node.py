@@ -571,7 +571,7 @@ class CanonicalizableNode:
         except ValueError:
             return 0
 
-        return (to_index - from_index) % len(self.config.radial_face_order)
+        return (from_index - to_index) % len(self.config.radial_face_order)
 
     def add_id_tags(self) -> None:
         """Gives each node its own id, using a shared tree_tag tag."""

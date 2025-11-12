@@ -12,7 +12,7 @@ EA PLAN
 
 
 10_000 results:
-    ☐ run it
-    ☐ fitness score per individual
     ☐ add baseline from nx TED
-    ☐ add gecko mutation demonstration
+    ☐ run it
+    ✔ fitness score per individual @done(25-11-12 21:45)
+    ✔ add gecko mutation demonstration @done(25-11-12 21:45)

@@ -58,7 +58,8 @@ def view(
     config: VisualizationConfig | None = None,
     make_tree: bool = False,
     with_viewer: bool = False,
-) -> None:
+    return_img: bool = False,
+):
     """
     Visualize a robot in a MuJoCo simulation environment.
 
@@ -70,6 +71,15 @@ def view(
         Whether to launch an interactive MuJoCo viewer window.
     save_xml : str or None, default None
         Optional filename to save the world specification as XML.
+    return_img : bool, default False
+        If True, returns the rendered image instead of displaying it.
+        Useful for creating side-by-side comparisons.
+
+    Returns
+    -------
+    Image or MjData
+        If return_img=True, returns the rendered image.
+        Otherwise, displays the image and returns MuJoCo data.
 
     Notes
     -----
@@ -159,6 +169,9 @@ def view(
     # View
     if with_viewer:
         viewer.launch(model=model, data=data)
+
+    if return_img:
+        return img
 
     display(img)
     return data
