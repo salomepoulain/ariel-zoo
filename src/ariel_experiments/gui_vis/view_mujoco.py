@@ -164,7 +164,7 @@ def view(
     mujoco.mj_resetData(model, data)
 
     # Render
-    img = single_frame_renderer(model, data, steps=10)
+    img = single_frame_renderer(model, data, steps=10, cam_pos=(1.0,1.0,0.0))
 
     # View
     if with_viewer:
