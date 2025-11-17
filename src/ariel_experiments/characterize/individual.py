@@ -22,7 +22,7 @@ from ariel.body_phenotypes.robogen_lite.modules.hinge import (
 from typing import Any, cast
 
 
-from ariel_experiments.characterize.canonical.core.toolkit import CanonicalToolKit as ctk, TreeHashDict
+from ariel_experiments.characterize.canonical.core.toolkit import CanonicalToolKit as ctk, TreeHash
 
 
 
@@ -75,10 +75,10 @@ class PropertyAnalyzer(Protocol[T]):
     def __call__(self, individual: DiGraph[Any]) -> NamedGraphPropertiesT[T]: ...
 
 
-def analyze_neighbourhood(individual: DiGraph[Any], config: ctk.SimilarityConfig) -> NamedGraphPropertiesT[TreeHashDict]:
+def analyze_neighbourhood(individual: DiGraph[Any], config: ctk.SimilarityConfig) -> NamedGraphPropertiesT[dict[int, list[TreeHash]]]:
     node = ctk.from_graph(individual)
     obtained_dict = ctk.collect_tree_hash_config_mode(node, config=config)
-    return {"neighbourhood": cast(TreeHashDict, obtained_dict)}
+    return {"neighbourhood": cast(dict[int, list[TreeHash]], obtained_dict)}
 
 def analyze_canonical_string(individual: DiGraph[Any]) -> NamedGraphPropertiesT[str]:
     node = ctk.from_graph(individual)
@@ -589,18 +589,18 @@ def analyze_sensors(individual: DiGraph[Any]) -> NamedGraphPropertiesT[float]:
     return {"sensors": 0.0}
 
 
-if __name__ == "__main__":
-    from ariel_experiments.utils.initialize import generate_random_individual
+# if __name__ == "__main__":
+#     from ariel_experiments.utils.initialize import generate_random_individual
 
-    graph = generate_random_individual()
-    console.print("not none:", analyze_module_counts(graph)["not-none"])
+#     graph = generate_random_individual()
+#     console.print("not none:", analyze_module_counts(graph)["not-none"])
 
-    g1 = generate_random_individual(seed = 5)
-    g2 = generate_random_individual(seed = 30)
-    v1 = get_morphological_vector(g1)
-    v2 = get_morphological_vector(g2)
-    console.print("Feature vector 1:", v1)
-    console.print("Feature vector 2:", v2)
-    console.print("Euclidean distance:", euclidean_distance(g1, g2))
+#     g1 = generate_random_individual(seed = 5)
+#     g2 = generate_random_individual(seed = 30)
+#     v1 = get_morphological_vector(g1)
+#     v2 = get_morphological_vector(g2)
+#     console.print("Feature vector 1:", v1)
+#     console.print("Feature vector 2:", v2)
+#     console.print("Euclidean distance:", euclidean_distance(g1, g2))
 
     # feel free to test and expand here

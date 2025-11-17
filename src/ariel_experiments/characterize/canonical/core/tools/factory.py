@@ -15,6 +15,13 @@ from ariel_experiments.characterize.canonical.configs.canonical_config import (
 from ariel_experiments.characterize.canonical.core.node import (
     CanonicalizableNode,
 )
+import numpy as np
+from ariel.body_phenotypes.robogen_lite.decoders.hi_prob_decoding import (
+    HighProbabilityDecoder,
+)
+from ariel.ec.genotypes.nde.nde import (
+    NeuralDevelopmentalEncoding,
+)
 
 
 class TreeFactory:
@@ -271,3 +278,36 @@ class TreeFactory:
             return node, i
 
         return parse_node(0)[0]
+
+    @classmethod
+    def from_nde_genotype(
+        cls,
+        genotype: list[list[float]],
+        *,
+        num_modules: int = 20,
+        auto_id: bool = False,
+    ) -> CanonicalizableNode:
+        """
+        Create a CanonicalizableNode from an NDE genotype.
+
+        Args:
+            genotype: NDE genotype (3 matrices: weights for NDE)
+            num_modules: Number of modules for NDE decoder
+            auto_id: Whether to add ID tags to nodes
+
+        Returns
+        -------
+            Root CanonicalizableNode of the decoded tree
+        """
+        nde = NeuralDevelopmentalEncoding(number_of_modules=num_modules)
+        hpd = HighProbabilityDecoder(num_modules=num_modules)
+
+        matrixes = nde.forward(np.array(genotype))
+        graph = hpd.probability_matrices_to_graph(
+            matrixes[0],
+            matrixes[1],
+            matrixes[2],
+        )
+
+        # Convert graph to canonical node
+        return cls.from_graph(graph, auto_id=auto_id)

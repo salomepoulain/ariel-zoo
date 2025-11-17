@@ -2,66 +2,227 @@ from __future__ import annotations
 
 from collections import Counter
 from collections.abc import Callable
+from dataclasses import dataclass
 
 import numpy as np
 from scipy.special import softmax
 
-type TreeHashDict = dict[int, list[str]]
-type ValidData = tuple[list[int], list[float]]
+from ariel_experiments.characterize.canonical.core.tools.vector import (
+    HashVector,
+)
 
-type TanimotoCalculator = Callable[
-    [TreeHashDict, TreeHashDict, int],
-    float | None,
-]
+type TreeHash = str
+type Vectorizer = Callable[[list[TreeHash]], HashVector]
+type Scorer = Callable[[HashVector, HashVector], float]
 type WeightCalculator = Callable[[list[int]], list[float]]
 type SimilarityAggregator = Callable[[list[float], list[float]], float]
 
 
+@dataclass
+class RadiusData:
+    """Document frequency data for TF-IDF calculations."""
+
+    df_counts: HashVector
+    N: int = 0
+
+    def get_df(self, tree_hash: TreeHash) -> int:
+        """Get document frequency for a fragment."""
+        return int(self.df_counts.get(tree_hash, 0))
+
+
 class Evaluator:
-    """Helper class for calculating similarity metrics between tree neighborhoods."""
+    """Pure vector operations for similarity calculations."""
 
-    # region TanimotoCalculator -----
-
-    @staticmethod
-    def tanimoto_strings_set(
-        fp1_dict: TreeHashDict,
-        fp2_dict: TreeHashDict,
-        radius: int,
-    ) -> float | None:
-        if radius not in fp1_dict or radius not in fp2_dict:
-            return None
-
-        strings1 = set(fp1_dict[radius])
-        strings2 = set(fp2_dict[radius])
-
-        intersection = len(strings1 & strings2)
-        union = len(strings1 | strings2)
-
-        if union == 0:
-            return 0.0
-
-        return intersection / union
+    # region Vectorizers -----
 
     @staticmethod
-    def tanimoto_strings_with_counts(
-        fp1_dict: TreeHashDict,
-        fp2_dict: TreeHashDict,
-        radius: int,
-    ) -> float | None:
-        """Tanimoto with fragment counts (bag of words approach)."""
-        if radius not in fp1_dict or radius not in fp2_dict:
-            return None
+    def compute_binary_vector(fragments: list[TreeHash]) -> HashVector:
+        """
+        Create binary presence/absence vector.
 
-        counts1 = Counter(fp1_dict[radius])
-        counts2 = Counter(fp2_dict[radius])
+        Each unique fragment gets value 1.0.
 
-        intersection = sum((counts1 & counts2).values())
-        union = sum((counts1 | counts2).values())
+        Args:
+            fragments: List of fragment strings
 
-        if union == 0:
+        Returns
+        -------
+            HashVector with 1.0 for each unique fragment
+        """
+        return HashVector(dict.fromkeys(set(fragments), 1.0))
+
+    @staticmethod
+    def compute_count_vector(fragments: list[TreeHash]) -> HashVector:
+        """
+        Create count vector (bag-of-words).
+
+        Each fragment mapped to its frequency.
+
+        Args:
+            fragments: List of fragment strings
+
+        Returns
+        -------
+            HashVector with counts for each fragment
+        """
+        counts = Counter(fragments)
+        return HashVector({
+            fragment: float(count) for fragment, count in counts.items()
+        })
+
+    @staticmethod
+    def tfidf_vector(
+        tf_vec: HashVector,
+        df_vec: HashVector,
+        N: int,
+        *,
+        smooth: bool = True,
+    ) -> HashVector:
+        """
+        Create TF-IDF weighted vector.
+
+        Args:
+            tf_vec: Term frequency vector (counts)
+            df_vec: Document frequency vector (counts across corpus)
+            N: Total number of documents in corpus
+            smooth: Whether to use smoothed IDF
+
+        Returns
+        -------
+            TF-IDF weighted HashVector
+        """
+        # Only compute IDF for terms present in tf_vec (much smaller set)
+        # Extract only the df_counts we need
+        terms = tf_vec.keys()
+        df_counts = np.array([df_vec.get(term, 0) for term in terms], dtype=float)
+
+        # Vectorized IDF calculation - much faster than individual np.log calls
+        if smooth:
+            idf_values = np.log((N + 1) / (df_counts + 1)) + 1
+        else:
+            # Handle df_count == 0 case with np.where
+            idf_values = np.where(
+                df_counts > 0,
+                np.log(N / df_counts),
+                0.0,
+            )
+
+        # Build IDF vector only for terms in tf_vec
+        idf_vec = HashVector(dict(zip(terms, idf_values, strict=True)))
+        return tf_vec * idf_vec
+
+    # endregion
+
+    # region Scorers -----
+
+    @staticmethod
+    def score_cosine_similarity(
+        vec1: HashVector,
+        vec2: HashVector,
+    ) -> float:
+        """
+        Cosine similarity between two vectors.
+
+        Measures angle between vectors, ignoring magnitude.
+
+        Returns
+        -------
+            Similarity in [-1, 1], or 0 if either vector is empty
+        """
+        if not vec1 or not vec2:
             return 0.0
 
-        return intersection / union
+        dot = vec1 @ vec2
+        norm_product = vec1.l2_norm() * vec2.l2_norm()
+
+        if norm_product == 0:
+            return 0.0
+
+        return dot / norm_product
+
+    @staticmethod
+    def score_tanimoto_similarity(
+        vec1: HashVector,
+        vec2: HashVector,
+    ) -> float:
+        """
+        Tanimoto similarity (generalized Jaccard).
+
+        Uses min for intersection, max for union.
+
+        Formula: sum(min(v1, v2)) / sum(max(v1, v2))
+
+        Returns
+        -------
+            Similarity in [0, 1]
+        """
+        all_keys = vec1.keys() | vec2.keys()
+
+        intersection = sum(min(vec1.get(k), vec2.get(k)) for k in all_keys)
+        union = sum(max(vec1.get(k), vec2.get(k)) for k in all_keys)
+
+        return intersection / union if union > 0 else 0.0
+
+    @classmethod
+    def score_tfidf_entropy(
+        cls,
+        tf_vec: HashVector,
+        df_vec: HashVector,
+        N: int,
+        *,
+        smooth: bool,
+        normalized: bool,
+    ) -> float:
+        """Value between 0 and 1."""
+        tfidf_vec = cls.tfidf_vector(
+            tf_vec=tf_vec,
+            df_vec=df_vec,
+            N=N,
+            smooth=smooth,
+        )
+        if normalized:
+            return tfidf_vec.normalized_entropy()
+
+        return tfidf_vec.entropy()
+
+    @classmethod
+    def score_tfidf_mean(
+        cls, tf_vec: HashVector, df_vec: HashVector, N: int, *, smooth: bool,
+    ) -> float:
+        tfidf_vec = cls.tfidf_vector(
+            tf_vec=tf_vec,
+            df_vec=df_vec,
+            N=N,
+            smooth=smooth,
+        )
+
+        return tfidf_vec.mean()
+
+    @classmethod
+    def score_tfidf_l1(
+        cls, tf_vec: HashVector, df_vec: HashVector, N: int, *, smooth: bool,
+    ) -> float:
+        tfidf_vec = cls.tfidf_vector(
+            tf_vec=tf_vec,
+            df_vec=df_vec,
+            N=N,
+            smooth=smooth,
+        )
+
+        return tfidf_vec.l1_norm()
+
+    @classmethod
+    def score_tfidf_sum(
+        cls, tf_vec: HashVector, df_vec: HashVector, N: int, *, smooth: bool,
+    ) -> float:
+        tfidf_vec = cls.tfidf_vector(
+            tf_vec=tf_vec,
+            df_vec=df_vec,
+            N=N,
+            smooth=smooth,
+        )
+
+        return tfidf_vec.sum()
 
     # endregion
 
@@ -90,10 +251,10 @@ class Evaluator:
 
     # endregion
 
-    # region AggregationFunction -----
+    # region Aggregation -----
 
     @staticmethod
-    def calc_tanimoto_power_mean(
+    def power_mean_aggregate(
         similarities: list[float],
         weights: list[float],
         *,
@@ -140,90 +301,5 @@ class Evaluator:
         total_weight = sum(weights)
 
         return (weighted_sum / total_weight) ** (1 / p)
-
-    # endregion
-
-    # region Base similarity calculator
-
-    @classmethod
-    def similarity_calculator(
-        cls,
-        nh1_dict: TreeHashDict,
-        nh2_dict: TreeHashDict,
-        *,
-        tanimoto_fn: TanimotoCalculator,
-        weight_fn: WeightCalculator,
-        aggregation_fn: SimilarityAggregator,
-        skip_missing_radii: bool = True,
-    ) -> tuple[float, dict[int, float | None], list[int], list[float]]:
-        """
-        Base similarity calculator that uses provided callables for computation.
-
-        This is a generic method that composes the similarity calculation pipeline
-        using injected functions. The toolkit's calculate_similarity method uses
-        this as a base and provides the specific functions based on config.
-
-        Args:
-            nh1_dict: Neighbourhood dictionary for first node
-            nh2_dict: Neighbourhood dictionary for second node (comparison is symmetric)
-            tanimoto_fn: Function to calculate Tanimoto similarity per radius
-            weight_fn: Function to calculate weights for radii
-            aggregation_fn: Function to aggregate weighted similarities
-            skip_missing_radii: If True, skip radii not in both dicts; else treat as 0
-
-        Returns
-        -------
-            Similarity score between 0 and 1
-        """
-        # Step 1: Calculate Tanimoto for all radii
-        tanimoto_dict = cls._tanimoto_all_radii(nh1_dict, nh2_dict, tanimoto_fn)
-
-        # Step 2: Extract valid data
-        radii, similarities = cls._extract_valid_data(
-            tanimoto_dict,
-            skip_none=skip_missing_radii,
-        )
-
-        # Step 3: Calculate weights
-        weights = weight_fn(radii)
-
-        # Step 4: Aggregate similarities
-        return aggregation_fn(similarities, weights), tanimoto_dict, radii, weights
-
-    # endregion
-
-    # region helpers -----
-
-    @staticmethod
-    def _tanimoto_all_radii(
-        fp1_dict: dict[int, list[str]],
-        fp2_dict: dict[int, list[str]],
-        tanimoto_calculator_fn: TanimotoCalculator,
-    ) -> dict[int, float | None]:
-        """Calculate Tanimoto for each radius level."""
-        results = {}
-
-        all_radii = max(fp1_dict.keys(), fp2_dict.keys())
-        for radius in all_radii:
-            results[radius] = tanimoto_calculator_fn(fp1_dict, fp2_dict, radius)
-
-        return results
-
-    @staticmethod
-    def _extract_valid_data(
-        result_dict: dict[int, float | None],
-        skip_none: bool = True,
-    ) -> tuple[list[int], list[float]]:
-        """Extract chosen radii and similarities from result dictionary."""
-        radii = []
-        similarities = []
-
-        for radius, similarity in result_dict.items():
-            if skip_none and similarity is None:
-                continue
-            radii.append(radius)
-            similarities.append(similarity if similarity is not None else 0.0)
-
-        return radii, similarities
 
     # endregion

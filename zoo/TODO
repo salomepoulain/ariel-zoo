@@ -1,18 +1,39 @@
 
 
 EA tasks:
-    ☐ make dynamic selection to decrease population size   [savio]
-    ☐ fitness score graphing function                      [sara]
-    ✔ make the list appending a bit more optimized         [salome] @done(25-11-10 21:56)
+    ☐ make dynamic selection to decrease population size   [savio]    ☐ fitness score graphing function                      [sara]    ✔ make the list appending a bit more optimized         [salome] @done(25-11-10 21:56)
     ✔ normalize the fitness fitness function               [salome] @done(25-11-10 21:56)
-
-EA PLAN
-- start with random (1000)
-- stop at reaching 50
 
 
 10_000 results:
-    ☐ add baseline from nx TED
-    ☐ run it
+    ☐ add baseline from nx TED ????
+    ☐ run it ???
     ✔ fitness score per individual @done(25-11-12 21:45)
     ✔ add gecko mutation demonstration @done(25-11-12 21:45)
+
+random thoughts:
+    ✘ similarity db score in ctk @cancelled(25-11-17 19:30) -> now dict!
+    ☐ add static radius?
+        ☐ look at chemistry first????
+
+
+
+meeting:
+    ☐ run 2 EA's
+        ☐ 1. use matrix method.
+            ☐ store/save novelty and diversity fitness
+            ☐ plot both lines
+            ☐ save top2 and lowest2 diversity/novelty? graphs at x generation interval
+            ☐ create final photoshopped plot
+        ☐ 2. use tfidf method.
+            - idem.
+        ☐ (3.) also to tfidf method for history archive instead of previous generation?
+
+        ☐ future:
+            ☐ use tfidf vectors for cross-similarity???
+            ☐ what about cosine similarity???
+            ☐ uniform vs lineair???
+
+
+    - also talked about dynamic: re-initialise robots if you see fitness is in a minimal (not needed)
+    - explain the hinges bias thing, but skip changin for now
