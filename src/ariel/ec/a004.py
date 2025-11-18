@@ -245,11 +245,12 @@ class EA(AbstractEA):
         *,
         only_alive: bool = True,
     ) -> Individual:
+        
         # Query population
         self.fetch_population(
             only_alive=only_alive,
             already_evaluated=True,
-            best_comes="first",  # self.population[0]
+            best_comes="last" if config.is_maximisation else "first",  # self.population[0]
         )
 
         # Get requested individual
