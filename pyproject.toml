@@ -39,6 +39,7 @@ dependencies = [
   "torch>=2.8.0",
   "scipy>=1.16.3",
   "scipy-stubs>=1.16.3.0",
+  "tqdm>=4.67.1",
 ]
 
 

@@ -27,6 +27,7 @@ from ariel.body_phenotypes.robogen_lite.decoders.hi_prob_decoding import (
 from ariel.body_phenotypes.robogen_lite.modules.core import CORE_DIMENSIONS
 from ariel.body_phenotypes.robogen_lite.modules.hinge import ROTOR_DIMENSIONS
 from ariel.parameters.ariel_modules import ArielModulesConfig
+from ariel.simulation.environments._base_world import BaseWorld
 from ariel.simulation.environments._simple_flat import SimpleFlatWorld
 from ariel.utils.renderers import single_frame_renderer
 from ariel_experiments.gui_vis.visualize_tree import VisualizationConfig
@@ -91,7 +92,8 @@ def view(
     - If save_xml provided, saves XML to DATA directory with UTF-8 encoding
     """
     # MuJoCo configuration
-    robot = construct_mjspec_from_graph(robot)
+    if type(robot) == nx.DiGraph:
+        robot = construct_mjspec_from_graph(robot)
     
     
     viz_options = mujoco.MjvOption()  # visualization of various elements
@@ -103,9 +105,9 @@ def view(
 
     # MuJoCo basics
     # world = TiltedFlatWorld()
-    # world = SimpleFlatWorld(floor_size=(20, 20, 0.1))
+    # world = SimpleFlatWorld(floor_size=(20, 20, 0.1), checker_floor=False)
         
-    world = SimpleFlatWorld(floor_size=(20, 20, 0.1), checker_floor=False)
+    world = BaseWorld()
 
 
 
@@ -164,7 +166,7 @@ def view(
     mujoco.mj_resetData(model, data)
 
     # Render
-    img = single_frame_renderer(model, data, steps=10, cam_pos=(1.0,1.0,0.0))
+    img = single_frame_renderer(model, data, steps=10) #, cam_pos=(0.0,0.0,0.0)) # camera buggy af
 
     # View
     if with_viewer:
