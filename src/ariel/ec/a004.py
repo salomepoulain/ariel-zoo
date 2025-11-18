@@ -346,7 +346,7 @@ def evaluate(population: Population) -> Population:
 def survivor_selection(population: Population) -> Population:
     random.shuffle(population)
     current_pop_size = len(population)
-    for idx in range(len(population)):
+    for idx in range(0, len(population) - 1, 2):
         ind_i = population[idx]
         ind_j = population[idx + 1]
 
