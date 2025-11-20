@@ -16,10 +16,10 @@ def tfidf_fitness(
     config: ctk.SimilarityConfig,
     tfidf_archive_prev: dict[int, ctk.RadiusData],
     tfidf_archive_now: dict[int, ctk.RadiusData],
-) -> None:
+) -> list[Individual]:
     """Because the tfidf_archives are pointers in memory, make sure to not fully replace them but update everything in place here."""
     analyzed_population = get_full_analyzed_population(
-        population,
+        [ctk.to_graph(ctk.from_string(ind.tags["graph"])) for ind in population],
         analyzers=[
             partial(analyze_neighbourhood, config=config),
         ],
@@ -37,12 +37,14 @@ def tfidf_fitness(
     # now give the scores for each individual
     for idx, treehash_dict in enumerate(treehash_list):
         individual = population[idx]
-        individual.tfidf_diversity = ctk.calculate_tfidf(
+        diversity = ctk.calculate_tfidf(
             treehash_dict,
             tfidf_archive_now,
             config=tfidf_config,
         )
-        individual.tfidf_novelty = ctk.calculate_tfidf(
+        individual.tags["tfidf_diversity"] = diversity
+        individual.fitness = diversity
+        individual.tags["tfidf_novelty"] = ctk.calculate_tfidf(
             treehash_dict,
             tfidf_archive_prev,
             config=tfidf_config,
@@ -53,7 +55,7 @@ def tfidf_fitness(
     tfidf_archive_prev |= tfidf_archive_now
     # Clear current archive for next iteration
     tfidf_archive_now.clear()
-
+    return population
 
 
 # USAGE:
