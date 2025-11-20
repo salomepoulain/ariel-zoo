@@ -167,6 +167,8 @@ class EA(AbstractEA):
         self.init_database()
         self.population = population
         self.commit_population()
+        self.populations = []       # Added for the purpose of the similarity visualization (through the generations)
+        self.populations.append(self.population.copy())        # Added for the purpose of the similarity visualization (through the generations)
         self.console.rule("[blue]EA Initialised")
 
     @property
