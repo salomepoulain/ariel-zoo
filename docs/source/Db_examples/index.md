@@ -7,5 +7,5 @@ This section discusses methods for storing, loading, and processing ARIEL experi
 
 db_with_pandas
 db_with_polars
-db_with_sqlite
+db_with_sqlite3
 ```
