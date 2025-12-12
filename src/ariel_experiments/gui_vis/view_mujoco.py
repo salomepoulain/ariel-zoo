@@ -1,36 +1,27 @@
 # Standard library
+import math
+import traceback
 from pathlib import Path
 
 import mujoco
 import networkx as nx
 import numpy as np
-import quaternion as qnp
-import open3d as o3d
 
 # Third-party libraries
 from mujoco import viewer
+from PIL import Image
 from rich.console import Console
+from multiprocessing import Pool
 
-from ariel.body_phenotypes.robogen_lite.config import (
-    NUM_OF_FACES,
-    NUM_OF_ROTATIONS,
-    NUM_OF_TYPES_OF_MODULES,
-)
+from typing import Any
+
 from ariel.body_phenotypes.robogen_lite.constructor import (
     construct_mjspec_from_graph,
 )
-from ariel.body_phenotypes.robogen_lite.decoders.hi_prob_decoding import (
-    HighProbabilityDecoder,
-)
 
 # Local libraries
-from ariel.body_phenotypes.robogen_lite.modules.core import CORE_DIMENSIONS
-from ariel.body_phenotypes.robogen_lite.modules.hinge import ROTOR_DIMENSIONS
-from ariel.parameters.ariel_modules import ArielModulesConfig
 from ariel.simulation.environments._base_world import BaseWorld
-from ariel.simulation.environments._simple_flat import SimpleFlatWorld
 from ariel.utils.renderers import single_frame_renderer
-from ariel_experiments.gui_vis.visualize_tree import VisualizationConfig
 
 # Global constants
 # SCRIPT_NAME = __file__.split("/")[-1][:-3]
@@ -45,8 +36,6 @@ RNG = np.random.default_rng(SEED)
 DPI = 300
 
 
-
-
 from IPython.display import display
 
 
@@ -56,9 +45,10 @@ def view(
     *,
     title: str = "",
     save_file: Path | str | None = None,
-    config: VisualizationConfig | None = None,
     make_tree: bool = False,
     with_viewer: bool = False,
+    remove_background: bool = False,  # TODO change
+    tilted: bool = False,
     return_img: bool = False,
 ):
     """
@@ -94,8 +84,7 @@ def view(
     # MuJoCo configuration
     if type(robot) == nx.DiGraph:
         robot = construct_mjspec_from_graph(robot)
-    
-    
+
     viz_options = mujoco.MjvOption()  # visualization of various elements
 
     # Visualization of the corresponding model or decoration element
@@ -106,42 +95,37 @@ def view(
     # MuJoCo basics
     # world = TiltedFlatWorld()
     # world = SimpleFlatWorld(floor_size=(20, 20, 0.1), checker_floor=False)
-        
+
     world = BaseWorld()
 
+    # Only add floor when using the viewer
+    if with_viewer:
+        world.spec.add_texture(
+            name="custom_grid",
+            type=mujoco.mjtTexture.mjTEXTURE_2D,
+            builtin=mujoco.mjtBuiltin.mjBUILTIN_CHECKER,
+            rgb1=[0.9, 0.9, 0.9],
+            rgb2=[0.95, 0.95, 0.95],
+            width=800,
+            height=800,
+        )
+        world.spec.add_material(
+            name="custom_floor_material",
+            textures=["", "custom_grid"],
+            texrepeat=[5, 5],
+            texuniform=True,
+            reflectance=0.05,
+        )
 
+        # Add a floor geom to the world
+        world.spec.worldbody.add_geom(
+            name="floor",
+            type=mujoco.mjtGeom.mjGEOM_PLANE,
+            size=[10, 10, 0.1],
+            material="custom_floor_material",
+            rgba=[0.9, 0.9, 0.9, 1.0],
+        )
 
-
-
-    world.spec.add_texture(
-        name="custom_grid",
-        type=mujoco.mjtTexture.mjTEXTURE_2D,
-        builtin=mujoco.mjtBuiltin.mjBUILTIN_CHECKER,
-        rgb1=[0.9, 0.9, 0.9],
-        rgb2=[0.95, 0.95, 0.95],
-        width=800,
-        height=800,
-    )
-    world.spec.add_material(
-        name="custom_floor_material",
-        textures=["", "custom_grid"],
-        texrepeat=[5, 5],
-        texuniform=True,
-        reflectance=0.05,
-    )
-    
-    
-    # Update floor geom
-    for geom in world.spec.worldbody.geoms:
-        if geom.name == "simple-flat-world":  # or whatever the floor_name is
-            geom.material = "custom_floor_material"
-            break
-
-    for geom in world.spec.worldbody.geoms:
-        if geom.name == "floor":
-            geom.material = "custom_floor_material"
-            break
-        
     # Save the model to XML
     if save_file:
         xml = world.spec.to_xml()
@@ -150,7 +134,7 @@ def view(
 
     # Make robot parts more transparant
     for i in range(len(robot.spec.geoms)):
-        robot.spec.geoms[i].rgba[-1] = 0.7
+        robot.spec.geoms[i].rgba[-1] = 0.9
 
     # Spawn the robot at the world
     world.spawn(robot.spec)
@@ -159,18 +143,58 @@ def view(
     model = world.spec.compile()
     data = mujoco.MjData(model)
 
-    # Number of actuators and DoFs
-    # console.log(f"DoF (model.nv): {model.nv}, Actuators (model.nu): {model.nu}")
+
+# --- ADD THIS BLOCK TO BRIGHTEN THE SCENE ---
+    # Increase ambient light (overall brightness)
+    model.vis.headlight.ambient = [0.17, 0.17, 0.17]  # Default is usually around [0.1, 0.1, 0.1]
+
+    # Increase diffuse light (direct brightness)
+    model.vis.headlight.diffuse = [0.8, 0.8, 0.8]  # Default is usually around [0.4, 0.4, 0.4]
+
+    # Increase specular light (shiny highlights)
+    model.vis.headlight.specular = [0.3, 0.3, 0.3]
 
     # Reset state and time of simulation
     mujoco.mj_resetData(model, data)
 
     # Render
-    img = single_frame_renderer(model, data, steps=10) #, cam_pos=(0.0,0.0,0.0)) # camera buggy af
+
+    if not tilted:
+        img = single_frame_renderer(
+            model,
+            data,
+            steps=10,
+            cam_fovy=2,
+        )  # , cam_pos=(0.0,0.0,0.0)) # camera buggy af
+    else:
+        distance = 2.5
+        angle_deg = 45
+        angle_rad = math.radians(angle_deg)
+
+        cam_pos = (
+            distance * math.cos(angle_rad),  # x
+            distance * math.sin(angle_rad),  # y
+            1.5,  # z height
+        )
+        cam_quat = look_at(cam_pos, [0, 0, 0])
+
+        img = single_frame_renderer(
+            model,
+            data,
+            width=500,
+            height=500,
+            cam_pos=cam_pos,
+            cam_quat=cam_quat,
+            cam_fovy=2,
+        )
 
     # View
     if with_viewer:
-        viewer.launch(model=model, data=data)
+        # Pass visualization options to ensure ground/floor is visible
+        viewer.launch(model=model, data=data, show_left_ui=True, show_right_ui=True)
+
+    if remove_background and return_img:
+        img = remove_black_background_and_crop(img)
 
     if return_img:
         return img
@@ -178,195 +202,412 @@ def view(
     display(img)
     return data
 
-# coloring for each component
-COLOR = { "hinge":[1,0,0] , 
-"brick": [0,0,1],
-"core": [1,1,0]}
 
-# translation to move component to the correct face
-SPACING = {"TOP": [0,0,0.5] ,
-"BOTTOM": [0,0,-0.5],
-"RIGHT": [0.5,0,0],
-"LEFT": [-0.5,0,0] ,
-"FRONT": [0,0.5,0],
-"BACK": [0,-0.5,0]}
-
-# size of each component
-DIMS = {"hinge": [0.025,0.05,0.025] , # place holder dim for now will import later
-"brick": ArielModulesConfig().BRICK_DIMENSIONS,
-"core": CORE_DIMENSIONS}
-
-# angles associated with the different faces, used to make components face the right direction
-BASE_ANGLES = {'TOP': [0.707, 0.707, 0.0, 0.0],
- 'BOTTOM': [-0.0, 0.0, -0.707, 0.707],
- 'LEFT': [0.707, -0.0, 0.0, 0.707],
- 'RIGHT': [-0.707, 0.0, 0.0, 0.707],
- 'FRONT': [1.0, 0.0, 0.0, 0.0],
- 'BACK': [-0.0, 0.0, 0.0, 1.0]}
-
-def make_point_cloud(center, type, rotation, nr_of_points = 1_000) -> o3d.geometry.PointCloud:
-
-    # making the outline of component
-    cube_max = np.array(DIMS[type])     # upper corner
-
-    # sampeling points in the outlined area
-    points = np.random.uniform(high=cube_max, size=(nr_of_points, 3))
-
-    # transforming to pointcloud object
-    point_cloud = o3d.geometry.PointCloud()
-    point_cloud.points = o3d.utility.Vector3dVector(points)
+import numpy as np
 
 
-    # shifting all points so the center of the point cloud matches the center using absolute coords
-    point_cloud.translate(center, relative=False)
-
-    # rotating
-    rotation_matrix = point_cloud.get_rotation_matrix_from_quaternion(rotation)
-    point_cloud.rotate(rotation_matrix)
-
-    # making the cloud pretty with colors depending on type
-    point_cloud.paint_uniform_color(COLOR[type])
-
-    return point_cloud
-
-
-def get_cloud_of_robot_from_graph(graph:nx.DiGraph, node:int = 0) -> o3d.geometry.PointCloud: 
-
+def remove_black_background_and_crop(img, threshold=10):
     """
-    graph: is a DiGraph of a robot
-    node: the node id from which to go down to generate the robot, primarily used for recursion of this function
-            can be used for to generate point clouds of a specific subtree in the DiGraph
-    
-    this will make point clouds and apply translation and rotation to make it match the simulations
-    
+    Remove black background and crop to content.
+
+    Args:
+        img: PIL Image
+        threshold: Pixel values below this are considered black (0-255)
+
+    Returns
+    -------
+        Cropped PIL Image with transparent background
     """
-    # collect orientation and type of parent
-    orientation = int(graph.nodes(data=True)[node]["rotation"].lower()[4:])
-    
-    node_type = graph.nodes(data=True)[node]["type"].lower()
-    cloud = make_point_cloud([0,0,0], node_type, [0,0,0,0], nr_of_points=1_000)
-    
-    for i in graph.edges(node, data=True):
+    # Convert to RGBA
+    img_rgba = img.convert("RGBA")
+    img_array = np.array(img_rgba)
 
-        # collect orientation and type of child component
-        component_type = graph.nodes(data=True)[i[1]]["type"].lower()
-        direction = i[-1]["face"]
+    # Create mask: pixels where all RGB channels are below threshold
+    is_black = (img_array[:, :, :3] < threshold).all(axis=2)
 
-        # check for none types
-        if component_type not in DIMS:
-            continue
+    # Set alpha to 0 for black pixels
+    img_array[is_black, 3] = 0
 
-        # makes point cloud
-        sub_cloud = get_cloud_of_robot_from_graph(graph,i[1])
+    # Find bounding box of non-transparent pixels
+    non_transparent = np.where(img_array[:, :, 3] > 0)
 
-        # rotation matrix
-        rotation_matrix = sub_cloud.get_rotation_matrix_from_quaternion(BASE_ANGLES[direction])
+    if len(non_transparent[0]) == 0:
+        # No content found, return original
+        return img_rgba
 
-        # calculating movement to correct face, aka 0.5 own size + 0.5 parent size in a direction
-        translation = (np.array(DIMS[component_type][1]) * SPACING[direction] ) + (np.array(DIMS[node_type][1]) * SPACING[direction])
+    # Get bounding box
+    y_min, y_max = non_transparent[0].min(), non_transparent[0].max()
+    x_min, x_max = non_transparent[1].min(), non_transparent[1].max()
 
-        # core attachment point is not always centered
-        if node_type == "core" and direction not in ["TOP","BOTTOM"]:
-            # moving component down so it touches the ground
-            translation += (np.array(DIMS["core"]) * [0,0,-0.25])
-
-        
-        # rotating to face the correct way
-        
-        sub_cloud.rotate(rotation_matrix, center=[0,0,0])
-
-        # moving cloud to the correct face
-        sub_cloud.translate(translation)
+    # Crop to bounding box
+    return Image.fromarray(img_array[y_min:y_max + 1, x_min:x_max + 1])
 
 
-        # merging cloud
-        cloud += sub_cloud
-        
-        
-    # rotations of components around their parent
-    quat = np.roll((qnp.as_float_array(qnp.from_euler_angles([
-    np.deg2rad(180),
-    -np.deg2rad(180 - orientation),
-    np.deg2rad(0),
-    ]))), shift=-1)
-
-    rotation_matrix = cloud.get_rotation_matrix_from_quaternion(quat)
-    cloud.rotate(rotation_matrix, center=[0,0,0])
-
-    return cloud
+import numpy as np
+from scipy.spatial.transform import Rotation as R
 
 
-def simple_cloud_distance(graph1:nx.DiGraph|o3d.geometry.PointCloud, graph2:nx.DiGraph|o3d.geometry.PointCloud) -> float:
+def look_at(cam_pos, target_pos):
     """
-    Calculates distance between the point cloud of 2 robots
-    graph1: either a graph or point cloud of a robot to be compared with graph 2
-    graph2: either a graph or point cloud of a robot to be compared with graph 1
+    Returns a MuJoCo quaternion (w, x, y, z) for a camera at cam_pos
+    looking directly at target_pos.
     """
+    # Vector from camera to target
+    direction = np.array(target_pos) - np.array(cam_pos)
+    # Normalize
+    direction /= np.linalg.norm(direction)
 
-    # checks whether we got point clouds or graphs as input, if graphs are given point clouds are generated
-    if type(graph1) == nx.DiGraph:
-        cloud1 = get_cloud_of_robot_from_graph(graph1)
+    # MuJoCo cameras look down their local -Z axis.
+    # We need a rotation that aligns local -Z with our 'direction' vector.
+
+    # Standard 'Up' vector for the world
+    up = np.array([0, 0, 1])
+
+    # Calculate orthogonal axes
+    right = np.cross(direction, up)
+    # Handle case where looking straight up/down
+    if np.linalg.norm(right) < 1e-6:
+        right = np.array([1, 0, 0])
     else:
-        cloud1 = graph1
-    
-    if type(graph2) == nx.DiGraph:
-        cloud2 = get_cloud_of_robot_from_graph(graph2)
+        right /= np.linalg.norm(right)
+
+    new_up = np.cross(right, direction)
+    new_up /= np.linalg.norm(new_up)
+
+    # Create rotation matrix: [Right, Up, -Forward]
+    # (The camera looks towards -Z, so -Forward is the positive Z axis of the matrix)
+    rot_mat = np.column_stack([right, new_up, -direction])
+
+    # Convert to quaternion (Scipy gives x, y, z, w)
+    r = R.from_matrix(rot_mat)
+    quat = r.as_quat()
+
+    # Return in MuJoCo order: (w, x, y, z)
+    return (quat[3], quat[0], quat[1], quat[2])
+
+
+def get_camera_params(angle_deg=45, distance=2.5, height=1.5):
+    """
+    Get camera position and quaternion for viewing at an angle.
+
+    Args:
+        angle_deg: Horizontal angle in degrees (0=front, 90=side, etc)
+        distance: Distance from center
+        height: Camera height above ground
+    """
+    angle_rad = math.radians(angle_deg)
+
+    cam_pos = (
+        distance * math.cos(angle_rad),
+        distance * math.sin(angle_rad),
+        height,
+    )
+
+    # Quaternion to look at origin with NO ROLL (keeps vertical lines vertical)
+    yaw = -angle_rad + math.pi / 2  # Rotate to face center
+    pitch = -math.atan2(height, distance)  # Tilt down to see robot
+    roll = 0  # Keep camera upright!
+
+    # Convert Euler (ZYX order) to quaternion
+    cy = math.cos(yaw * 0.5)
+    sy = math.sin(yaw * 0.5)
+    cp = math.cos(pitch * 0.5)
+    sp = math.sin(pitch * 0.5)
+    cr = math.cos(roll * 0.5)
+    sr = math.sin(roll * 0.5)
+
+    cam_quat = (
+        cr * cp * cy + sr * sp * sy,  # w
+        sr * cp * cy - cr * sp * sy,  # x
+        cr * sp * cy + sr * cp * sy,  # y
+        cr * cp * sy - sr * sp * cy,   # z
+    )
+
+    return cam_pos, cam_quat
+
+
+# =============================================================================
+# IMAGE CACHING AND THUMBNAIL FUNCTIONS
+# =============================================================================
+
+import base64
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
+from io import BytesIO
+
+import pandas as pd
+
+try:
+    from rich.progress import track
+except ImportError:
+    # Fallback if rich is not installed
+    def track(iterable, description="", total=None):
+        return iterable
+
+
+def generate_single_image_worker(args):
+    """
+    Worker function for parallel image generation.
+    Must be at module level for multiprocessing to work.
+
+    Args:
+        args: Tuple of (i, robot, cache_dir)
+
+    Returns
+    -------
+        dict with robot_id and genome_string, or None on error
+    """
+    i, robot, cache_dir = args
+    try:
+        # graph = robot.to_graph()
+
+        # Generate image using view function
+        img = view(robot, return_img=True, tilted=True, remove_background=True)
+
+        # If it's already a PIL Image, use it directly; otherwise convert from array
+        if not isinstance(img, Image.Image):
+            img = Image.fromarray(img)
+
+        img.save(f"{cache_dir}/robot_{i:04d}.png", optimize=True, compress_level=6)
+
+        return {
+            "robot_id": i,
+        }
+    except Exception as e:
+        console.print(f"[red]Error generating robot {i}: {e}[/red]")
+        console.print(f"[dim]{traceback.format_exc()}[/dim]")
+        return None
+
+
+def generate_image_cache_with_index(
+    population: list[nx.DiGraph],
+    robot_names: list[str] | None = None,
+    cache_dir: str | Path | None = None,
+    parallel: bool = False,
+    max_workers: int = 4,
+):
+    """
+    Generate all robot images and create index CSV.
+
+    Args:
+        population: List of robot objects
+        robot_names: Optional list of string identifiers for each robot
+        cache_dir: Directory to save images and index (default: DATA/img)
+        parallel: Use multiprocessing for speed (requires macOS/Linux setup)
+        max_workers: Number of parallel workers
+
+    Returns
+    -------
+        DataFrame with robot index
+    """
+    if cache_dir is None:
+        cache_dir = DATA / "img"
+    cache_dir = Path(cache_dir)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
+    # Use robot_names if provided, otherwise use robot string representation
+    if robot_names is None:
+        robot_names = [None] * len(population)
+
+    if parallel:
+        try:
+            args = [(i, population[i], cache_dir) for i in range(len(population))]
+
+            with Pool(processes=max_workers) as pool:
+                results = list(
+                    track(
+                        pool.imap(generate_single_image_worker, args),
+                        total=len(population),
+                        description=(
+                            f"Generating images (parallel, {max_workers} "
+                            "workers)..."
+                        ),
+                    ),
+                )
+            index_data = [r for r in results if r is not None]
+        except Exception:
+            parallel = False
+
+    if not parallel:
+        # Serial generation (slower but reliable in notebooks)
+        index_data = []
+        for i in track(
+            range(len(population)), description="Generating images (serial)...",
+        ):
+            result = generate_single_image_worker((i, population[i], cache_dir))
+            if result:
+                index_data.append(result)
+
+    # Add custom names if provided
+    for i, data in enumerate(index_data):
+        if i < len(robot_names) and robot_names[i] is not None:
+            data["robot_name"] = robot_names[i]
+
+    # Save index
+    index_df = pd.DataFrame(index_data)
+    index_df.to_csv(f"{cache_dir}/index.csv", index=False)
+
+    return index_df
+
+
+def load_single_thumbnail(
+    i: int, cache_dir: str | Path, scale: float,
+) -> str:
+    """
+    Load and scale a single robot image from cache.
+
+    Args:
+        i: Robot index
+        cache_dir: Directory containing cached images
+        scale: Scaling factor (0.25 = 25% size)
+
+    Returns
+    -------
+        Base64 encoded PNG data URL string
+    """
+    cache_path = Path(cache_dir)
+    img = Image.open(cache_path / f"robot_{i:04d}.png")
+    new_size = (int(img.width * scale), int(img.height * scale))
+    img_small = img.resize(new_size, Image.Resampling.BICUBIC)
+    buffer = BytesIO()
+    img_small.save(buffer, format="PNG", optimize=False, compress_level=1)
+    return "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode()
+
+
+def load_all_thumbnails(
+    n_robots: int,
+    cache_dir: str | Path | None = None,
+    scale: float = 0.3,
+    max_workers: int = 8,
+) -> list[str]:
+    """
+    Load all thumbnails from cache (parallel with threading).
+
+    Args:
+        n_robots: Number of robots to load
+        cache_dir: Directory containing cached images (default: DATA/img)
+        scale: Scaling factor (0.3 = 30% size, ~7MB for 1000 robots)
+        max_workers: Number of parallel threads
+
+    Returns
+    -------
+        List of base64 encoded PNG data URL strings
+    """
+    if cache_dir is None:
+        cache_dir = DATA / "img"
+    cache_dir = Path(cache_dir)
+
+    loader = partial(load_single_thumbnail, cache_dir=cache_dir, scale=scale)
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        return list(track(
+            executor.map(loader, range(n_robots)),
+            total=n_robots,
+            description=f"Loading {n_robots} thumbnails at {scale * 100:.0f}% scale...",
+        ))
+
+
+def load_index(cache_dir: str | Path | None = None) -> pd.DataFrame:
+    """
+    Load the robot index CSV.
+
+    Args:
+        cache_dir: Directory containing the index.csv (default: DATA/img)
+
+    Returns
+    -------
+        DataFrame with robot metadata
+    """
+    if cache_dir is None:
+        cache_dir = DATA / "img"
+    cache_path = Path(cache_dir)
+    return pd.read_csv(cache_path / "index.csv")
+
+
+def cache_exists(cache_dir: str | Path | None = None) -> bool:
+    """
+    Check if image cache and index exist.
+
+    Args:
+        cache_dir: Directory to check (default: DATA/img)
+
+    Returns
+    -------
+        bool: True if cache exists and is valid
+    """
+    if cache_dir is None:
+        cache_dir = DATA / "img"
+    cache_path = Path(cache_dir)
+    index_path = cache_path / "index.csv"
+
+    if not index_path.exists():
+        return False
+
+    # Check if at least one image exists
+    try:
+        index_df = pd.read_csv(index_path)
+        if len(index_df) == 0:
+            return False
+
+        first_img = cache_path / "robot_0000.png"
+        return first_img.exists()
+    except Exception:
+        return False
+
+
+def load_or_generate_cache(
+    population: list[nx.DiGraph],
+    robot_names: list[str] | None = None,
+    cache_dir: str | Path | None = None,
+    scale: float = 0.3,
+    parallel: bool = False,
+    max_workers: int = 4,
+) -> tuple[list[str], pd.DataFrame]:
+    """
+    Convenience function: Load cache if it exists, otherwise generate it.
+
+    Args:
+        population: List/dict of robot objects (only needed if generating)
+        robot_names: Optional list of string identifiers for each robot
+        cache_dir: Directory for cache (default: DATA/img)
+        scale: Thumbnail scale for loading
+        parallel: Use multiprocessing for generation
+        max_workers: Number of workers for generation
+
+    Returns
+    -------
+        Tuple of (thumbnails_list, index_dataframe)
+    """
+    if cache_dir is None:
+        cache_dir = DATA / "img"
+    cache_path = Path(cache_dir)
+
+    if cache_exists(cache_path):
+        index_df = load_index(cache_path)
+        thumbnails = load_all_thumbnails(
+            len(index_df), cache_dir=cache_path, scale=scale,
+        )
     else:
-        cloud2 = graph2
+        index_df = generate_image_cache_with_index(
+            population,
+            robot_names=robot_names,
+            cache_dir=cache_path,
+            parallel=parallel,
+            max_workers=max_workers,
+        )
+        thumbnails = load_all_thumbnails(
+            len(index_df), cache_dir=cache_path, scale=scale,
+        )
 
-    # set max distance
-    distance = float("inf")
+    return thumbnails, index_df
 
-    # compare 24 different orientations to see which orientation has the smallest distance
-    for direction in BASE_ANGLES:
-        # using base angles to make it all 6 directions
-        cloud1.rotate(cloud1.get_rotation_matrix_from_quaternion(BASE_ANGLES[direction]), center=[0,0,0])
 
-        for i in range(4):
-            # "rolling" the robot for the other 4 orientations
-            quat = np.roll((qnp.as_float_array(qnp.from_euler_angles([
-                np.deg2rad(180),
-                -np.deg2rad(180 - 90*i),
-                np.deg2rad(0),
-                ]))), shift=-1)
-            cloud1.rotate(cloud1.get_rotation_matrix_from_quaternion(quat), center=[0,0,0])
+# =============================================================================
+# END OF IMAGE CACHING FUNCTIONS
+# =============================================================================
 
-            # find smallest distance
-            distance2 = (np.sum(cloud1.compute_point_cloud_distance(cloud2)) + np.sum(cloud2.compute_point_cloud_distance(cloud1)))
-            if distance > distance2:
-                distance = distance2
-
-    # currently returns the smallest Chamfer distance
-    return distance
 
 if __name__ == "__main__":
+    from ariel_experiments.utils.initialize import generate_random_individual
 
-    num_modules = 20
-
-    type_probability_space = RNG.random(
-        size=(num_modules, NUM_OF_TYPES_OF_MODULES),
-        dtype=np.float32,
-    )
-
-    # "Connection" probability space
-    conn_probability_space = RNG.random(
-        size=(num_modules, num_modules, NUM_OF_FACES),
-        dtype=np.float32,
-    )
-
-    # "Rotation" probability space
-    rotation_probability_space = RNG.random(
-        size=(num_modules, NUM_OF_ROTATIONS),
-        dtype=np.float32,
-    )
-
-    # Decode the high-probability graph
-    hpd = HighProbabilityDecoder(num_modules)
-    robot = hpd.probability_matrices_to_graph(
-        type_probability_space,
-        conn_probability_space,
-        rotation_probability_space,
-    )
-    
-    
-    view(robot)
+    view(generate_random_individual())

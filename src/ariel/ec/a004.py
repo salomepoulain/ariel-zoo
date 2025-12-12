@@ -228,9 +228,15 @@ class EA(AbstractEA):
 
             # Produce sorting statement
             if max_and_first | min_and_last:
-                statement = statement.order_by(col(Individual.fitness_).desc())
+                statement = statement.order_by(
+                    col(Individual.fitness_).desc(),
+                    col(Individual.id).asc()  # Secondary sort for determinism
+                )
             elif max_and_last | min_and_first:
-                statement = statement.order_by(col(Individual.fitness_).asc())
+                statement = statement.order_by(
+                    col(Individual.fitness_).asc(),
+                    col(Individual.id).asc()  # Secondary sort for determinism
+                )
             else:
                 msg = "Correct sorting statement not found!\n"
                 msg += f"Got: {best_comes=} and {self.is_maximisation=}\n"
@@ -281,13 +287,14 @@ class EA(AbstractEA):
 
 # ------------------------ EA STEPS ------------------------ #
 def parent_selection(population: Population) -> Population:
-    random.shuffle(population)
+    RNG.shuffle(population)
     for idx in range(0, len(population) - 1, 2):
         ind_i = population[idx]
         ind_j = population[idx + 1]
 
-        # Compare fitness values
-        if ind_i.fitness > ind_j.fitness and config.is_maximisation:
+        # Compare fitness values - works for both maximization and minimization
+        if (ind_i.fitness > ind_j.fitness and config.is_maximisation) or \
+           (ind_i.fitness < ind_j.fitness and not config.is_maximisation):
             ind_i.tags = {"ps": True}
             ind_j.tags = {"ps": False}
         else:
@@ -345,7 +352,7 @@ def evaluate(population: Population) -> Population:
 
 
 def survivor_selection(population: Population) -> Population:
-    random.shuffle(population)
+    RNG.shuffle(population)
     current_pop_size = len(population)
     for idx in range(len(population)):
         ind_i = population[idx]

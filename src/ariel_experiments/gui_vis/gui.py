@@ -32,7 +32,7 @@ RNG = np.random.default_rng(SEED)
 
 from collections.abc import Callable
 
-from ariel_experiments.characterize.canonical.core.toolkit import CanonicalToolKit as ctk
+from ariel_experiments.characterize.canonical_toolkit.tests.old.toolkit import CanonicalToolKit as ctk
 
 class IndividualVisualizer:
     """
@@ -272,7 +272,7 @@ class IndividualVisualizer:
 
     def _render_all_visualizations(
         self,
-        
+
     ) -> None:
         """Render all visualized individuals in order (most recent first)."""
         if not self._viz_output_area or not self._visualized_individuals:
@@ -297,7 +297,7 @@ class IndividualVisualizer:
                         node = ctk.from_graph(self._population[idx])
                         node.canonicalize()
                         view(node.to_graph())
-                        
+
 
     def backward(self) -> None:
         # when viewing individuals

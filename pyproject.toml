@@ -40,6 +40,12 @@ dependencies = [
   "scipy>=1.16.3",
   "scipy-stubs>=1.16.3.0",
   "tqdm>=4.67.1",
+  "umap-learn>=0.5.9.post2",
+  "datashader>=0.18.2",
+  "bokeh>=3.8.1",
+  "holoviews>=1.22.0",
+  "scikit-image>=0.25.2",
+  "colorcet>=3.1.0",
 ]
 
 

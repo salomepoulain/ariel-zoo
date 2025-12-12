@@ -19,7 +19,8 @@ CWD = Path.cwd()
 DATA = Path(CWD / "__data__")
 DATA.mkdir(exist_ok=True)
 SEED = 42
-DPI=300
+DPI = 300
+
 
 # Global functions
 console = Console()
@@ -48,7 +49,7 @@ def create_boxplot_from_raw(
     sns.boxplot(data=data)
     plt.xticks(ticks=range(len(labels)), labels=labels)
     plt.ylabel("Value")
-    
+
     if title:
         plt.title(title)
     else:
@@ -57,7 +58,7 @@ def create_boxplot_from_raw(
     if save_file:
         path = DATA / Path(save_file)
         console.log(f"saving file to {path}")
-        plt.savefig(path)    
+        plt.savefig(path)
 
     plt.show()
 
@@ -115,7 +116,7 @@ def create_histogram_from_raw(
             path = DATA / Path(save_file)
             console.log(f"saving file to {path}")
             plt.savefig(path)
-        
+
         plt.show()
     else:
         # Plot string-valued keys separately
@@ -143,17 +144,17 @@ def create_histogram_from_raw(
                 )
                 plt.xlabel("Genotype frequency")
                 plt.ylabel("Number of unique genotypes")
-                
+
                 if title:
                     plt.title(title)
                 else:
                     plt.title(key)
-                
+
                 plt.legend()
-                
+
                 if save_file:
                     path = DATA / Path(save_file)
                     console.log(f"saving file to {path}")
                     plt.savefig(path)
-                
+
                 plt.show()

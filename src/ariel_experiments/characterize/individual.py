@@ -22,7 +22,7 @@ from ariel.body_phenotypes.robogen_lite.modules.hinge import (
 from typing import Any, cast
 
 
-from ariel_experiments.characterize.canonical.core.toolkit import CanonicalToolKit as ctk, TreeHash
+from ariel_experiments.characterize.canonical_toolkit.tests.old.toolkit import CanonicalToolKit as ctk, TreeHash
 
 
 

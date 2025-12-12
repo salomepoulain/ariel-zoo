@@ -2,6 +2,7 @@
 
 # Standard library
 from pathlib import Path
+from re import sub
 from typing import TYPE_CHECKING, Any, Literal
 
 # Third-party libraries
@@ -35,7 +36,7 @@ if TYPE_CHECKING:
 type ViewerTypes = Literal["launcher", "video", "simple", "no_control", "frame"]
 
 # --- RANDOM GENERATOR SETUP --- #
-SEED = 42
+SEED = 43
 RNG = np.random.default_rng(SEED)
 
 # --- DATA SETUP ---
@@ -46,7 +47,7 @@ DATA.mkdir(exist_ok=True)
 
 # Global variables
 SPAWN_POS = [-0.8, 0, 0]
-NUM_OF_MODULES = 30
+NUM_OF_MODULES = 2
 TARGET_POSITION = [5, 0, 0.5]
 
 # Local scripts
@@ -213,6 +214,15 @@ def main() -> None:
         p_matrices[1],
         p_matrices[2],
     )
+
+
+    from ariel_experiments.characterize.canonical_toolkit.tests.old.toolkit import CanonicalToolKit as ctk
+
+    node = ctk.from_graph(robot_graph)
+
+    subtrees = ctk.collect_neighbours(node)
+
+    print(subtrees)
 
     # ? ------------------------------------------------------------------ #
     # Save the graph to a file

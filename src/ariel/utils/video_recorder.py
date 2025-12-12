@@ -14,7 +14,8 @@ class VideoRecorder:
     """Simple video recorder for ariel."""
 
     # Encoding: 'mp4v' or 'avc1' for H.264
-    _video_encoding: str = "avc1"
+    # Using mp4v for better compatibility in WSL2/headless environments
+    _video_encoding: str = "mp4v"
     _add_timestamp_to_file_name: bool = True
     _file_extension: str = ".mp4"
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import itertools
+# import itertools
 
 # Standard library imports
 from collections import defaultdict
@@ -8,7 +8,7 @@ from os import cpu_count
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol, TypedDict, TypeVar, cast
 import numpy as np
-from tqdm.auto import tqdm
+# from tqdm.auto import tqdm
 # Third-party imports
 import numpy as np
 import pandas as pd
@@ -17,9 +17,12 @@ from rich.console import Console
 from rich.progress import track
 from rich.tree import Tree
 
-from ariel_experiments.characterize.canonical.core.toolkit import (
-    CanonicalToolKit as ctk,
-)
+# import pickle
+# from multiprocessing import shared_memory
+
+# from ariel_experiments.characterize.canonical.core.toolkit import (
+#     CanonicalToolKit as ctk,
+# )
 
 if TYPE_CHECKING:
     from networkx import DiGraph
@@ -31,8 +34,7 @@ DATA = CWD / "__data__"
 DATA.mkdir(parents=True, exist_ok=True)
 # console.log(f"DATA dir = {DATA}")
 SEED = 42
-import pickle
-from multiprocessing import shared_memory
+
 
 # Global functions
 console = Console()
@@ -187,185 +189,185 @@ def _find_property_list[T](
 
 # region PropertyDerivers
 
-def matrix_derive_neighbourhood[T](
-    named_props: NamedGraphPropertiesT[T],
-    key: GraphPropertyName = "neighbourhood",
-    *,
-    config: ctk.SimilarityConfig,
-    symmetric: bool = True,
-    n_jobs: int = -1,
-    batch_size: int = 5000,
-    hide_tracker: bool = False
-) -> NamedDerivedPropertiesT[SimilarityMatrix]:
-    if key not in named_props:
-        msg = f"Property '{key}' not found in raw properties"
-        raise KeyError(msg)
+# def matrix_derive_neighbourhood[T](
+#     named_props: NamedGraphPropertiesT[T],
+#     key: GraphPropertyName = "neighbourhood",
+#     *,
+#     config: ctk.SimilarityConfig,
+#     symmetric: bool = True,
+#     n_jobs: int = -1,
+#     batch_size: int = 5000,
+#     hide_tracker: bool = False
+# ) -> NamedDerivedPropertiesT[SimilarityMatrix]:
+#     if key not in named_props:
+#         msg = f"Property '{key}' not found in raw properties"
+#         raise KeyError(msg)
 
-    if n_jobs == -1:
-        cpus = cpu_count()
-        if cpus is None:
-            cpus = 1
-        n_jobs = max(1, cpus - (cpus // 4))
+#     if n_jobs == -1:
+#         cpus = cpu_count()
+#         if cpus is None:
+#             cpus = 1
+#         n_jobs = max(1, cpus - (cpus // 4))
 
-    property_values = named_props[key]
-    n = len(property_values)
-    matrix = np.full((n, n), 1.0, dtype=np.float32)
+#     property_values = named_props[key]
+#     n = len(property_values)
+#     matrix = np.full((n, n), 1.0, dtype=np.float32)
 
-    # Calculate total pairs without storing them
-    n_pairs = n * (n - 1) // 2 if symmetric else n * (n - 1)
-    n_batches = (n_pairs + batch_size - 1) // batch_size
+#     # Calculate total pairs without storing them
+#     n_pairs = n * (n - 1) // 2 if symmetric else n * (n - 1)
+#     n_batches = (n_pairs + batch_size - 1) // batch_size
 
-    # Create shared memory for property_values
-    data_bytes = pickle.dumps(property_values)
-    shm = shared_memory.SharedMemory(create=True, size=len(data_bytes))
-    shm.buf[:len(data_bytes)] = data_bytes
-    shm_name = shm.name
-    shm_size = len(data_bytes)
+#     # Create shared memory for property_values
+#     data_bytes = pickle.dumps(property_values)
+#     shm = shared_memory.SharedMemory(create=True, size=len(data_bytes))
+#     shm.buf[:len(data_bytes)] = data_bytes
+#     shm_name = shm.name
+#     shm_size = len(data_bytes)
 
-    try:
-        # Generator for pair batches - no memory accumulation
-        def batch_generator():
-            if symmetric:
-                pair_gen = itertools.combinations(range(n), 2)
-            else:
-                pair_gen = itertools.permutations(range(n), 2)
+#     try:
+#         # Generator for pair batches - no memory accumulation
+#         def batch_generator():
+#             if symmetric:
+#                 pair_gen = itertools.combinations(range(n), 2)
+#             else:
+#                 pair_gen = itertools.permutations(range(n), 2)
 
-            batch = []
-            for pair in pair_gen:
-                batch.append(pair)
-                if len(batch) >= batch_size:
-                    yield batch
-                    batch = []
-            if batch:
-                yield batch
+#             batch = []
+#             for pair in pair_gen:
+#                 batch.append(pair)
+#                 if len(batch) >= batch_size:
+#                     yield batch
+#                     batch = []
+#             if batch:
+#                 yield batch
 
-        def compute_batch_shared(batch_pairs):
-            """Compute using shared memory."""
-            shm = shared_memory.SharedMemory(name=shm_name)
-            prop_vals = pickle.loads(bytes(shm.buf[:shm_size]))
+#         def compute_batch_shared(batch_pairs):
+#             """Compute using shared memory."""
+#             shm = shared_memory.SharedMemory(name=shm_name)
+#             prop_vals = pickle.loads(bytes(shm.buf[:shm_size]))
 
-            return [
-                float(ctk.calculate_similarity_from_dicts(
-                    prop_vals[i], prop_vals[j], config,
-                ))
-                for i, j in batch_pairs
-            ]
+#             return [
+#                 float(ctk.calculate_similarity_from_dicts(
+#                     prop_vals[i], prop_vals[j], config,
+#                 ))
+#                 for i, j in batch_pairs
+#             ]
 
-        # Process batches with streaming
-        with tqdm(total=n_batches, desc=f"Computing {key}", unit="batch", disable=hide_tracker) as pbar:
-            for batch_pairs, batch_result in zip(
-                batch_generator(),
-                Parallel(
-                    n_jobs=n_jobs,
-                    backend="loky",
-                    return_as="generator",
-                )(
-                    delayed(compute_batch_shared)(batch)
-                    for batch in batch_generator()
-                ), strict=False,
-            ):
-                # Fill matrix immediately
-                for (i, j), value in zip(batch_pairs, batch_result, strict=False):
-                    matrix[i, j] = value
-                    if symmetric:
-                        matrix[j, i] = value
-                pbar.update(1)
+#         # Process batches with streaming
+#         with tqdm(total=n_batches, desc=f"Computing {key}", unit="batch", disable=hide_tracker) as pbar:
+#             for batch_pairs, batch_result in zip(
+#                 batch_generator(),
+#                 Parallel(
+#                     n_jobs=n_jobs,
+#                     backend="loky",
+#                     return_as="generator",
+#                 )(
+#                     delayed(compute_batch_shared)(batch)
+#                     for batch in batch_generator()
+#                 ), strict=False,
+#             ):
+#                 # Fill matrix immediately
+#                 for (i, j), value in zip(batch_pairs, batch_result, strict=False):
+#                     matrix[i, j] = value
+#                     if symmetric:
+#                         matrix[j, i] = value
+#                 pbar.update(1)
 
-    finally:
-        # Clean up shared memory
-        shm.close()
-        shm.unlink()
+#     finally:
+#         # Clean up shared memory
+#         shm.close()
+#         shm.unlink()
 
-    return {"similarity_matrix": SimilarityMatrix(full=matrix)}
+#     return {"similarity_matrix": SimilarityMatrix(full=matrix)}
 
 
-def matrix_derive_neighbourhood_cross_pop[T](
-    named_props: tuple[NamedGraphPropertiesT[T],NamedGraphPropertiesT[T]],
-    key: GraphPropertyName = "neighbourhood",
-    *,
-    config: ctk.SimilarityConfig,
-    n_jobs: int = -1,
-    batch_size: int = 5000,
-    hide_tracker: bool = False
-) -> NamedDerivedPropertiesT[SimilarityMatrix]:
-    if key not in named_props[0] or key not in named_props[1]:
-        msg = f"Property '{key}' not found in raw properties"
-        raise KeyError(msg)
+# def matrix_derive_neighbourhood_cross_pop[T](
+#     named_props: tuple[NamedGraphPropertiesT[T],NamedGraphPropertiesT[T]],
+#     key: GraphPropertyName = "neighbourhood",
+#     *,
+#     config: ctk.SimilarityConfig,
+#     n_jobs: int = -1,
+#     batch_size: int = 5000,
+#     hide_tracker: bool = False
+# ) -> NamedDerivedPropertiesT[SimilarityMatrix]:
+#     if key not in named_props[0] or key not in named_props[1]:
+#         msg = f"Property '{key}' not found in raw properties"
+#         raise KeyError(msg)
 
-    if n_jobs == -1:
-        cpus = cpu_count()
-        if cpus is None:
-            cpus = 1
-        n_jobs = max(1, cpus - (cpus // 4))
+#     if n_jobs == -1:
+#         cpus = cpu_count()
+#         if cpus is None:
+#             cpus = 1
+#         n_jobs = max(1, cpus - (cpus // 4))
 
-    property_values_1 = named_props[0][key]
-    property_values_2 = named_props[1][key]
-    n = len(property_values_1)
-    m = len(property_values_2)
-    matrix = np.full((n, m), 1.0, dtype=np.float32)
+#     property_values_1 = named_props[0][key]
+#     property_values_2 = named_props[1][key]
+#     n = len(property_values_1)
+#     m = len(property_values_2)
+#     matrix = np.full((n, m), 1.0, dtype=np.float32)
 
-    # Calculate total pairs without storing them
-    n_pairs = n * m
-    n_batches = (n_pairs + batch_size - 1) // batch_size
+#     # Calculate total pairs without storing them
+#     n_pairs = n * m
+#     n_batches = (n_pairs + batch_size - 1) // batch_size
 
-    # Create shared memory for property_values
-    data_bytes = pickle.dumps([property_values_1,property_values_2])
-    shm = shared_memory.SharedMemory(create=True, size=len(data_bytes))
-    shm.buf[:len(data_bytes)] = data_bytes
-    shm_name = shm.name
-    shm_size = len(data_bytes)
+#     # Create shared memory for property_values
+#     data_bytes = pickle.dumps([property_values_1,property_values_2])
+#     shm = shared_memory.SharedMemory(create=True, size=len(data_bytes))
+#     shm.buf[:len(data_bytes)] = data_bytes
+#     shm_name = shm.name
+#     shm_size = len(data_bytes)
 
-    try:
-        # Generator for pair batches - no memory accumulation
-        def batch_generator():
-            pair_gen = itertools.product(range(n), range(m))
+#     try:
+#         # Generator for pair batches - no memory accumulation
+#         def batch_generator():
+#             pair_gen = itertools.product(range(n), range(m))
 
-            batch = []
-            for pair in pair_gen:
-                batch.append(pair)
-                if len(batch) >= batch_size:
-                    yield batch
-                    batch = []
-            if batch:
-                yield batch
+#             batch = []
+#             for pair in pair_gen:
+#                 batch.append(pair)
+#                 if len(batch) >= batch_size:
+#                     yield batch
+#                     batch = []
+#             if batch:
+#                 yield batch
 
-        def compute_batch_shared(batch_pairs):
-            """Compute using shared memory."""
-            shm = shared_memory.SharedMemory(name=shm_name)
-            prop_vals = pickle.loads(bytes(shm.buf[:shm_size]))
+#         def compute_batch_shared(batch_pairs):
+#             """Compute using shared memory."""
+#             shm = shared_memory.SharedMemory(name=shm_name)
+#             prop_vals = pickle.loads(bytes(shm.buf[:shm_size]))
 
-            return [
-                float(ctk.calculate_similarity_from_dicts(
-                    prop_vals[0][i], prop_vals[1][j], config,
-                ))
-                for i, j in batch_pairs
-            ]
+#             return [
+#                 float(ctk.calculate_similarity_from_dicts(
+#                     prop_vals[0][i], prop_vals[1][j], config,
+#                 ))
+#                 for i, j in batch_pairs
+#             ]
 
-        # Process batches with streaming
-        with tqdm(total=n_batches, desc=f"Computing {key}", unit="batch", disable=hide_tracker) as pbar:
-            for batch_pairs, batch_result in zip(
-                batch_generator(),
-                Parallel(
-                    n_jobs=n_jobs,
-                    backend="loky",
-                    return_as="generator",
-                )(
-                    delayed(compute_batch_shared)(batch)
-                    for batch in batch_generator()
-                ), strict=False,
-            ):
-                # Fill matrix immediately
-                for (i, j), value in zip(batch_pairs, batch_result, strict=False):
-                    matrix[i, j] = value
+#         # Process batches with streaming
+#         with tqdm(total=n_batches, desc=f"Computing {key}", unit="batch", disable=hide_tracker) as pbar:
+#             for batch_pairs, batch_result in zip(
+#                 batch_generator(),
+#                 Parallel(
+#                     n_jobs=n_jobs,
+#                     backend="loky",
+#                     return_as="generator",
+#                 )(
+#                     delayed(compute_batch_shared)(batch)
+#                     for batch in batch_generator()
+#                 ), strict=False,
+#             ):
+#                 # Fill matrix immediately
+#                 for (i, j), value in zip(batch_pairs, batch_result, strict=False):
+#                     matrix[i, j] = value
 
-                pbar.update(1)
+#                 pbar.update(1)
 
-    finally:
-        # Clean up shared memory
-        shm.close()
-        shm.unlink()
+#     finally:
+#         # Clean up shared memory
+#         shm.close()
+#         shm.unlink()
 
-    return {"similarity_matrix": SimilarityMatrix(full=matrix)}
+#     return {"similarity_matrix": SimilarityMatrix(full=matrix)}
 
 def derive_numeric_summary(
     named_props: NamedGraphPropertiesT[int | float],
