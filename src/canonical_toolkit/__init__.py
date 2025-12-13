@@ -20,7 +20,7 @@ from canonical_toolkit.core.node import (
     create_hinge_node,
     node_from_graph,
     node_from_string,
-    from_nde_genotype,
+    # from_nde_genotype,
 
     # Types
     hash_fingerprint,
@@ -47,22 +47,22 @@ from canonical_toolkit.core.matrix import (
 
 # ===== Similarity Analysis =====
 from canonical_toolkit.core import similarity
-from canonical_toolkit.core.similarity import (
-    # Config & Enums
-    OutputType,
-    RadiusStrategy,
-    HVectorSpace,
-    SimilarityConfig,
+# from canonical_toolkit.core.similarity import (
+#     # Config & Enums
+#     # OutputType,
+#     # RadiusStrategy,
+#     # HVectorSpace,
+#     SimilarityConfig,
 
-    # Functions
-    collect_subtrees,
-    collect_hash_fingerprint,
-    to_canonical_graph,
-    to_canonical_string,
-    series_from_population_fingerprint,
-    series_to_grid_configs,
-    embeddings_to_grid,
-)
+#     # Functions
+#     # collect_subtrees,
+#     collect_hash_fingerprint,
+#     to_canonical_graph,
+#     to_canonical_string,
+#     series_from_population_fingerprint,
+#     series_to_grid_configs,
+#     embeddings_to_grid,
+# )
 
 # ===== Visual Sub-package =====
 from canonical_toolkit.core import visual
@@ -83,7 +83,7 @@ __all__ = [
     "create_hinge_node",
     "node_from_graph",
     "node_from_string",
-    "from_nde_genotype",
+    # "from_nde_genotype",
 
     # Analysis
     "MatrixInstance",
@@ -100,9 +100,9 @@ __all__ = [
     "similarity",
 
     # Similarity - Config & Enums
-    "OutputType",
-    "RadiusStrategy",
-    "HVectorSpace",
+    # "OutputType",
+    # "RadiusStrategy",
+    # "HVectorSpace",
     "SimilarityConfig",
 
     # Similarity - Functions

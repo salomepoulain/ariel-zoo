@@ -1,16 +1,15 @@
-"""MatrixSeries: Collection of MatrixInstance objects indexed by radius."""
+"""MatrixSeries: Generic collection of MatrixInstance objects indexed by index."""
 
 from __future__ import annotations
 
 import contextlib
 import io
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Hashable
 
 import scipy.sparse as sp
 from rich.console import Console
 from rich.table import Table
 
-from canonical_toolkit.core.matrix.m_enums import MatrixDomain, VectorSpace
 from canonical_toolkit.core.matrix.matrix import MatrixInstance
 
 if TYPE_CHECKING:
@@ -18,54 +17,51 @@ if TYPE_CHECKING:
 
 
 class MatrixSeries:
-    """Abstraction for a column of radii (e.g., all depths for 'Front Limb')."""
+    """Generic collection of matrices sharing the same label."""
 
     def __init__(
         self,
         instances_list: list[MatrixInstance] | None = None,
-        # meta: dict[str, Any] | None = None,
     ) -> None:
         """Initialize MatrixSeries.
 
         Args:
-            instances_list: List of MatrixInstance objects. All must have same space.
+            instances_list: List of MatrixInstance objects. All must have same label.
                            Cannot be empty or None.
-            # meta: Optional metadata dict
 
         Raises
         ------
-            ValueError: If instances_list is empty/None, has duplicate radii,
-                       or instances have different spaces
+            ValueError: If instances_list is empty/None, has duplicate indices,
+                       or instances have different labels
         """
         # Validate: Cannot be empty
         if not instances_list:
             msg = "instances_list cannot be empty or None. MatrixSeries requires at least one MatrixInstance."
             raise ValueError(msg)
 
-        # Validate: All instances must have same space
-        spaces = [inst.space for inst in instances_list]
-        unique_spaces = set(spaces)
-        if len(unique_spaces) > 1:
+        # Validate: All instances must have same label
+        labels = [inst.label for inst in instances_list]
+        unique_labels = set(labels)
+        if len(unique_labels) > 1:
             msg = (
-                f"All instances must have the same space. "
-                f"Found {len(unique_spaces)} different spaces: {unique_spaces}"
+                f"All instances must have the same label. "
+                f"Found {len(unique_labels)} different labels: {unique_labels}"
             )
             raise ValueError(msg)
 
-        # Validate: No duplicate radii
-        radii = [inst.radius for inst in instances_list]
-        duplicates = [r for r in radii if radii.count(r) > 1]
+        # Validate: No duplicate indices
+        indices = [inst.index for inst in instances_list]
+        duplicates = [idx for idx in indices if indices.count(idx) > 1]
         if duplicates:
-            dup_radii = set(duplicates)
+            dup_indices = set(duplicates)
             msg = (
-                f"Duplicate radii detected: {dup_radii}. "
-                f"Each MatrixInstance must have a unique radius."
+                f"Duplicate indices detected: {dup_indices}. "
+                f"Each MatrixInstance must have a unique index."
             )
             raise ValueError(msg)
 
-        # Convert list to dict using radius as key
-        self._instances = {inst.radius: inst for inst in instances_list}
-        # self._meta = meta if meta is not None else {}
+        # Convert list to dict using index as key
+        self._instances = {inst.index: inst for inst in instances_list}
 
     @property
     def space(self) -> VectorSpace | str:

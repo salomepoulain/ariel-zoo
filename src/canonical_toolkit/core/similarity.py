@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable
 
+import scipy.sparse as sp
 from sklearn.feature_extraction import FeatureHasher
 
 from canonical_toolkit.core.matrix.m_enums import (
@@ -25,13 +26,14 @@ from canonical_toolkit.core.matrix.matrix import (
     MatrixInstance,
 )
 
+
 from canonical_toolkit.core.node.tools import (
     deriver,
     serializer,
 )
 
 if TYPE_CHECKING:
-    from canonical_toolkit.core.matrix.m_types import (
+    from canonical_toolkit.core.matrix.sim_types import (
         FeatureHasherProtocol,
     )
 

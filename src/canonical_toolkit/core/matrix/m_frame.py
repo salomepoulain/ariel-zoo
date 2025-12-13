@@ -13,7 +13,7 @@ from rich.table import Table
 
 from canonical_toolkit.core.matrix.matrix import MatrixInstance
 from canonical_toolkit.core.matrix.m_series import MatrixSeries
-from canonical_toolkit.core.matrix.m_types import DEFAULT_DATA_DIR
+from canonical_toolkit.core.matrix.sim_types import DEFAULT_DATA_DIR
 from canonical_toolkit.core.matrix.m_enums import MatrixDomain, VectorSpace
 
 if TYPE_CHECKING:

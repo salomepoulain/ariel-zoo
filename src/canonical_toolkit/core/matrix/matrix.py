@@ -1,11 +1,11 @@
-"""MatrixInstance: Single matrix wrapper with validation and I/O."""
+"""MatrixInstance: Generic matrix wrapper with flexible metadata."""
 
 from __future__ import annotations
 
 import io
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Hashable
 
 import numpy as np
 import scipy.sparse as sp
@@ -14,86 +14,75 @@ from rich.table import Table
 from sklearn.metrics.pairwise import cosine_similarity
 from umap import UMAP
 
-from canonical_toolkit.core.matrix.m_enums import MatrixDomain, VectorSpace
-
 
 class MatrixInstance:
     """
-    A strictly encapsulated wrapper around heavy matrix data.
-    Standard Python class enforcing immutability via private properties.
+    Generic matrix wrapper with flexible metadata.
+
+    This base class knows nothing about similarity, trees, or radius.
+    Domain-specific subclasses (like SimilarityMatrix) add typed meaning.
     """
 
     def __init__(
         self,
         matrix: sp.spmatrix | np.ndarray,
-        space: VectorSpace | str,
-        radius: int,
-        domain: MatrixDomain = MatrixDomain.FEATURES,
-        meta: dict[str, Any] | None = None,
+        label: str,
+        index: Hashable,
+        tags: dict[str, Any] | None = None,
     ) -> None:
         """
-        Initialize with strict validation.
-        Arguments map directly to private fields.
-        """
-        # 1. Assign to private fields
-        self._matrix = matrix
-        self._space = space
-        self._radius = radius
-        self._domain = domain
-        self._meta = meta if meta is not None else {}
+        Initialize generic matrix with flexible metadata.
 
-        # 2. STRICT VALIDATION: Memory Safety
-        if self._domain == MatrixDomain.FEATURES:
-            if not sp.issparse(self._matrix):
-                msg = (
-                    f"CRITICAL MEMORY ERROR: MatrixDomain.FEATURES must be a "
-                    f"scipy.sparse matrix, but got {domain(self._matrix)}. "
-                    "This will crash your RAM on large datasets."
-                )
-                raise TypeError(
-                    msg,
-                )
+        Args:
+            matrix: Sparse or dense matrix data
+            label: Generic label (e.g., space name, experiment ID)
+            index: Hashable index (e.g., radius, timepoint, condition)
+            tags: Flexible metadata dict (e.g., {"domain": "features"})
+        """
+        self._matrix = matrix
+        self._label = label
+        self._index = index
+        self._tags = tags if tags is not None else {}
 
     # --- Public Read-Only Properties (Getters) ---
 
     @property
     def matrix(self) -> sp.spmatrix | np.ndarray:
-        """Read-only access to raw data."""
+        """Read-only access to raw matrix data."""
         return self._matrix
 
     @property
     def shape(self):
+        """Shape of the underlying matrix."""
         return self._matrix.shape
 
     @property
-    def space(self) -> VectorSpace | str:
-        return self._space
-
-    @property
-    def radius(self) -> int:
-        return self._radius
-
-    @property
-    def domain(self) -> MatrixDomain:
-        return self._domain
-
-    @property
-    def meta(self) -> dict[str, Any]:
-        """Returns a COPY of metadata to prevent mutation bugs."""
-        return self._meta.copy()
-
-    @property
     def label(self) -> str:
-        """Short label: space + radius (e.g., 'FRONT r2')."""
-        space_str = self._space.value if isinstance(self._space, VectorSpace) else str(self._space)
-        return f"{space_str} r{self._radius}"
+        """Generic label (e.g., space name, experiment ID)."""
+        return self._label
 
     @property
-    def description(self) -> str:
-        """Full description: space + radius + domain (e.g., 'FRONT r2 Features')."""
-        space_str = self._space.value if isinstance(self._space, VectorSpace) else str(self._space)
-        domain_str = self._domain.name.capitalize()
-        return f"{space_str} r{self._radius} {domain_str}"
+    def index(self) -> Hashable:
+        """Generic index (e.g., radius, timepoint) - hashable for dict keys."""
+        return self._index
+
+    @property
+    def tags(self) -> dict[str, Any]:
+        """Returns a COPY of tags to prevent mutation bugs."""
+        return self._tags.copy()
+
+    @property
+    def short_description(self) -> str:
+        """Short description: 'label [index]' - e.g., 'FRONT_LIMB [3]'."""
+        return f"{self._label} [{self._index}]"
+
+    @property
+    def long_description(self) -> str:
+        """Long description with tags - e.g., 'FRONT_LIMB [3] (domain: features)'."""
+        if self._tags:
+            tags_str = ", ".join(f"{k}: {v}" for k, v in self._tags.items())
+            return f"{self.short_description} ({tags_str})"
+        return self.short_description
 
     # --- Indexing ---
 
@@ -111,29 +100,13 @@ class MatrixInstance:
     # --- Visualization ---
 
     def __repr__(self) -> str:
-        s_name = (
-            self._space.value
-            if isinstance(self._space, VectorSpace)
-            else self._space
-        )
         rows, cols = self.shape
-
-        # Compact format matching frame cells
-        if self._domain == MatrixDomain.FEATURES:
-            shape_str = f"{rows}r×{cols}f"
-        elif self._domain == MatrixDomain.SIMILARITY:
-            shape_str = f"{rows}r×{cols}r"
-        elif self._domain == MatrixDomain.EMBEDDING:
-            shape_str = f"{rows}r×{cols}d"
-        else:
-            shape_str = f"{rows}×{cols}"
-
-        "Sp" if sp.issparse(self._matrix) else "Dn"
+        shape_str = f"{rows}×{cols}"
 
         # For dense matrices, show rich table with corner values
         if not sp.issparse(self._matrix):
             table = Table(
-                title=f"MatrixInstance: {s_name} (r={self._radius})",
+                title=f"MatrixInstance: {self.short_description}",
                 title_style="bold bright_cyan",
                 title_justify="left",
                 show_header=True,
@@ -143,11 +116,15 @@ class MatrixInstance:
             table.add_column("Value", style="green")
 
             table.add_row("Shape", f"[{shape_str}]")
-            table.add_row("domain", self._domain.name)
             table.add_row("Storage", "Dense")
 
-            if self._meta:
-                table.add_row("Meta", str(self._meta))
+            # Show up to 5 tags
+            if self._tags:
+                for i, (key, value) in enumerate(self._tags.items()):
+                    if i >= 5:
+                        table.add_row("...", f"({len(self._tags) - 5} more tags)")
+                        break
+                    table.add_row(key.capitalize(), str(value))
 
             # Extract corner values (2x2 from each corner)
             matrix = self._matrix
@@ -213,7 +190,7 @@ class MatrixInstance:
             return string_buffer.getvalue().rstrip()
         # Sparse matrix - pretty table format
         table = Table(
-            title=f"MatrixInstance: {s_name} (r={self._radius})",
+            title=f"MatrixInstance: {self.short_description}",
             title_style="bold bright_cyan",
             title_justify="left",
             show_header=True,
@@ -223,7 +200,6 @@ class MatrixInstance:
         table.add_column("Value", style="green")
 
         table.add_row("Shape", f"[{shape_str}]")
-        table.add_row("domain", self._domain.name)
         table.add_row("Storage", f"Sparse ({self._matrix.format})")
 
         # Calculate sparsity information
@@ -234,8 +210,13 @@ class MatrixInstance:
         table.add_row("Non-zero", f"{n_nonzero:,} / {n_total:,}")
         table.add_row("Sparsity", f"{sparsity:.2f}%")
 
-        if self._meta:
-            table.add_row("Meta", str(self._meta))
+        # Show up to 5 tags
+        if self._tags:
+            for i, (key, value) in enumerate(self._tags.items()):
+                if i >= 5:
+                    table.add_row("...", f"({len(self._tags) - 5} more tags)")
+                    break
+                table.add_row(key.capitalize(), str(value))
 
         # Show sample of non-zero values
         if n_nonzero > 0:
@@ -272,12 +253,11 @@ class MatrixInstance:
         """
         new_args = {
             "matrix": self._matrix,
-            "space": self._space,
-            "radius": self._radius,
-            "domain": self._domain,
-            "meta": self._meta.copy(),
+            "label": self._label,
+            "index": self._index,
+            "tags": self._tags.copy(),
         }
-        new_args |= changes
+        new_args.update(changes)
         return MatrixInstance(**new_args)
 
     # def add_meta(self, **kwargs) -> MatrixInstance:
@@ -288,196 +268,13 @@ class MatrixInstance:
 
     # --- Math Transforms ---
 
-    def cosine_similarity(self) -> MatrixInstance:
-        if self._domain == MatrixDomain.SIMILARITY:
-            msg = "Matrix is already a similarity matrix."
-            raise ValueError(msg)
-
-        sim_matrix = cosine_similarity(self._matrix)
-
-        return self.replace(matrix=sim_matrix, domain=MatrixDomain.SIMILARITY)
-
-    def sum_similarity_scores(
-        self,
-        *,
-        zero_diagonal: bool = True,
-        k: int | None = None,
-        largest: bool = True,
-    ) -> np.ndarray:
-        """Compute total similarity score for each individual.
-
-        Collapses the SIMILARITY matrix by summing each row (individual's
-        similarities to others). By default, zeros the diagonal first
-        to exclude self-similarity. Optionally sum only top-k neighbors.
-
-        ONLY works on MatrixDomain.SIMILARITY matrices.
-
-        Args:
-            zero_diagonal: If True, set diagonal to 0 before summing
-                          (excludes self-similarity). Default: True.
-            k: Number of neighbors to consider. If None, sum all neighbors.
-               If specified, sum only the k largest or k smallest values.
-            largest: If True, sum k largest similarities (most similar).
-                    If False, sum k smallest (least similar/most dissimilar).
-                    Only used when k is not None. Default: True.
-
-        Returns
-        -------
-            1D numpy array of length n_robots, where each value is the
-            sum of that individual's similarities to selected others.
-
-        Raises
-        ------
-            ValueError: If matrix is not SIMILARITY domain
-
-        Example:
-            >>> # Similarity matrix (3 robots)
-            >>> sim_matrix = np.array([
-            ...     [1.0, 0.8, 0.6, 0.2],
-            ...     [0.8, 1.0, 0.7, 0.3],
-            ...     [0.6, 0.7, 1.0, 0.4],
-            ...     [0.2, 0.3, 0.4, 1.0]
-            ... ])
-            >>> inst = MatrixInstance(sim_matrix, space=..., domain=SIMILARITY)
-            >>> # Sum all similarities (excluding diagonal)
-            >>> inst.sum_similarity_scores()  # [1.6, 1.8, 1.7, 0.9]
-            >>> # Sum top-2 most similar neighbors
-            >>> inst.sum_similarity_scores(k=2, largest=True)  # [1.4, 1.5, 1.3, 0.7]
-            >>> # Sum top-2 least similar neighbors
-            >>> inst.sum_similarity_scores(k=2, largest=False)  # [0.8, 1.0, 1.0, 0.5]
-        """
-        if self._domain != MatrixDomain.SIMILARITY:
-            msg = (
-                f"Can only sum similarity scores on SIMILARITY matrices. "
-                f"Found {self._domain.name}"
-            )
-            raise ValueError(msg)
-
-        # Convert to dense if sparse (should already be dense for SIMILARITY)
-        matrix = self._matrix.toarray() if sp.issparse(self._matrix) else self._matrix.copy()
-
-        if zero_diagonal:
-            # Zero out the diagonal
-            np.fill_diagonal(matrix, 0)
-
-        # If k is None, sum all values
-        if k is None:
-            return matrix.sum(axis=1)
-
-        # Select top-k or bottom-k neighbors per row
-        n_robots = matrix.shape[0]
-        scores = np.zeros(n_robots)
-
-        for i in range(n_robots):
-            row = matrix[i]
-            # Get indices of k largest or smallest values
-            if largest:
-                # k largest: use argpartition and take largest k
-                indices = np.argpartition(row, -k)[-k:]
-            else:
-                # k smallest: use argpartition and take smallest k
-                indices = np.argpartition(row, k)[:k]
-
-            # Sum the selected values
-            scores[i] = row[indices].sum()
-
-        return scores
-
-    def umap_embed(
-        self,
-        *,
-        n_neighbors: int = 15,
-        n_components: int = 2,
-        metric: str = "cosine",
-        random_state: int | None = 42,
-        **umap_kwargs,
-    ) -> MatrixInstance:
-        """Compute UMAP embedding from FEATURES or SIMILARITY matrix.
-
-        Reduces dimensionality using UMAP. Works on both FEATURES
-        (computes distances internally) and SIMILARITY matrices
-        (uses precomputed distances).
-
-        Returns EMBEDDING matrix (N×n_components).
-
-        Args:
-            n_neighbors: Number of neighbors for UMAP. Default: 15.
-            n_components: Dimensionality of embedding. Default: 2.
-            metric: Distance metric for FEATURES matrices.
-                   Ignored for SIMILARITY (uses precomputed). Default: "cosine".
-            random_state: Random seed for reproducibility. Set to None
-                         to enable parallelization. Default: 42.
-            **umap_kwargs: Additional arguments passed to UMAP constructor.
-
-        Returns
-        -------
-            MatrixInstance with domain=EMBEDDING, shape (n_robots, n_components)
-
-        Raises
-        ------
-            ValueError: If matrix is EMBEDDING (already embedded)
-
-        Example:
-            >>> # From FEATURES matrix
-            >>> features = MatrixInstance(feat_matrix, domain=FEATURES)
-            >>> embedding = features.umap_embed(n_neighbors=10, n_components=2)
-            >>> embedding.shape  # (n_robots, 2)
-            >>>
-            >>> # From SIMILARITY matrix (precomputed cosine similarity)
-            >>> sim = features.cosine_similarity()
-            >>> embedding = sim.umap_embed(n_neighbors=10, n_components=2)
-        """
-        if self._domain == MatrixDomain.EMBEDDING:
-            msg = "Matrix is already an EMBEDDING. Cannot embed again."
-            raise ValueError(msg)
-
-        # Convert sparse to dense if needed
-        matrix = self._matrix.toarray() if sp.issparse(self._matrix) else self._matrix
-
-        # Handle SIMILARITY vs FEATURES differently
-        if self._domain == MatrixDomain.SIMILARITY:
-            # Convert similarity to distance (1 - similarity)
-            distance_matrix = 1 - matrix
-            # Use precomputed metric
-            umap_model = UMAP(
-                n_neighbors=n_neighbors,
-                n_components=n_components,
-                metric="precomputed",
-                random_state=random_state,
-                init="random",
-                transform_seed=random_state if random_state is not None else None,
-                n_jobs=1 if random_state is not None else -1,
-                **umap_kwargs,
-            )
-            embedding = umap_model.fit_transform(distance_matrix)
-        else:
-            # FEATURES matrix - compute distances with specified metric
-            umap_model = UMAP(
-                n_neighbors=n_neighbors,
-                n_components=n_components,
-                metric=metric,
-                random_state=random_state,
-                init="random",
-                transform_seed=random_state if random_state is not None else None,
-                n_jobs=1 if random_state is not None else -1,
-                **umap_kwargs,
-            )
-            embedding = umap_model.fit_transform(matrix)
-
-        return self.replace(matrix=embedding, domain=MatrixDomain.EMBEDDING)
 
     def __add__(self, other: MatrixInstance) -> MatrixInstance:
         if not isinstance(other, MatrixInstance):
             return NotImplemented
 
-        if self._radius != other._radius:
-            msg = f"Radius mismatch: {self._radius} vs {other._radius}"
-            raise ValueError(
-                msg,
-            )
-
-        if self._domain != other._domain:
-            msg = f"domain mismatch: {self._domain} vs {other._domain}"
+        if self._index != other._index:
+            msg = f"Index mismatch: {self._index} vs {other._index}"
             raise ValueError(msg)
 
         new_matrix = self._matrix + other._matrix
@@ -499,14 +296,11 @@ class MatrixInstance:
             storage_domain = "dense"
 
         meta_payload = {
-            "space": self.space.value
-            if isinstance(self.space, VectorSpace)
-            else self.space,
-            "radius": self.radius,
-            "domain": self.domain.name,
+            "label": self._label,
+            "index": str(self._index),  # Convert to string for JSON
+            "tags": self._tags,
             "storage": storage_domain,
             "matrix_file": matrix_path.name,
-            "user_meta": self._meta,
         }
 
         with Path(folder / f"{filename_stem}.json").open("w", encoding="utf-8") as f:
@@ -524,13 +318,13 @@ class MatrixInstance:
         with Path(json_path).open(encoding="utf-8") as f:
             info = json.load(f)
 
+        label = info["label"]
+        # Try to convert index back to int if possible, otherwise keep as string
         try:
-            space = VectorSpace(info["space"])
-        except ValueError:
-            space = info["space"]
-
-        mat_domain = MatrixDomain[info["domain"]]
-        radius = int(info["radius"])
+            index = int(info["index"])
+        except (ValueError, TypeError):
+            index = info["index"]
+        tags = info.get("tags", {})
 
         matrix_path = folder / info["matrix_file"]
         if info["storage"] == "sparse":
@@ -540,18 +334,57 @@ class MatrixInstance:
 
         return cls(
             matrix=matrix,
-            space=space,
-            radius=radius,
-            domain=mat_domain,
-            meta=info["user_meta"],
+            label=label,
+            index=index,
+            tags=tags,
         )
 
 
 if __name__ == "__main__":
-    import scipy.sparse as sp
+    print("Testing Generic MatrixInstance...")
 
-    # Test 1: Create sparse matrix instance
+    # Test 1: Generic matrix with custom label/index
     sparse_mat = sp.random(5, 10, density=0.3, format="csr", random_state=42)
+    generic_inst = MatrixInstance(
+        matrix=sparse_mat,
+        label="experiment_A",
+        index="timepoint_0",
+        tags={"condition": "control", "temp": 37}
+    )
+
+    print(generic_inst)
+
+    print(f"✓ Generic matrix: {generic_inst.short_description}")
+    print(f"  Tags: {generic_inst.tags}")
+
+    # Test 2: Generic dense matrix with numeric index
+    dense_mat = np.random.rand(4, 4)
+    generic_dense = MatrixInstance(
+        matrix=dense_mat,
+        label="sensor_data",
+        index=42,
+        tags={"sensor": "temp", "location": "lab"}
+    )
+    print(f"✓ Dense matrix: {generic_dense.long_description}")
+
+    # Test 3: Matrix operations (add)
+    mat1 = MatrixInstance(sp.random(3, 5, density=0.5, format="csr"), "test", 1, {"type": "features"})
+    mat2 = MatrixInstance(sp.random(3, 5, density=0.5, format="csr"), "test", 1, {"type": "features"})
+    mat_sum = mat1 + mat2
+    print(f"✓ Matrix addition works: {mat_sum.shape}")
+
+    # Test 4: Save/Load
+    from pathlib import Path
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmpdir:
+        generic_inst.save(Path(tmpdir), "test_matrix")
+        loaded = MatrixInstance.load(Path(tmpdir), "test_matrix")
+        print(f"✓ Save/Load: {loaded.label} [{loaded.index}]")
+
+    print("\n✅ All generic MatrixInstance tests passed!")
+
+    # Original test code (commented out - uses old API)
+    """
     sparse_inst = MatrixInstance(
         matrix=sparse_mat,
         space=VectorSpace.FRONT_LIMB,
@@ -643,8 +476,7 @@ if __name__ == "__main__":
     # Now try the WRONG way [i][j]
     try:
         row = sparse_inst[0]  # Returns shape (1, 10) sparse matrix
-
-        # Now try to index [5] on a (1, 10) matrix
         wrong_result = sparse_inst[0][5]
     except IndexError:
         pass
+    """
