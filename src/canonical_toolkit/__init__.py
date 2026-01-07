@@ -1,124 +1,93 @@
 """
-CanonicalToolkit - Tree canonicalization and similarity analysis.
+CanonicalToolkit - Morphological analysis toolkit for evolutionary robotics.
+
+This toolkit provides:
+- Generic matrix infrastructure (base.matrix)
+- Morphological analysis tools (morphology.node, morphology.similarity, morphology.visual)
 
 Quick start:
-    from canonical_toolkit import create_root_node, Node, MatrixFrame
+    # Import packages
+    from canonical_toolkit import base, morphology
 
-    root = create_root_node()
-    root["front"] = create_brick_node()
+    # Or import directly from subpackages
+    from canonical_toolkit.base.matrix import MatrixInstance
+    from canonical_toolkit.morphology.node import Node
+    from canonical_toolkit.morphology.similarity import SimilarityMatrix
 """
 
-# ===== Node Package =====
-from canonical_toolkit.core.node import (
-    # Core
-    Node,
+# ===== Main Packages =====
+from . import base
+from . import morphology
 
-    # Factory
+# ===== Convenience Imports (Optional - most commonly used) =====
+# Users can import directly from subpackages, or use these for convenience
+
+# Base matrix classes
+from .base.matrix import (
+    MatrixInstance,
+    MatrixSeries,
+    MatrixFrame,
+)
+
+# Node classes and factories
+from .morphology.node import (
+    Node,
     create_root_node,
     create_node,
     create_brick_node,
     create_hinge_node,
     node_from_graph,
-    node_from_string,
-    # from_nde_genotype,
-
-    # Types
-    hash_fingerprint,
-    population_fingerprints,
-
-    # Utilities
-    suppress_face_errors,
+    node_from_string
+    # suppress_face_errors,
 )
 
-# ===== Node Tool Modules (for advanced use) =====
-from canonical_toolkit.core import node
-
-# ===== Matrix Package =====
-from canonical_toolkit.core.matrix import (
-    # Analysis Classes
-    MatrixInstance,
-    MatrixSeries,
-    MatrixFrame,
-
-    # Enums
-    MatrixDomain,
+# Similarity classes
+from .morphology.similarity import (
+    SimilarityMatrix,
+    SimilaritySeries,
+    SimilarityFrame,
     VectorSpace,
+    MatrixDomain,
+    
 )
 
-# ===== Similarity Analysis =====
-from canonical_toolkit.core import similarity
-# from canonical_toolkit.core.similarity import (
-#     # Config & Enums
-#     # OutputType,
-#     # RadiusStrategy,
-#     # HVectorSpace,
-#     SimilarityConfig,
+from .morphology.visual import(
+    view
+)
 
-#     # Functions
-#     # collect_subtrees,
-#     collect_hash_fingerprint,
-#     to_canonical_graph,
-#     to_canonical_string,
-#     series_from_population_fingerprint,
-#     series_to_grid_configs,
-#     embeddings_to_grid,
-# )
-
-# ===== Visual Sub-package =====
-from canonical_toolkit.core import visual
-
-
-suppress_face_errors()
-
-# ===== Define what gets exported with "from canonical_toolkit import *"
+# ===== Exports =====
 __all__ = [
+    # Packages
+    "base",
+    "morphology",
+
+    # Base matrix
+    "MatrixInstance",
+    "MatrixSeries",
+    "MatrixFrame",
+
     # Node
     "Node",
-    "node",  # Module for advanced use (access to deriver, serializer, factory)
-
-    # Factory
     "create_root_node",
     "create_node",
     "create_brick_node",
     "create_hinge_node",
     "node_from_graph",
     "node_from_string",
-    # "from_nde_genotype",
 
-    # Analysis
-    "MatrixInstance",
-    "MatrixSeries",
-    "MatrixFrame",
-    "MatrixDomain",
+    # Similarity
+    "SimilarityMatrix",
+    "SimilaritySeries",
+    "SimilarityFrame",
+    # options
     "VectorSpace",
-
-    # Types
-    "hash_fingerprint",
-    "population_fingerprints",
-
-    # Similarity Module
-    "similarity",
-
-    # Similarity - Config & Enums
-    # "OutputType",
-    # "RadiusStrategy",
-    # "HVectorSpace",
-    "SimilarityConfig",
-
-    # Similarity - Functions
-    "collect_hash_fingerprint",
-    "to_canonical_graph",
-    "to_canonical_string",
-    "series_from_population_fingerprint",
-    "series_to_grid_configs",
-    "embeddings_to_grid",
-
-    # Utils
-    "suppress_face_errors",
-
-    # Visual sub-package
-    "visual",
+    "MatrixDomain",
+    
+    # Visual functions
+    "view"
 ]
 
-# Optional: Version info
 __version__ = "0.1.0"
+
+# Initialize
+# suppress_face_errors()

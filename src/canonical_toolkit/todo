@@ -1,3 +1,24 @@
 ☐ fix the new matrices and series
 ☐ make the new graph/plotting functions
 ☐ make the tests notebooks
+
+☐ make node exceptions work
+☐ mujco viewer is glitchy and shows the dot connection points?
+
+☐ fix core being able to get rotated
+✔ fix canonicalization having option to not change child order! @done(25-12-13 22:06)
+
+
+BROKEN:
+    ☐ notebooks of matrix stuff usage
+
+TODO:
+    ☐ make visualization based on grid system
+    ☐ make this work with the matrix stuff
+    ☐ fix UMAP
+
+SNELLIUS:
+    ☐ Test EA
+
+☐ get rid of the unecessary property descriptions from the base class
+☐ test out the save/load
