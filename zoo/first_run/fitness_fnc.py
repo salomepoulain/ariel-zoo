@@ -110,23 +110,40 @@ def decode_genotype_to_string(genotype: list) -> str:
     tree = ctk.from_graph(graph)
     return ctk.to_string(tree)
 
+
 def fitness(population:Population)->Population:
 
     K = K_NEIGHBORS  # Use the global K
     
+    # Decoding genotypes
     for ind in population:
         if ind.requires_eval:
             ind.tags['ctk_string'] = decode_genotype_to_string(ind.genotype)
+            ind.tags["subtrees"] = ctk.collect(
+                ind.tags["ctk_string"],
+                SIM_CONFIG
+            )
 
     n_pop = len(population)
     novelty_list = [0]*n_pop
 
-    simliarity_matrix = np.zeros((n_pop, n_pop))
-    for ind in population:
-        # TODO fill simliarity matrix
-        break 
+    # Initializing and filling the similarity matrix
+    similarity_matrix = np.zeros((n_pop, n_pop))
+    documents = [list(ind.tags['subtrees']) for ind in population]
+    hasher = FeatureHasher(n_features=SCALE, input_type="string")
+    X = hasher.transform(documents)
+    X = normalize(X, norm="l2")
 
-    # TODO take a row take the average of the K lowest score in row, then put in a list
+    for i in range(n_pop):
+        for j in range(n_pop):
+            similarity_matrix[i, j] = X[i] @ X[j].T
+
+
+    # Taking a row take the average of the K lowest score in row, then putting in a list
+        for i in range(n_pop):
+            distances = 1.0 - similarity_matrix[i]
+            distances_sorted = np.sort(distances)
+            novelty_list[i] = distances_sorted[1:K+1].sum()
 
 
     speed_list = []
@@ -134,7 +151,6 @@ def fitness(population:Population)->Population:
         speed = speed_test(ind)
         speed_list.append(speed)
         ind.fitness = speed*novelty_list[index]
-
 
 
     return population
