@@ -31,6 +31,9 @@ STATOR_DIMENSIONS: DimensionType = (0.025, 0.03, 0.025)
 ROTOR_DIMENSIONS: DimensionType = (0.025, 0.02, 0.025)
 # ------------------------------ #
 
+# STATOR_DIMENSIONS: DimensionType = (0.025, 0.01, 0.025)
+# ROTOR_DIMENSIONS: DimensionType = (0.005, 0.04, 0.025)
+
 
 class HingeModule(Module):
     """Hinge module specifications."""

@@ -4,6 +4,12 @@
 # Dirs
 __data__
 # Mujoco
+
+old/
+archived/
+
+todo
+
 MUJOCO_LOG.TXT
 # DrawIo
 *.bkp
