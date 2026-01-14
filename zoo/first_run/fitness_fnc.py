@@ -8,6 +8,7 @@ Use: import the fitness function and place it in the EA operators
 import matplotlib.pyplot as plt
 
 # from examples.z_ec_course.A3_template import NUM_OF_MODULES
+import mujoco
 import numpy as np
 
 # from ariel_experiments.characterize.individual import analyze_neighbourhood
@@ -17,7 +18,14 @@ import numpy as np
 # matrix_derive_neighbourhood_cross_pop,
 # )
 import torch
-import umap
+from ariel.body_phenotypes.robogen_lite.constructor import construct_mjspec_from_graph
+from ariel.body_phenotypes.robogen_lite.modules.core import CoreModule
+from ariel.simulation.controllers.controller import Controller
+from ariel.simulation.controllers.na_cpg import NaCPG, create_fully_connected_adjacency
+from ariel.simulation.environments._simple_flat import SimpleFlatWorld
+from ariel.utils.renderers import single_frame_renderer
+from ariel.utils.tracker import Tracker
+
 from rich.console import Console
 from scipy.spatial.distance import pdist, squareform
 from sklearn.feature_extraction import FeatureHasher
@@ -78,15 +86,15 @@ SCALE = 8192  # ADDED: Following A3_template pattern
 MUTATION_RATE = 0.05  # FIXED: 5% mutation rate (was 0)
 
 # Selection pressure settings
-PARENT_TOURNAMENT_SIZE = 4  # Reduced for more diversity
-SURVIVOR_TOURNAMENT_SIZE = 4  # Reduced for more diversity
+PARENT_TOURNAMENT_SIZE = 2  # Reduced for more diversity
+SURVIVOR_TOURNAMENT_SIZE = 2  # Reduced for more diversity
 
 # Archive settings
 MAX_ARCHIVE_SIZE = 500_000  # Limit archive growth (keeps last 500)
 
 GLOBAL_N_NEIGHBORS = EA_CONFIG.target_population_size - 1
 
-K_NEIGHBORS = 5
+K_NEIGHBORS = 9
 
 # ADDED: Global NDE for deterministic genotype-to-phenotype mapping (following A3_template pattern)
 GLOBAL_NDE = NeuralDevelopmentalEncoding(number_of_modules=NUM_OF_MODULES)
@@ -119,6 +127,8 @@ def fitness(population:Population)->Population:
         break 
 
     # TODO take a row take the average of the K lowest score in row, then put in a list
+
+
     speed_list = []
     for index, ind in enumerate(population):
         speed = speed_test(ind)
@@ -131,13 +141,89 @@ def fitness(population:Population)->Population:
 
 
 
-import numpy as np
 
-# Assuming K_NEIGHBORS is defined globally, e.g.,
+def speed_test(ind:Individual, nr_of_tests:int=1) -> float:
+    best = 0
+    
+
+    for _ in range(nr_of_tests):
+        robot = construct_mjspec_from_graph(ctk.to_graph(ctk.from_string(ind.tags["ctk_string"]))) 
+        score = run_simulation(robot)
+        if score > best:
+            best = score
+
+    return best
 
 
-def speed_test(ind:Individual) -> float:
-    # TODO calculate the speed of the robot
-    return 0
+def run_simulation(robot:str|CoreModule, time:int=10): 
+    """Entry function to run the simulation with random movements, with added speed measuring"""
+    # Initialise controller to controller to None, always in the beginning.
+    if type(robot) == str:
+        robot = construct_mjspec_from_graph(ctk.to_graph(ctk.from_string(robot)))
+    mujoco.set_mjcb_control(None)  # DO NOT REMOVE
+    steps = time *50  # TODO check how many steps are in a second
+    # Initialise world
+    # Import environments from ariel.simulation.environments
+    world = SimpleFlatWorld()
 
 
+
+    # Spawn robot in the world
+    # Check docstring for spawn conditions
+    world.spawn(robot.spec)
+
+    # Generate the model and data
+    # These are standard parts of the simulation USE THEM AS IS, DO NOT CHANGE
+    model = world.spec.compile()
+    data = mujoco.MjData(model)
+
+    # Initialise data tracking
+    # to_track is automatically updated every time step
+    # You do not need to touch it.
+    mujoco_type_to_find = mujoco.mjtObj.mjOBJ_GEOM
+    name_to_bind = "core"
+    tracker = Tracker(
+        mujoco_obj_to_find=mujoco_type_to_find,
+        name_to_bind=name_to_bind,
+    )
+
+    # Setup the NaCPG controller
+    adj_dict = create_fully_connected_adjacency(len(data.ctrl.copy()))
+    na_cpg_mat = NaCPG(adj_dict)
+
+   
+
+    # Simulate the robot
+    ctrl = Controller(
+        controller_callback_function=lambda _, d: na_cpg_mat.forward(d.time),
+        tracker=tracker,
+    )
+
+    # Set the control callback function
+    # This is called every time step to get the next action.
+    # Pass the model and data to the tracker
+    ctrl.tracker.setup(world.spec, data)
+
+    # Set the control callback function
+    mujoco.set_mjcb_control(
+        ctrl.set_control,
+    )
+
+    # Reset state and time of simulation
+    # mujoco.mj_resetData(model, data)
+
+
+
+    # Move simulation forward one iteration/step nsteps times
+    mujoco.mj_step(model, data, nstep=steps)
+
+    pos_data = np.array(tracker.history["xpos"][0])
+    speed = np.sqrt((pos_data[-1, 0] - pos_data[0, 0])**2 + (pos_data[-1, 1] - pos_data[0, 1])**2)/time # change for 60 second
+    return float(speed)
+
+
+if __name__ == "__main__":
+## just some testing code feel free to change
+
+    for _ in range(30):
+        print(format(run_simulation('C[f(H6H2B[t(B2[l(B2[t(BH4BB6[r(B6)]H6)])])]HH4)]', time=60),'.8f'))

@@ -117,7 +117,7 @@ def check_movement(robot, threshold=0.01):
         for _ in range(50):
             for id, _ in enumerate(data.ctrl):
                 data.ctrl[id] = 3.14  # Set target within 0 to 3.14 range
-                mujoco.mj_step(model, data)
+                mujoco.mj_step(model, data, nstep=50)
 
             new_pos = data.body("robot1_core").xpos.copy()
             displacement = np.linalg.norm(new_pos - initial_xpos)
@@ -128,7 +128,7 @@ def check_movement(robot, threshold=0.01):
             
             for id, _ in enumerate(data.ctrl):
                 data.ctrl[id] = -3.14  # Set target within 0 to 3.14 range
-                mujoco.mj_step(model, data)
+                mujoco.mj_step(model, data, nstep=50)
 
             new_pos = data.body("robot1_core").xpos.copy()
             displacement = np.linalg.norm(new_pos - initial_xpos)
