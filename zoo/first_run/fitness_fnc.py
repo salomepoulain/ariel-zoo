@@ -119,7 +119,7 @@ def fitness(population:Population)->Population:
     for ind in population:
         if ind.requires_eval:
             ind.tags['ctk_string'] = decode_genotype_to_string(ind.genotype)
-            ind.tags["subtrees"] = ctk.collect(
+            ind.tags["subtrees"] = ctk.collect_subtrees(
                 ind.tags["ctk_string"],
                 SIM_CONFIG
             )
