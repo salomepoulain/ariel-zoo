@@ -263,7 +263,7 @@ def collect_neighbourhoods(
     starting_node: Node,
     serializer_fn: Callable[[Node], Any] | None = None,
     *,
-    use_min_radius: bool = False,  # TODO
+    min_radius: int = 0,  # TODO
     use_node_max_radius: bool = True,
     tree_max_radius: int | None = None,
     canonicalized: bool = True,

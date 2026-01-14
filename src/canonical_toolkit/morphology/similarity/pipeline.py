@@ -8,7 +8,8 @@ with the analysis tools form the *MATRIX* and *VISUAL* package
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
 
 import numpy as np
 import scipy.sparse as sp
@@ -19,26 +20,27 @@ from .sim_matrix import SimilarityMatrix, SimilaritySeries
 
 from .options import (
     MatrixDomain,
-    VectorSpace,
+    Space,
 )
 
-from ..node.tools import (
+from ..node import (
     deriver,
+    node_from_graph
 )
 
 from .options import (
-    SimilarityConfig,
+    SimilaritySpaceConfig,
     OutputType
 )
 
-from ...base.matrix import MatrixFrame, MatrixSeries
+from .sim_matrix import SimilarityMatrix, SimilaritySeries, SimilarityFrame
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
     from .sim_types import (
         HashFingerprint,
-        PopulationFingerprints,
+        PopulationFingerprint,
         FeatureHasherProtocol,
     )
 
@@ -47,6 +49,8 @@ if TYPE_CHECKING:
     )
 
     from ..visual.grid_config import EmbeddingGridConfig, HeatmapGridConfig
+    
+    from networkx import DiGraph
 
 
 __all__ = [
@@ -57,6 +61,8 @@ __all__ = [
     "frame_to_embedding_grid",
     "frame_to_heatmap_grid",
     "series_to_cumulative_similarity",
+    "graph_population_to_series",
+    "graph_population_to_frame"
 ]
 
 
@@ -64,12 +70,13 @@ def collect_subtrees(node: Node, output_type: OutputType):
     serializer_fn = output_type.value  # Get the callable
     return deriver.collect_subtrees(node, serializer_fn)
 
-
 def collect_hash_fingerprint(
-    node: Node, config: SimilarityConfig | None
+    node: Node, 
+    *, 
+    config: SimilaritySpaceConfig | None
 ) -> HashFingerprint:
     if not config:
-        config = SimilarityConfig()
+        config = SimilaritySpaceConfig()
     
     return deriver.collect_neighbourhoods(
         starting_node=node,
@@ -78,24 +85,25 @@ def collect_hash_fingerprint(
         tree_max_radius=config.max_hop_radius,
         canonicalized=True,
         do_radius_prefix=True,
-        hash_prefix=config.vector_space.value,
+        hash_prefix=config.space.value,
     )
     
 def collect_population_fingerprint(
-    node_population: list[Node], config: SimilarityConfig | None = None
-) -> PopulationFingerprints:
+    node_population: list[Node], 
+    *, 
+    config: SimilaritySpaceConfig | None = None
+) -> PopulationFingerprint:
     if not config:
-        config = SimilarityConfig()
-    return [collect_hash_fingerprint(node, config) for node in node_population]
-
+        config = SimilaritySpaceConfig()
+    return [collect_hash_fingerprint(node, config=config) for node in node_population]
 
 def series_from_population_fingerprint(
-    population_fingerprints: PopulationFingerprints,
-    space: VectorSpace | str = VectorSpace.DEFAULT,
+    population_fingerprint: PopulationFingerprint,
+    space: Space | str = Space.WHOLE,
     *,
     max_radius: int | None = None,
     hasher: FeatureHasherProtocol | None = None,
-    n_features: int = 2 * 24,
+    n_features: int = 2 ** 24,
 ) -> SimilaritySeries:
     """Create SimilaritySeries from population neighbourhood dictionaries.
 
@@ -136,14 +144,14 @@ def series_from_population_fingerprint(
 
     # Auto-detect max radius
     if max_radius is None:
-        max_radius = max(max(d.keys()) for d in population_fingerprints)
+        max_radius = max(max(d.keys()) for d in population_fingerprint)
 
     # Build instances for each radius
     instances_list = []
     for radius in range(max_radius + 1):
         # Collect features at this radius from all individuals
         radius_features = [
-            pop_neigh.get(radius, []) for pop_neigh in population_fingerprints
+            pop_neigh.get(radius, []) for pop_neigh in population_fingerprint
         ]
 
         # Transform to sparse matrix: (n_individuals, n_features)
@@ -161,6 +169,41 @@ def series_from_population_fingerprint(
     return SimilaritySeries(
         instances_list=instances_list
     )
+    
+# Region nx based pipeline helpers
+
+def graph_population_to_series(
+    population: list[DiGraph[Any]], 
+    space_config: SimilaritySpaceConfig
+) -> SimilaritySeries:
+    node_population = [node_from_graph(graph) for graph in population]
+    
+    population_fingerprint = collect_population_fingerprint(
+        node_population=node_population, 
+        config=space_config
+    )
+
+    series = series_from_population_fingerprint(
+        population_fingerprint=population_fingerprint, 
+        space=space_config.space, 
+        max_radius=space_config.max_hop_radius, 
+        hasher=space_config.hasher
+    )
+        
+    return series
+
+def graph_population_to_frame(
+    population: list[DiGraph[Any]], 
+    space_configs: list[SimilaritySpaceConfig]
+) -> SimilarityFrame:
+    all_series = [graph_population_to_series(population, config) for config in space_configs]    
+    frame = SimilarityFrame(all_series)
+    return frame
+
+
+# create your own ea pipeline with actions to be applied to a population of graphs
+
+
 
 
 # --- Grid Conversion Functions ---

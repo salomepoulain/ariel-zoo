@@ -3,7 +3,7 @@
 ☐ make the tests notebooks
 
 ☐ make node exceptions work
-☐ mujco viewer is glitchy and shows the dot connection points?
+✔ mujco viewer is glitchy and shows the dot connection points? @done(26-01-10 17:23)
 
 ☐ fix core being able to get rotated
 ✔ fix canonicalization having option to not change child order! @done(25-12-13 22:06)
@@ -16,9 +16,20 @@ TODO:
     ☐ make visualization based on grid system
     ☐ make this work with the matrix stuff
     ☐ fix UMAP
+    ☐ add helper functions to save or load generations
 
 SNELLIUS:
     ☐ Test EA
 
-☐ get rid of the unecessary property descriptions from the base class
-☐ test out the save/load
+
+
+✔ get rid of the unecessary property descriptions from the base class @done(26-01-10 17:23)
+✔ test out the save/load @done(26-01-10 17:23)
+
+
+EXTRA:
+    ✔ fix the camera for collision of stuff at the angle @done(26-01-10 17:23)
+    ☐ add min_radius
+
+
+✔ find out why robots are not deterministically built in the A3_template @done(26-01-10 17:23)

@@ -6,6 +6,9 @@ This toolkit provides:
 - Morphological analysis tools (morphology.node, morphology.similarity, morphology.visual)
 
 Quick start:
+    # Import quickly [easiest]
+    import canonical_toolkit as ctk
+
     # Import packages
     from canonical_toolkit import base, morphology
 
@@ -15,77 +18,86 @@ Quick start:
     from canonical_toolkit.morphology.similarity import SimilarityMatrix
 """
 
-# ===== Main Packages =====
-from . import base
-from . import morphology
+# # ===== Main Packages =====
+# from . import base
+# from . import morphology
+
+from .base import *
+from .morphology import *
+from .utils import *
+
+
 
 # ===== Convenience Imports (Optional - most commonly used) =====
 # Users can import directly from subpackages, or use these for convenience
 
-# Base matrix classes
-from .base.matrix import (
-    MatrixInstance,
-    MatrixSeries,
-    MatrixFrame,
-)
+# # Base matrix classes
+# from .base.matrix import (
+#     MatrixInstance,
+#     MatrixSeries,
+#     MatrixFrame,
+# )
 
-# Node classes and factories
-from .morphology.node import (
-    Node,
-    create_root_node,
-    create_node,
-    create_brick_node,
-    create_hinge_node,
-    node_from_graph,
-    node_from_string
-    # suppress_face_errors,
-)
+# # Node classes and factories
+# from .morphology.node import (
+#     Node,
+#     create_root_node,
+#     create_node,
+#     create_brick_node,
+#     create_hinge_node,
+#     node_from_graph,
+#     node_from_string
+#     # suppress_face_errors,
+# )
 
-# Similarity classes
-from .morphology.similarity import (
-    SimilarityMatrix,
-    SimilaritySeries,
-    SimilarityFrame,
-    VectorSpace,
-    MatrixDomain,
+# # Similarity classes
+# from .morphology.similarity import (
+#     SimilarityMatrix,
+#     SimilaritySeries,
+#     SimilarityFrame,
+#     Space,
+#     MatrixDomain,
+# )
+
+# from .morphology.similarity.pipeline import *
+
+# from .morphology.similarity import *
+
+# from .morphology.visual import(
+#     view
+# )
+
+# # ===== Exports =====
+# __all__ = [
+#     # Packages
+#     "base",
+#     "morphology",
+
+#     # Base matrix
+#     "MatrixInstance",
+#     "MatrixSeries",
+#     "MatrixFrame",
+
+#     # Node
+#     "Node",
+#     "create_root_node",
+#     "create_node",
+#     "create_brick_node",
+#     "create_hinge_node",
+#     "node_from_graph",
+#     "node_from_string",
+
+#     # Similarity
+#     "SimilarityMatrix",
+#     "SimilaritySeries",
+#     "SimilarityFrame",
+#     # options
+#     "Space",
+#     "MatrixDomain",
     
-)
-
-from .morphology.visual import(
-    view
-)
-
-# ===== Exports =====
-__all__ = [
-    # Packages
-    "base",
-    "morphology",
-
-    # Base matrix
-    "MatrixInstance",
-    "MatrixSeries",
-    "MatrixFrame",
-
-    # Node
-    "Node",
-    "create_root_node",
-    "create_node",
-    "create_brick_node",
-    "create_hinge_node",
-    "node_from_graph",
-    "node_from_string",
-
-    # Similarity
-    "SimilarityMatrix",
-    "SimilaritySeries",
-    "SimilarityFrame",
-    # options
-    "VectorSpace",
-    "MatrixDomain",
-    
-    # Visual functions
-    "view"
-]
+#     # Visual functions
+#     "view"
+# ]
 
 __version__ = "0.1.0"
 

@@ -2,40 +2,37 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from ....base.matrix import MatrixFrame
 
 from .matrix import SimilarityMatrix
-from ..options import MatrixDomain, VectorSpace
+from ..options import MatrixDomain, Space
 from .series import SimilaritySeries
 
-class SimilarityFrame(MatrixFrame):
+class SimilarityFrame(MatrixFrame[SimilaritySeries]):
     """
     Similarity-specific collection of SimilaritySeries.
 
-    Extends MatrixFrame with domain-specific methods for morphological
+    Extends MatrixFrame[SimilaritySeries] with domain-specific methods for morphological
     similarity analysis.
+
+    Type-safe: Inherits Generic[SimilaritySeries], so frame["FRONT"] returns SimilaritySeries
+    (which returns SimilarityMatrix when indexed).
     """
-    # Override series class for polymorphic loading
+    
     _series_class = SimilaritySeries
 
-    def __init__(
-        self,
-        series: list[SimilaritySeries] | None = None,
-    ) -> None:
-        """Initialize SimilarityFrame.
+    def to_cumulative(self, *, inplace: bool = True) -> SimilarityFrame:
+        """Convert all series to cumulative sum across indices.
 
         Args:
-            series: List of SimilaritySeries (uses series.space as dict key)
+            inplace: If True, modify self and return self (faster, saves memory).
+                    If False, create new MatrixFrame (safer). Default: True.
 
-        Raises:
-            ValueError: If multiple series have the same space
+        Returns
+        -------
+            Self if inplace=True, new MatrixFrame if inplace=False
         """
-        super().__init__(series=series)
-
-    # Note: map() and replace() are inherited from MatrixFrame base class.
-    # They automatically return SimilarityFrame (via self.__class__) - no need to override!
+        return self.map(lambda s: s.to_cumulative(inplace=False), inplace=inplace)
 
     def aggregate(self) -> SimilaritySeries:
         """Aggregate all series by summing across series at each radius.
@@ -64,7 +61,6 @@ class SimilarityFrame(MatrixFrame):
             msg = "Cannot aggregate empty SimilarityFrame"
             raise ValueError(msg)
 
-        # Validate all instances are FEATURES
         for space, series in self._series.items():
             for r, inst in series.instances.items():
                 if inst.domain != MatrixDomain.FEATURES.name:
@@ -74,7 +70,6 @@ class SimilarityFrame(MatrixFrame):
                     )
                     raise ValueError(msg)
 
-        # Find common radii across all series
         all_radii = [set(series.instances.keys()) for series in self._series.values()]
         common_radii = sorted(set.intersection(*all_radii))
 
@@ -82,15 +77,11 @@ class SimilarityFrame(MatrixFrame):
             msg = "No common radii found across all series"
             raise ValueError(msg)
 
-        # Collect instances first, then create series
         result_instances = []
 
-        # For each radius, sum across all series
         for r in common_radii:
-            # Get all instances at this radius
             instances_at_r = [series[r] for series in self._series.values()]
 
-            # Sum matrices element-wise
             agg_matrix = instances_at_r[0].matrix.copy()
             for inst in instances_at_r[1:]:
                 agg_matrix = agg_matrix + inst.matrix
@@ -110,7 +101,7 @@ if __name__ == "__main__":
     import scipy.sparse as sp
     from .matrix import SimilarityMatrix
     from .series import SimilaritySeries
-    from ..options import VectorSpace, MatrixDomain
+    from ..options import Space, MatrixDomain
 
     print("=" * 80)
     print("SIMILARITY FRAME TESTS")
@@ -125,7 +116,7 @@ if __name__ == "__main__":
         mat = sp.random(10, 100, density=0.3, format="csr")
         inst = SimilarityMatrix(
             matrix=mat,
-            space=VectorSpace.FRONT,
+            space=Space.FRONT,
             radius=r,
             domain=MatrixDomain.FEATURES
         )
@@ -138,7 +129,7 @@ if __name__ == "__main__":
         mat = sp.random(10, 100, density=0.3, format="csr")
         inst = SimilarityMatrix(
             matrix=mat,
-            space=VectorSpace.BACK,
+            space=Space.BACK,
             radius=r,
             domain=MatrixDomain.FEATURES
         )
@@ -155,7 +146,7 @@ if __name__ == "__main__":
 
     # Test 3: Frame selection by space
     print("\n[3] SimilarityFrame space selection:")
-    selected = frame[[VectorSpace.FRONT, VectorSpace.BACK]]
+    selected = frame[[Space.FRONT, Space.BACK]]
     print(f"✓ frame[[FRONT, BACK]] → {len(list(selected.keys()))} series")
 
     # Test 4: Aggregate

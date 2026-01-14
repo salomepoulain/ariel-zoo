@@ -8,64 +8,52 @@ Provides tools for:
 - Image caching and thumbnail generation
 """
 
-# ===== Grid Configuration Dataclasses =====
-from .grid_config import (
-    EmbeddingGridConfig,
-    HeatmapGridConfig,
-    RobotGridConfig,
-)
+# # ===== Grid Configuration Dataclasses =====
+# from .grid_config import (
+#     EmbeddingGridConfig,
+#     HeatmapGridConfig,
+#     RobotGridConfig,
+# )
 
-# ===== Robot Grid Visualization =====
-from .robot_grid import (
-    plot_robot_grid,
-)
+# # ===== Robot Grid Visualization =====
+# from .robot_grid import (
+#     plot_robot_grid,
+# )
 
-# ===== Interactive Embedding Plots =====
-from .embeddings_grid import (
-    plot_embedding_grid,
-)
+# # ===== Interactive Embedding Plots =====
+# from .embeddings_grid import (
+#     plot_embedding_grid,
+# )
 
 # ===== Robot Viewer & Rendering =====
 from .viewer import (
-    view,
+    quick_view,
     RobotViewer,
 )
-from .utils import (
-    remove_black_background_and_crop,
-    look_at,
-    get_camera_params,
-)
 
-# ===== Image Caching & Thumbnails =====
-from .cache import (
-    generate_image_cache,
-    load_thumbnails,
-    cache_exists,
-    load_or_generate_cache,
-)
+from .snapshots import *
 
-__all__ = [
-    # Grid configs
-    "EmbeddingGridConfig",
-    "HeatmapGridConfig",
-    "RobotGridConfig",
+# __all__ = [
+#     # Grid configs
+#     "EmbeddingGridConfig",
+#     "HeatmapGridConfig",
+#     "RobotGridConfig",
 
-    # Robot grid
-    "plot_robot_grid",
+#     # Robot grid
+#     "plot_robot_grid",
 
-    # Embedding plots
-    "plot_embedding_grid",
+#     # Embedding plots
+#     "plot_embedding_grid",
 
-    # Viewer
-    "view",
-    "RobotViewer",
-    "remove_black_background_and_crop",
-    "look_at",
-    "get_camera_params",
+#     # Viewer
+#     "view",
+#     "RobotViewer",
+#     # "remove_black_background_and_crop",
+#     # "look_at",
 
-    # Caching
-    "generate_image_cache",
-    "load_thumbnails",
-    "cache_exists",
-    "load_or_generate_cache",
-]
+#     # # Caching
+#     # "generate_image_cache",
+#     # "load_thumbnails",
+#     # "cache_exists",
+#     # "load_or_generate_cache",
+# ]

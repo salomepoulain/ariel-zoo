@@ -14,14 +14,30 @@ if TYPE_CHECKING:
 _CURRENT_DIR = Path(__file__).parent
 DEFAULT_DATA_DIR = _CURRENT_DIR / "__data__" / "npz"
 
-RadiusKey = int  
 
 TreeHash = str
+"""
+TreeHash is a formatted string representing a canonicalized subtree modular part of the robot
+
+"""
 
 HashFingerprint = dict[int, list[TreeHash]]
+"""
+HashFingerprint is a dictionary with radius : list[TreeHash]
+TreeHash is a formatted string representing a canonicalized subtree modular part of the robot
+"""
 
-PopulationFingerprints = list[HashFingerprint]
+PopulationFingerprint = list[HashFingerprint]
+"""
+Index of list is HashFingerprint from an individual
+HashFingerprint is a dictionary with radius : list[TreeHash]
+TreeHash is a formatted string representing a canonicalized subtree modular part of the robot
+"""
 
+
+"""
+FingerprintSpace == the vectorized PopulationFingerprint
+"""
 
 class FeatureHasherProtocol(Protocol):
     """Protocol for hashers that convert string features to sparse matrices.

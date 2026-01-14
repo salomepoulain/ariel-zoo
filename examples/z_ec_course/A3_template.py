@@ -36,8 +36,20 @@ if TYPE_CHECKING:
 type ViewerTypes = Literal["launcher", "video", "simple", "no_control", "frame"]
 
 # --- RANDOM GENERATOR SETUP --- #
-SEED = 43
+
+# SEED = 42
+
+# Seed everything for determinism
+# np.random.seed(SEED)
+# RNG = np.random.default_rng(SEED)
+
+import torch
+SEED = 42
+torch.manual_seed(SEED)
+torch.use_deterministic_algorithms(True, warn_only=True)
 RNG = np.random.default_rng(SEED)
+
+
 
 # --- DATA SETUP ---
 SCRIPT_NAME = __file__.split("/")[-1][:-3]
@@ -47,7 +59,7 @@ DATA.mkdir(exist_ok=True)
 
 # Global variables
 SPAWN_POS = [-0.8, 0, 0]
-NUM_OF_MODULES = 2
+NUM_OF_MODULES = 20
 TARGET_POSITION = [5, 0, 0.5]
 
 # Local scripts
@@ -216,13 +228,13 @@ def main() -> None:
     )
 
 
-    from ariel_experiments.characterize.canonical_toolkit.tests.old.toolkit import CanonicalToolKit as ctk
+    # from ariel_experiments.characterize.canonical_toolkit.tests.old.toolkit import CanonicalToolKit as ctk
 
-    node = ctk.from_graph(robot_graph)
+    # node = ctk.from_graph(robot_graph)
 
-    subtrees = ctk.collect_neighbours(node)
+    # subtrees = ctk.collect_neighbours(node)
 
-    print(subtrees)
+    # print(subtrees)
 
     # ? ------------------------------------------------------------------ #
     # Save the graph to a file
@@ -251,7 +263,7 @@ def main() -> None:
         tracker=tracker,
     )
 
-    experiment(robot=core, controller=ctrl, mode="video")
+    experiment(robot=core, controller=ctrl, mode="launcher")
 
     show_xpos_history(
         tracker.history["xpos"][0],

@@ -43,6 +43,12 @@ def single_frame_renderer(
     viz_options.flags[mujoco.mjtVisFlag.mjVIS_TRANSPARENT] = False
     viz_options.flags[mujoco.mjtVisFlag.mjVIS_ACTUATOR] = False
     viz_options.flags[mujoco.mjtVisFlag.mjVIS_BODYBVH] = False
+    viz_options.flags[mujoco.mjtVisFlag.mjVIS_CONTACTPOINT] = False
+    viz_options.flags[mujoco.mjtVisFlag.mjVIS_CONTACTFORCE] = False
+    viz_options.flags[mujoco.mjtVisFlag.mjVIS_COM] = False
+    viz_options.flags[mujoco.mjtVisFlag.mjVIS_CONSTRAINT] = False
+    # Hide all site groups (connection point dots)
+    viz_options.sitegroup[:] = 0
 
     # Update rendering engine
     camera = mujoco.mj_name2id(
@@ -128,9 +134,15 @@ def video_renderer(
     # Enable joint visualization option:
     viz_options = mujoco.MjvOption()
     viz_options.flags[mujoco.mjtVisFlag.mjVIS_JOINT] = False
-    viz_options.flags[mujoco.mjtVisFlag.mjVIS_TRANSPARENT] = False
+    viz_options.flags[mujoco.mjtVisFlag.mjVIS_TRANSPARENT] = True
     viz_options.flags[mujoco.mjtVisFlag.mjVIS_ACTUATOR] = False
     viz_options.flags[mujoco.mjtVisFlag.mjVIS_BODYBVH] = False
+    viz_options.flags[mujoco.mjtVisFlag.mjVIS_CONTACTPOINT] = False
+    viz_options.flags[mujoco.mjtVisFlag.mjVIS_CONTACTFORCE] = False
+    viz_options.flags[mujoco.mjtVisFlag.mjVIS_COM] = False
+    viz_options.flags[mujoco.mjtVisFlag.mjVIS_CONSTRAINT] = False
+    # Hide all site groups (connection point dots)
+    viz_options.sitegroup[:] = 0
 
     # Reset state and time of simulation
     mujoco.mj_resetData(model, data)

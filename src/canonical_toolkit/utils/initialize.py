@@ -140,7 +140,7 @@ def intitialize_random_graph_population(
     # produce per-individual seeds in parent so they're unique (and reproducible)
     seeds = RNG.integers(0, 2**31 - 1, size=population_size, dtype=np.int64)
 
-    population: list[DiGraph] = []
+    population: list[DiGraph[Any]] = []
     with Parallel(n_jobs=n_jobs, batch_size="auto") as parallel_pool:
         try:
             iterator = (
