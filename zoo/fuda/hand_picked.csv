@@ -1,0 +1,6 @@
+,fuda_aligned,canonical
+0,C[4-(HBH2B)],C[4-(HBH2B)]
+1,C[fb(H2B)l(HBHB[rl(H2B)])],C[fb(H2B)r(HBHB[rl(H2B)])]
+2,C[f(H2B)b(H2H2BH2B)l(HBHB[rl(H2B)])],C[b(H2B)f(H2H2BH2B)r(HBHB[rl(H2B)])]
+3,C[l(H2B)fbr(HBH2BH2B)],C[f(H2B)brl(HBH2BH2B)]
+4,C[f(H2BH2BH2BH2BH2BH2BH2BH2)],C[r(H2BH2BH2BH2BH2BH2BH2BH2)]

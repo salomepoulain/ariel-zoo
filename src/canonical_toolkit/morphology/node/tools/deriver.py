@@ -21,6 +21,7 @@ def _calc_highest_priority_child_face(
     node: Node,
 ) -> ModuleFaces | None:
     """Return the face where the child is attached with the highest priority."""
+    raise DeprecationWarning
     if not node.has_children or len(node.config.radial_face_order) == 0:
         return None
 
@@ -32,6 +33,33 @@ def _calc_highest_priority_child_face(
             winning_face = face
 
     return winning_face
+
+
+def _calc_highest_priority_child_face(
+    node: Node,
+) -> ModuleFaces | None:
+    """Return the face where the child is attached with the highest priority."""
+    if not node.has_children or len(node.config.radial_face_order) == 0:
+        return None
+
+    items = [(face, child) for face, child in node.radial_children_items]
+
+    if len(items) == 0:
+        return None
+
+    child_strings = [child.to_string() for face, child in items]
+    n = len(child_strings)
+
+    best_rotation = 0
+    best_sequence = tuple(child_strings)
+
+    for shift in range(1, n):
+        sequence = tuple(child_strings[(shift + i) % n] for i in range(n))
+        if sequence > best_sequence:
+            best_sequence = sequence
+            best_rotation = shift
+
+    return items[best_rotation][0]
 
 
 def _canonicalize_child_order(node: Node) -> None:
@@ -62,14 +90,14 @@ def canonicalize(
     if return_copy:
         starting_node = starting_node.copy()
 
-    if child_order:
-        _canonicalize_child_order(starting_node)
-
     starting_node.traverse_depth_first(
         visit_fn=[
             _normalize_rotations,
         ],
     )
+
+    if child_order:
+        _canonicalize_child_order(starting_node)
 
     if zero_root_angle:
         starting_node.rotate_amt(-starting_node.internal_rotation)
@@ -377,13 +405,12 @@ def _serialize(
 if __name__ == "__main__":
     from rich.console import Console
 
-    from canonical_toolkit.tests.old.toolkit import (
-        CanonicalToolKit as ctk,
-    )
+    import canonical_toolkit as ctk
     from .serializer import (
         to_string,
         to_graph,
     )
+    
     from ariel_experiments.utils.initialize import (
         generate_random_individual,
     )
