@@ -65,8 +65,8 @@ def random_move(
     # Bound the control values to be within the hinge limits.
     # If a value goes outside the bounds it might result in jittery movement.
     # data.ctrl = np.clip(data.ctrl, -np.pi/2, np.pi/2)
-    data.ctrl = [0 for _ in range(len(data.ctrl))]
-    data.ctrl[0] = 1.5
+    # data.ctrl = [0 for _ in range(len(data.ctrl))]
+    # data.ctrl[0] = 1.5
 
     # Save movement to history
     HISTORY.append(to_track[0].xpos.copy())

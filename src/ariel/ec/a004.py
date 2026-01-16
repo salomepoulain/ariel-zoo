@@ -253,11 +253,12 @@ class EA(AbstractEA):
         *,
         only_alive: bool = True,
     ) -> Individual:
+        
         # Query population
         self.fetch_population(
             only_alive=only_alive,
             already_evaluated=True,
-            best_comes="first",  # self.population[0]
+            best_comes="last" if config.is_maximisation else "first",  # self.population[0]
         )
 
         # Get requested individual
@@ -354,7 +355,7 @@ def evaluate(population: Population) -> Population:
 def survivor_selection(population: Population) -> Population:
     RNG.shuffle(population)
     current_pop_size = len(population)
-    for idx in range(len(population)):
+    for idx in range(0, len(population) - 1, 2):
         ind_i = population[idx]
         ind_j = population[idx + 1]
 

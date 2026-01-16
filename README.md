@@ -1,4 +1,4 @@
-![ariel-header](./docs/resources/ariel_header.svg)
+![ariel-header](./docs/resources/ariel_logo.svg)
 
 # ARIEL: Autonomous Robots through Integrated Evolution and Learning
 
@@ -24,7 +24,7 @@ To run the code examples please do
 ```bash
 uv venv
 uv sync
-uv run examples/0_render_single_frame.py
+uv run examples/z_ec_course/0_render_single_frame.py
 ```
 
 <!-- ## TODO: Installation
