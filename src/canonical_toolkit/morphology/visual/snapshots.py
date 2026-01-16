@@ -31,7 +31,7 @@ T = TypeVar('T')
 def _default_snapshot_converter(data: T) -> Image.Image:
     """Default converter using quick_view from viewer."""
     from .viewer import quick_view
-    return quick_view(data, return_img=True, tilted=True, remove_background=True)
+    return quick_view(data, return_img=True, tilted=True, remove_background=True, white_background=True)
 
 
 def _save_single_image_worker(args):

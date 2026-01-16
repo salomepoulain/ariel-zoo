@@ -81,9 +81,9 @@ class RevDE:
 
 def main() -> None:
     """Entry point."""
-    parent_b = RNG.random(4)
-    parent_c = RNG.random(4)
-    parent_a = RNG.random(4)
+    parent_b = [RNG.random(4), RNG.random(4), RNG.random(4)]
+    parent_c = [RNG.random(4), RNG.random(4), RNG.random(4)]
+    parent_a = [RNG.random(4), RNG.random(4), RNG.random(4)]
     revde = RevDE(scaling_factor=-0.5)
     children = revde.mutate(parent_a, parent_b, parent_c)
     

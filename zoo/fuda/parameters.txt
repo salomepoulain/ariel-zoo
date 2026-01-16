@@ -1,0 +1,86 @@
+
+GENOTYPE:
+multineat.genome graph NN [cppnwin]
+
+
+MUTATION:
+mutation_prob = 0.8
+mutation_operator: standard mutation:
+    - uses a shit ton of paramters
+    - MutateWeightsProb = 0.9
+        - MaxWeight = 8.0
+        - WeightMutationMaxPower = 0.2
+        - WeightReplacementMaxPower = 1
+
+
+CROSSOVER:
+crossover_prob = 0.8
+operator: standard crossover
+    - Apply NEAT crossover via MateWithConstraints()
+        - most similar to uniform crossover
+        
+
+PARENT_SELECTION
+Tournament Selection (k=UNCLEAR, LIKELY 2) with Unique Pairing (yes Replacement across pairs)
+
+SURVIVAL_SELECTION
+Tournament Selection (k=UNCLEAR, LIKELY 2)
+
+NOVLETY:
+Mean distance to k-nearest neighbors in morphology space
+  - Calculate distance in N-dimensional morphology space
+  - Take k nearest neighbors
+  - Average their distances
+
+FITNESS:
+speed x novelty
+speed = sqrt(x² + y²) / 60
+    - x, y = final position after 60 seconds
+    - sqrt(x² + y²) = Euclidean distance from starting point
+    - /60 = convert to speed (cm/s)
+
+
+EA_PARAMS:
+Population size: 500 
+Offspring size: 100
+
+
+CONTROLLER:
+
+
+  │ population_management          │ steady_state_population_management │ Line 96  │ Survival selection strategy    │
+  The tournament size k is NOT explicitly specified in the parent_selection or population_management_selector parameters.
+
+
+
+
+Penalty:
+The Penalty: The term is max(0.1,1−E), where E calculates the ratio of "limb-like" modules (modules with 2 connections) to the maximum possible chain length.
+
+
+Neighbors (k): They used k=1. This means the novelty score is simply the distance to the single most similar robot ever seen.
+
+Comparison Pool: The robot is compared against the current population PLUS a historical Archive.
+
+
+The archive acts as a memory of everything evolution has already tried.
+Update Rule: Every newly generated individual has a 10% probability of being added to the archive permanently.
+Once in the archive, a robot stays there forever.
+
+comparison pool = entire population + archive population
+
+
+
+
+def add_to_archive(population: Population, probability):
+    probability = 10 percent
+    tags archive
+
+def calculate_penalty(population: Population, penalty):
+    if limb has +2 modules
+    / 
+    e/max = m - 2
+
+
+def fitness(population: Population):
+    

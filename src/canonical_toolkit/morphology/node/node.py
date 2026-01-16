@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
     from networkx import DiGraph
 
-    from canonical_toolkit.configs.canonical_config import (
+    from canonical_toolkit.morphology.node.configs.canonical_config import (
         CanonicalConfig,
     )
 
@@ -33,7 +33,7 @@ class Node:
         "__face_to_placement",
         "_axial_list",
         "_config",
-        "_full_priority",
+        # "_full_priority",
         "_internal_rotation",
         "_node_tags",
         "_parent",
@@ -79,7 +79,7 @@ class Node:
         self._tree_tags: dict[str, Any] = {}
 
         # Set priority from config
-        self._full_priority = config.priority
+        # self._full_priority = config.priority
 
         # Build face to placement mapping
         mapping: dict[
@@ -188,13 +188,13 @@ class Node:
 
     # region internal helpers -----
 
-    def _update_parent_priorites(
-        self, delta_priority: int,
-    ) -> Node | None:
-        def _priority_updater(n: Node) -> None:
-            n._full_priority += delta_priority
+    # def _update_parent_priorites(
+    #     self, delta_priority: int,
+    # ) -> Node | None:
+    #     def _priority_updater(n: Node) -> None:
+    #         n._full_priority += delta_priority
 
-        self.traverse_through_parents(_priority_updater)
+    #     self.traverse_through_parents(_priority_updater)
 
     def _get_child(self, face: ModuleFaces) -> Node | None:
         target_list, index = self.__face_to_placement[face]
@@ -211,7 +211,7 @@ class Node:
     def _set_child(self, face: ModuleFaces, child: Node) -> None:
         child = child if child.parent is None else child.copy()
 
-        self._update_parent_priorites(child.full_priority)
+        # self._update_parent_priorites(child.full_priority)
         self._set_child_raw(face, child)
         child.parent = self
 
@@ -237,7 +237,7 @@ class Node:
         if not child:
             return None
 
-        self._update_parent_priorites(-child.full_priority)
+        # self._update_parent_priorites(-child.full_priority)
 
         child.parent = None
         self._set_child_raw(face, None)
@@ -272,10 +272,10 @@ class Node:
         """Set the parent node."""
         self._parent = value
 
-    @property
-    def full_priority(self) -> int:
-        """Get the full priority value."""
-        return self._full_priority
+    # @property
+    # def full_priority(self) -> int:
+    #     """Get the full priority value."""
+    #     return self._full_priority
 
     @property
     def parent_attachment_face(self) -> ModuleFaces | None:
@@ -411,11 +411,11 @@ class Node:
         """Detach all children from this node, return the list."""
         detached = list(self.children)
 
-        delta_priority = 0
-        for child in detached:
-            child.detatch_from_parent()
-            delta_priority -= child.full_priority
-        self._update_parent_priorites(delta_priority)
+        # delta_priority = 0
+        # for child in detached:
+        #     child.detatch_from_parent()
+        #     delta_priority -= child.full_priority
+        # self._update_parent_priorites(delta_priority)
 
         self._radial_list[:] = [None] * len(self._radial_list)
         self._axial_list[:] = [None] * len(self._axial_list)

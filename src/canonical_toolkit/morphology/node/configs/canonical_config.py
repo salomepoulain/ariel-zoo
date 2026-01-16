@@ -11,7 +11,7 @@ class CanonicalConfig:
     axial_face_order: tuple[ModuleFaces, ...]
     radial_face_order: tuple[ModuleFaces, ...]
     unique_rotation_amt: int
-    priority: int
+    # priority: int
     radial_adjustments: tuple[tuple[int, ...]]
 
 
@@ -27,7 +27,7 @@ CANONICAL_CONFIGS: dict[ModuleType, CanonicalConfig] = {
             ModuleFaces.FRONT,
         ),
         unique_rotation_amt=2,
-        priority=3,
+        # priority=3,
         radial_adjustments=(
             (0, 0, 0, 0),
             (0, 0, 0, 0),
@@ -45,7 +45,7 @@ CANONICAL_CONFIGS: dict[ModuleType, CanonicalConfig] = {
             ModuleFaces.TOP,
         ),
         unique_rotation_amt=2,
-        priority=2,
+        # priority=2,
         radial_adjustments=(
             (0, 6, 4, 6),
             (0, 6, 0, 2),
@@ -58,7 +58,7 @@ CANONICAL_CONFIGS: dict[ModuleType, CanonicalConfig] = {
         axial_face_order=(ModuleFaces.FRONT,),
         radial_face_order=(),
         unique_rotation_amt=4,
-        priority=1,
+        # priority=1,
         radial_adjustments=(),
     ),
     ModuleType.NONE: CanonicalConfig(
@@ -66,7 +66,7 @@ CANONICAL_CONFIGS: dict[ModuleType, CanonicalConfig] = {
         axial_face_order=(),
         radial_face_order=(),
         unique_rotation_amt=1,
-        priority=0,
+        # priority=0,
         radial_adjustments=(),
     ),
 }

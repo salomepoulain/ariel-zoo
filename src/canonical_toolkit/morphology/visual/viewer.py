@@ -336,7 +336,7 @@ def quick_view(
     save_file: Path | str | None = None,
     with_viewer: bool = False,
     remove_background: bool = True,
-    white_background: bool = True,
+    white_background: bool = False,
     tilted: bool = True,
     rectangle_hinge: bool = True,
     return_img: bool = False,

@@ -32,7 +32,7 @@ from PIL import Image
 
 def remove_white_background_and_crop(
     img: Image.Image,
-    threshold: int = 245,
+    threshold: int = 200,
 ) -> Image.Image:
     """
     Remove white background and crop to content.
@@ -73,7 +73,7 @@ def remove_white_background_and_crop(
 
 def remove_black_background_and_crop(
     img: Image.Image,
-    threshold: int = 10,
+    threshold: int = 40,
 ) -> Image.Image:
     """
     Remove black background and crop to content.
