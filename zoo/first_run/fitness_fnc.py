@@ -52,6 +52,8 @@ from ariel_experiments.characterize.canonical.core.toolkit import (
 from ariel_experiments.characterize.individual import analyze_branching, analyze_coverage, analyze_joints, analyze_length_of_limbs, analyze_number_of_limbs, analyze_proportion_literature, analyze_size, analyze_symmetry
 from ariel_experiments.characterize.population import get_raw_population_properties
 
+from sklearn.metrics import pairwise_distances
+
 # some global vars that will be removed when the function is complete, only used vars will be kept
 
 console = Console()
@@ -131,23 +133,23 @@ def fitness(population:Population)->Population:
     n_pop = len(population)
     novelty_list = [0]*n_pop
 
-    # Initializing and filling the similarity matrix
-    similarity_matrix = np.zeros((n_pop, n_pop))
+    #similarity_matrix = np.zeros((n_pop, n_pop))
     documents = get_raw_population_properties(population,morphological_analysers)# [list(ind.tags['subtrees']) for ind in population]
-    hasher = FeatureHasher(n_features=7)
-    X = hasher.transform(documents)
-    X = normalize(X, norm="l2")
+    #hasher = FeatureHasher(n_features=7)
+    #X = hasher.transform(documents)
+    #X = normalize(X, norm="l2")
+    X = np.array(documents, dtype=float)
+
+    #for i in range(n_pop):
+    #    for j in range(n_pop):
+    #        similarity_matrix[i, j] = X[i] @ X[j].T
+
+    distance_matrix = pairwise_distances(X, metric="euclidean")
+
 
     for i in range(n_pop):
-        for j in range(n_pop):
-            similarity_matrix[i, j] = X[i] @ X[j].T
-
-
-    # Taking a row take the average of the K lowest score in row, then putting in a list
-        for i in range(n_pop):
-            distances = 1.0 - similarity_matrix[i]
-            distances_sorted = np.sort(distances)
-            novelty_list[i] = distances_sorted[1:K+1].sum()
+        distances_sorted = np.sort(distance_matrix[i])
+        novelty_list[i] = distances_sorted[1:K+1].sum()
 
 
     speed_list = []
