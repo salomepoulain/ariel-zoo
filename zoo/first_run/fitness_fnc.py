@@ -5,6 +5,7 @@ Use: import the fitness function and place it in the EA operators
 """
 
 
+import time
 import matplotlib.pyplot as plt
 
 # from examples.z_ec_course.A3_template import NUM_OF_MODULES
@@ -18,6 +19,7 @@ import numpy as np
 # matrix_derive_neighbourhood_cross_pop,
 # )
 import torch
+from tqdm import tqdm
 from ariel.body_phenotypes.robogen_lite.constructor import construct_mjspec_from_graph
 from ariel.body_phenotypes.robogen_lite.modules.core import CoreModule
 from ariel.simulation.controllers.controller import Controller
@@ -47,6 +49,8 @@ from ariel.ec.genotypes.nde.nde import NeuralDevelopmentalEncoding
 from ariel_experiments.characterize.canonical.core.toolkit import (
     CanonicalToolKit as ctk,
 )
+from ariel_experiments.characterize.individual import analyze_branching, analyze_coverage, analyze_joints, analyze_length_of_limbs, analyze_number_of_limbs, analyze_proportion_literature, analyze_size, analyze_symmetry
+from ariel_experiments.characterize.population import get_raw_population_properties
 
 # some global vars that will be removed when the function is complete, only used vars will be kept
 
@@ -99,7 +103,7 @@ K_NEIGHBORS = 9
 # ADDED: Global NDE for deterministic genotype-to-phenotype mapping (following A3_template pattern)
 GLOBAL_NDE = NeuralDevelopmentalEncoding(number_of_modules=NUM_OF_MODULES)
 
-
+morphological_analysers = [analyze_branching,analyze_number_of_limbs,analyze_coverage,analyze_joints,analyze_proportion_literature,analyze_symmetry]
 
 
 def decode_genotype_to_string(genotype: list) -> str:
@@ -129,8 +133,8 @@ def fitness(population:Population)->Population:
 
     # Initializing and filling the similarity matrix
     similarity_matrix = np.zeros((n_pop, n_pop))
-    documents = [list(ind.tags['subtrees']) for ind in population]
-    hasher = FeatureHasher(n_features=SCALE, input_type="string")
+    documents = get_raw_population_properties(population,morphological_analysers)# [list(ind.tags['subtrees']) for ind in population]
+    hasher = FeatureHasher(n_features=7)
     X = hasher.transform(documents)
     X = normalize(X, norm="l2")
 
@@ -171,13 +175,12 @@ def speed_test(ind:Individual, nr_of_tests:int=1) -> float:
     return best
 
 
-def run_simulation(robot:str|CoreModule, time:int=10): 
+def run_simulation(robot:CoreModule, time:int=10): 
     """Entry function to run the simulation with random movements, with added speed measuring"""
     # Initialise controller to controller to None, always in the beginning.
-    if type(robot) == str:
-        robot = construct_mjspec_from_graph(ctk.to_graph(ctk.from_string(robot)))
+
     mujoco.set_mjcb_control(None)  # DO NOT REMOVE
-    steps = time *50  # TODO check how many steps are in a second
+    steps = time *500  # TODO check how many steps are in a second
     # Initialise world
     # Import environments from ariel.simulation.environments
     world = SimpleFlatWorld()
@@ -234,12 +237,16 @@ def run_simulation(robot:str|CoreModule, time:int=10):
     mujoco.mj_step(model, data, nstep=steps)
 
     pos_data = np.array(tracker.history["xpos"][0])
-    speed = np.sqrt((pos_data[-1, 0] - pos_data[0, 0])**2 + (pos_data[-1, 1] - pos_data[0, 1])**2)/time # change for 60 second
+    speed = np.sqrt((pos_data[-1, 0] - pos_data[0, 0])**2 + (pos_data[-1, 1] - pos_data[0, 1])**2)/60 # change for 60 second
+    # print("data time:", data.time)
     return float(speed)
 
 
 if __name__ == "__main__":
 ## just some testing code feel free to change
 
-    for _ in range(30):
-        print(format(run_simulation('C[f(H6H2B[t(B2[l(B2[t(BH4BB6[r(B6)]H6)])])]HH4)]', time=60),'.8f'))
+    for _ in tqdm(range(500)):
+        # print(format(run_simulation('C[f(H6H2B[t(B2[l(B2[t(BH4BB6[r(B6)]H6)])])]HH4)]', time=60),'.8f'))
+        run_simulation('C[f(H6H2B[t(B2[l(B2[t(BH4BB6[r(B6)]H6)])])]HH4)]', time=60)
+
+
