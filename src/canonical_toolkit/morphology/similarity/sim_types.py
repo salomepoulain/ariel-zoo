@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 import scipy.sparse as sp
 
@@ -39,6 +39,7 @@ TreeHash is a formatted string representing a canonicalized subtree modular part
 FingerprintSpace == the vectorized PopulationFingerprint
 """
 
+@runtime_checkable
 class FeatureHasherProtocol(Protocol):
     """Protocol for hashers that convert string features to sparse matrices.
 

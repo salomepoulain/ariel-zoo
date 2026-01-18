@@ -188,12 +188,23 @@ class MatrixSeries(Generic[I]):
             func: Function to apply to each instance (type I)
             inplace: If True, modify self and return self (faster, saves memory).
                     If False, create new instance of same type (safer). Default: True.
+                    When False, also attempts to pass inplace=False to func if it accepts it.
 
         Returns
         -------
             Self if inplace=True, new instance of same type if inplace=False
         """
-        new_data = {idx: func(inst) for idx, inst in self._instances.items()}
+        new_data = {}
+        for idx, inst in self._instances.items():
+            if not inplace:
+                # Try to pass inplace=False to the function if it accepts it
+                try:
+                    new_data[idx] = func(inst, inplace=False)
+                except TypeError:
+                    # Function doesn't accept inplace parameter
+                    new_data[idx] = func(inst)
+            else:
+                new_data[idx] = func(inst)
 
         if inplace:
             self._instances = new_data
@@ -211,13 +222,14 @@ class MatrixSeries(Generic[I]):
     # --- I/O Methods ---
 
     def save(
-        self, folder_path: Path | str | None = None, *, overwrite: bool = False
+        self, folder_path: Path | str | None = None, series_name: str | None = None, *, overwrite: bool = False
     ) -> None:
         """Save series to disk.
 
         Args:
             folder_path: Directory to save series. If None, uses default:
-                        __data__/series/{description}
+                        __data__/series/{series_name}
+            series_name: Name for the series. defaults to description
             overwrite: If False, appends counter to avoid overwriting existing folders
 
         Creates:
@@ -226,18 +238,22 @@ class MatrixSeries(Generic[I]):
             {folder_path}/{instance.description}.npz - instance data files
         """
         if folder_path is None:
-            folder_path = DATA_SERIES / self.description
+            folder_path = DATA_SERIES 
+        
+        if series_name is None:
+            series_name = self.description
 
-            if not overwrite:
-                counter = 2
-                original_path = folder_path
-                while folder_path.exists():
-                    folder_path = original_path.with_name(
-                        f"{original_path.name}_{counter}"
-                    )
-                    counter += 1
-
-        folder_path = Path(folder_path)
+        original_path = Path(folder_path) / Path(series_name)
+        folder_path = original_path
+        
+        if not overwrite:
+            counter = 2
+            while folder_path.exists():
+                folder_path = original_path.with_name(
+                    f"{original_path.name}_{counter}"
+                )
+                counter += 1
+                
         folder_path.mkdir(parents=True, exist_ok=True)
 
         instance_files = {}

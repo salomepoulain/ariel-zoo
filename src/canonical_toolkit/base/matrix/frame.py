@@ -72,19 +72,66 @@ class MatrixFrame(Generic[S]):
     @overload
     def __getitem__(self, key: Hashable) -> S: ...
 
+    @overload
+    def __getitem__(self, key: tuple[slice, slice]) -> Self: ...
+
+    @overload
+    def __getitem__(self, key: tuple[slice, Hashable]) -> S: ...
+
+    @overload
+    def __getitem__(self, key: tuple[slice, list[Hashable]]) -> Self: ...
+
     def __getitem__(
         self,
-        key: Hashable | slice | list[Hashable],
+        key: Hashable | slice | list[Hashable] | tuple[slice, slice | Hashable | list[Hashable]],
     ) -> S | Self:
         """
-        Access series by label, slice by index, or select multiple series.
+        Access series by label, slice by index, or 2D matrix-style indexing.
 
         Examples
         --------
-            frame["series_A"]       # Get single series
-            frame[:3]               # Slice all series to indices 0-3
-            frame[["A", "B"]]       # Select specific series
+            frame["FRONT"]              # Get single series by label
+            frame[:3]                   # Slice all series to indices 0-2
+            frame[["FRONT", "BACK"]]    # Select specific series by label
+
+            # 2D indexing (indices, series):
+            frame[:3, 2:]               # Indices 0-2, series positions 2+ → Frame
+            frame[:, :2]                # All indices, first 2 series → Frame
+            frame[:3, "FRONT"]          # Indices 0-2, single series by label → Series
+            frame[:, ["FRONT", "BACK"]] # All indices, multiple series by label → Frame
         """
+        # Handle 2D tuple indexing: frame[idx_slice, series_selector]
+        if isinstance(key, tuple) and len(key) == 2:
+            idx_slice, series_key = key
+
+            if not isinstance(idx_slice, slice):
+                msg = f"First index must be a slice, got {type(idx_slice).__name__}"
+                raise TypeError(msg)
+
+            # Slice on series dimension → positional selection
+            if isinstance(series_key, slice):
+                selected_labels = self._ordered_labels[series_key]
+                new_series = [
+                    self._series[label][idx_slice] for label in selected_labels
+                ]
+                return self.__class__(series=new_series)
+
+            # List of labels → multiple series by name
+            if isinstance(series_key, list):
+                new_series = []
+                for k in series_key:
+                    label = getattr(k, "name", str(k))
+                    if label in self._series:
+                        new_series.append(self._series[label][idx_slice])
+                return self.__class__(series=new_series)
+
+            # Single label → return sliced Series
+            label = getattr(series_key, "name", str(series_key))
+            if label not in self._series:
+                msg = f"Key not found: {series_key} (serialized: {label})"
+                raise KeyError(msg)
+            return self._series[label][idx_slice]
+
         if isinstance(key, slice):
             new_series = [
                 self._series[label][key] for label in self._ordered_labels
@@ -257,14 +304,24 @@ class MatrixFrame(Generic[S]):
             func: Function to apply to each series (type S)
             inplace: If True, modify self and return self (faster, saves memory).
                     If False, create new instance of same type (safer). Default: True.
+                    When False, also attempts to pass inplace=False to func if it accepts it.
 
         Returns
         -------
             Self if inplace=True, new instance of same type if inplace=False
         """
-        new_series = {
-            label: func(self._series[label]) for label in self._ordered_labels
-        }
+        new_series = {}
+        for label in self._ordered_labels:
+            series = self._series[label]
+            if not inplace:
+                # Try to pass inplace=False to the function if it accepts it
+                try:
+                    new_series[label] = func(series, inplace=False)
+                except TypeError:
+                    # Function doesn't accept inplace parameter
+                    new_series[label] = func(series)
+            else:
+                new_series[label] = func(series)
 
         if inplace:
             self._series = new_series
@@ -286,9 +343,12 @@ class MatrixFrame(Generic[S]):
 
         return f"{class_name}_{num_series}s_{max_indices}i".lower()
 
+        
+
     def save(
         self,
         folder_path: Path | str | None = None,
+        frame_name: str | None = None,
         *,
         overwrite: bool = False,
     ) -> None:
@@ -296,7 +356,8 @@ class MatrixFrame(Generic[S]):
 
         Args:
             folder_path: Directory to save frame. If None, uses default:
-                        __data__/frames/{description}
+                        __data__/frames/{frame_name}
+            frame_name: defautls to description
             overwrite: If False, appends counter to avoid overwriting existing folders
 
         Creates hierarchical structure:
@@ -310,18 +371,22 @@ class MatrixFrame(Generic[S]):
                     ...
         """
         if folder_path is None:
-            folder_path = DATA_FRAMES / self.description
+            folder_path = DATA_FRAMES 
+        
+        if frame_name is None:
+            frame_name = self.description
 
-            if not overwrite:
-                counter = 2
-                original_path = folder_path
-                while folder_path.exists():
-                    folder_path = original_path.with_name(
-                        f"{original_path.name}_{counter}",
-                    )
-                    counter += 1
-
-        folder_path = Path(folder_path)
+        original_path = Path(folder_path) / Path(frame_name)
+        folder_path = original_path
+        
+        if not overwrite:
+            counter = 2
+            while folder_path.exists():
+                folder_path = original_path.with_name(
+                    f"{original_path.name}_{counter}"
+                )
+                counter += 1
+                
         folder_path.mkdir(parents=True, exist_ok=True)
 
         series_folders = {
@@ -337,8 +402,7 @@ class MatrixFrame(Generic[S]):
             json.dump(frame_info, f, indent=2)
 
         for label in self._ordered_labels:
-            series_folder = folder_path / series_folders[label]
-            self._series[label].save(series_folder, overwrite=True)
+            self._series[label].save(folder_path, series_folders[label], overwrite=True)
 
     @classmethod
     def load(cls, folder_path: Path | str) -> Self:

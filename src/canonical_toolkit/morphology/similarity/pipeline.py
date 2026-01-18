@@ -61,8 +61,9 @@ __all__ = [
     "frame_to_embedding_grid",
     "frame_to_heatmap_grid",
     "series_to_cumulative_similarity",
-    "graph_population_to_series",
-    "graph_population_to_frame"
+    "series_from_graph_population",
+    "series_from_node_population",
+    "frame_from_graph_population"
 ]
 
 
@@ -78,6 +79,26 @@ def collect_hash_fingerprint(
     if not config:
         config = SimilaritySpaceConfig()
     
+    if not config.space.value == '':
+        node = node.copy()
+        
+        # detatch radial children, if you want axial hashes
+        if config.space.value == 'A_#__':
+            for radial_child in node.radial_children:
+                radial_child.detatch_from_parent()
+                
+        # detatch axial children, if you want radial hashes
+        elif config.space.value == 'R_#__':
+            for axial_child in node.axial_children:
+                axial_child.detatch_from_parent()
+        
+        # just get hashes from 1 limb   
+        else:
+            node = node.get(config.space.name)
+            if not node:
+                return {-1: []}
+            node.detatch_from_parent()
+                
     return deriver.collect_neighbourhoods(
         starting_node=node,
         serializer_fn=OutputType.STRING,
@@ -172,12 +193,12 @@ def series_from_population_fingerprint(
     
 # Region nx based pipeline helpers
 
-def graph_population_to_series(
+def series_from_graph_population(
     population: list[DiGraph[Any]], 
     space_config: SimilaritySpaceConfig
 ) -> SimilaritySeries:
     node_population = [node_from_graph(graph) for graph in population]
-    
+        
     population_fingerprint = collect_population_fingerprint(
         node_population=node_population, 
         config=space_config
@@ -192,11 +213,29 @@ def graph_population_to_series(
         
     return series
 
-def graph_population_to_frame(
+def series_from_node_population(
+    population: list[Node], 
+    space_config: SimilaritySpaceConfig
+) -> SimilaritySeries:  
+    population_fingerprint = collect_population_fingerprint(
+        node_population=population, 
+        config=space_config
+    )
+
+    series = series_from_population_fingerprint(
+        population_fingerprint=population_fingerprint, 
+        space=space_config.space, 
+        max_radius=space_config.max_hop_radius, 
+        hasher=space_config.hasher
+    )
+        
+    return series
+
+def frame_from_graph_population(
     population: list[DiGraph[Any]], 
     space_configs: list[SimilaritySpaceConfig]
 ) -> SimilarityFrame:
-    all_series = [graph_population_to_series(population, config) for config in space_configs]    
+    all_series = [series_from_graph_population(population, config) for config in space_configs]    
     frame = SimilarityFrame(all_series)
     return frame
 

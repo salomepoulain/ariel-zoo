@@ -12,50 +12,51 @@ from ariel.utils.optimizers.revde import RevDE
 
 import canonical_toolkit as ctk
 
+
 class Config(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    # Seed and file handling
+    # ? ------------------------
     SEED: int = 42
     RUN_NAME: str = "run"
     QUIET: bool = False
     STORE_STRING: bool = True
-    
+    # ? ------------------------
     NUM_MODULES: int = 20
     GENOTYPE_SIZE: int = 64
     SCALE: float = 8192
-    REV_SCALING_FACTOR: float = 0.5
-    
+    # ? ------------------------
+    REV_SCALING_FACTOR: float = -0.5
+    # ? ------------------------
     POPULATION_SIZE: int = 300
     NUM_GENERATIONS: int = 100
-    
-    # SURVIVOR_TOURNAMENT_SIZE: int = 10
     IS_MAXIMISATION: bool = True
-    
+    # ? ------------------------
+    SPEED_EVAL: bool = True
+    # ? ------------------------
+    SIM_SPACE: ctk.Space = ctk.Space.WHOLE
+    MAX_HOP_RADIUS: int | None = None
+    # ? ------------------------
     K_NOVELTY: int = 1
     ARCHIVE_CHANCE: float = 0.1
-
+    # ? ------------------------
     # Derived (set in model_validator, excluded from __init__)
     RNG: np.random.Generator = Field(default=None, validate_default=False)  # type: ignore[assignment]
     NDE: NeuralDevelopmentalEncoding = Field(default=None, validate_default=False) # type: ignore[assignment]
     REVDE: RevDE = Field(default=RevDE(-0.5), validate_default=False)
-    
     EA_SETTINGS: EASettings = Field(default=EASettings, validate_default=False)  # type: ignore[assignment]
     SIM_CONFIG: ctk.SimilaritySpaceConfig = Field(default=ctk.SimilaritySpaceConfig(), validate_default=False)
-    
     OUTPUT_FOLDER: Path = Field(default=Path("__data__"), validate_default=False)
 
 
     @model_validator(mode="after")
     def setup(self) -> "Config":
-        # Set all random seeds
         np.random.seed(self.SEED)
         torch.manual_seed(self.SEED)
         torch.use_deterministic_algorithms(True, warn_only=True)
 
         object.__setattr__(self, "RNG", np.random.default_rng(self.SEED))
 
-        # Create output folder with auto-incrementing suffix
         base_folder = Path.cwd() / "__data__" / self.RUN_NAME
         counter = 1
         output_folder = base_folder.parent / f"{base_folder.name}_{counter:04d}"
@@ -70,7 +71,10 @@ class Config(BaseModel):
         revde = RevDE(self.REV_SCALING_FACTOR)
         object.__setattr__(self, "REVDE", revde)
         
-        sim_config = ctk.SimilaritySpaceConfig()
+        sim_config = ctk.SimilaritySpaceConfig(
+            space=self.SIM_SPACE,
+            max_hop_radius=self.MAX_HOP_RADIUS
+        )
         object.__setattr__(self, "SIM_CONFIG", sim_config)
 
         ea_settings = EASettings(
@@ -102,6 +106,7 @@ class Config(BaseModel):
 
 
 config: Config = None  # type: ignore[assignment]
+
 
 def cli_options(func):
     """Add all config CLI options to a function."""

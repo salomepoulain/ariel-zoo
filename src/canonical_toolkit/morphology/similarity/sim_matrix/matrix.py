@@ -138,27 +138,49 @@ class SimilarityMatrix(MatrixInstance):
             tags=tags,
         )
 
-    def normalize_by_radius(self) -> SimilarityMatrix:
-        """Normalize matrix by dividing by (radius + 1).
+    def __or__(self, other: SimilarityMatrix) -> SimilarityMatrix:
+        """Vertically stack matrices (concatenate rows/individuals).
 
-        Uses the instance's stored radius value for normalization.
+        Only allowed when domain is FEATURES.
+        Use this to combine populations, e.g. current + archive.
+
+        Args:
+            other: Another SimilarityMatrix (must have same columns and be FEATURES)
 
         Returns:
-            New SimilarityMatrix with normalized values
+            New SimilarityMatrix with vstacked matrices
         """
-        if self._tags.get("domain") != MatrixDomain.SIMILARITY.name:
-            raise ValueError(
-                f"Requires similarity domain, found {self._tags.get('domain')}"
-            )
+        if not isinstance(other, SimilarityMatrix):
+            return NotImplemented
+
+        if self.domain != "FEATURES":
+            msg = f"| only allowed for FEATURES domain, got {self.domain}"
+            raise ValueError(msg)
+        if other.domain != "FEATURES":
+            msg = f"| only allowed for FEATURES domain, got {other.domain}"
+            raise ValueError(msg)
+
+        new_matrix = sp.vstack([self._matrix, other._matrix])
+        return self.replace(matrix=new_matrix)
+
+    def normalize_by_radius(self, in_place: bool = True) -> SimilarityMatrix:
+        """Normalize matrix by dividing by (radius + 1)."""
+        
         matrix_as_array = cast(np.ndarray, self._matrix)
-        normalized_matrix = matrix_as_array / (self.radius + 1)
+        normalized_values = matrix_as_array / (self.radius + 1)
+
+        if in_place:
+            self._matrix = normalized_values
+            return self
+    
         return SimilarityMatrix(
-            matrix=normalized_matrix,
+            matrix=normalized_values,
             space=self.space,
             radius=self.radius,
             domain=self.domain,
             tags=self.tags,
         )
+        
 
     def cosine_similarity(self) -> SimilarityMatrix:
         """Compute cosine similarity matrix."""
@@ -188,10 +210,10 @@ class SimilarityMatrix(MatrixInstance):
         Returns:
             Array of scores per row (normalized if normalise_by_pop_len=True)
         """
-        if self._tags.get("domain") != MatrixDomain.SIMILARITY.name:
-            raise ValueError(
-                f"Requires similarity domain, found {self._tags.get('domain')}"
-            )
+        # if self._tags.get("domain") != MatrixDomain.SIMILARITY.name:
+        #     raise ValueError(
+        #         f"Requires similarity domain, found {self._tags.get('domain')}"
+        #     )
 
         matrix = (
             self._matrix.toarray()
@@ -220,6 +242,36 @@ class SimilarityMatrix(MatrixInstance):
             scores = scores / k
 
         return scores
+
+    def get_max_indices(self, amt: int = 1) -> list[tuple[int, int]]:
+        """Get indices of the highest values in the upper triangle (excluding diagonal)."""
+        return self._get_sorted_indices(amt=amt, reverse=True)
+
+    def get_min_indices(self, amt: int = 1) -> list[tuple[int, int]]:
+        """Get indices of the lowest values in the upper triangle (excluding diagonal)."""
+        return self._get_sorted_indices(amt=amt, reverse=False)
+
+    def _get_sorted_indices(self, amt: int, reverse: bool) -> list[tuple[int, int]]:
+        """Helper to find top/bottom values in a symmetric matrix."""
+        matrix = self._matrix
+        if sp.issparse(matrix):
+            matrix = matrix.toarray()
+
+        # We only care about the upper triangle to avoid duplicates (A,B and B,A)
+        # k=1 excludes the diagonal (self-similarity)
+        rows, cols = np.triu_indices(matrix.shape[0], k=1)
+        values = matrix[rows, cols]
+
+        # Sort based on values
+        if reverse:
+            # Get indices of largest values
+            idx = np.argsort(values)[-amt:][::-1]
+        else:
+            # Get indices of smallest values
+            idx = np.argsort(values)[:amt]
+
+        # Map back to matrix coordinates
+        return list(zip(rows[idx], cols[idx]))
 
     def umap_embed(
         self,

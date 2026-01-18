@@ -412,8 +412,8 @@ class Node:
         detached = list(self.children)
 
         # delta_priority = 0
-        # for child in detached:
-        #     child.detatch_from_parent()
+        for child in detached:
+            child.detatch_from_parent()
         #     delta_priority -= child.full_priority
         # self._update_parent_priorites(delta_priority)
 

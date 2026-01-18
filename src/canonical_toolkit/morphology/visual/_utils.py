@@ -73,7 +73,7 @@ def remove_white_background_and_crop(
 
 def remove_black_background_and_crop(
     img: Image.Image,
-    threshold: int = 40,
+    threshold: int = 20,
 ) -> Image.Image:
     """
     Remove black background and crop to content.

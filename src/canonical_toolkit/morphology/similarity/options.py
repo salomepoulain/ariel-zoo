@@ -11,8 +11,7 @@ from ..node.tools import (
     serializer,
 )
 
-if TYPE_CHECKING:
-    from .sim_types import FeatureHasherProtocol
+from .sim_types import FeatureHasherProtocol
 
 
 class MatrixDomain(Enum):
@@ -51,6 +50,9 @@ class Space(Enum):
     RIGHT = "R_r__"
     TOP = "A_t__"
     BOTTOM = "A_b__"
+    
+    RADIAL = "R_#__"
+    AXIAL = "A_#__"
     # AGGREGATED = auto()
 
     # @classmethod

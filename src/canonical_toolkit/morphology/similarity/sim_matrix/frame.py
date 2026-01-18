@@ -61,14 +61,16 @@ class SimilarityFrame(MatrixFrame[SimilaritySeries]):
             msg = "Cannot aggregate empty SimilarityFrame"
             raise ValueError(msg)
 
+        previous_domain = ""
         for space, series in self._series.items():
             for r, inst in series.instances.items():
-                if inst.domain != MatrixDomain.FEATURES.name:
-                    msg = (
-                        f"Can only aggregate FEATURES matrices. "
-                        f"Found {inst.domain} at {space}, radius {r}"
-                    )
-                    raise ValueError(msg)
+                previous_domain = inst.domain
+        #         if inst.domain != MatrixDomain.FEATURES.name:
+        #             msg = (
+        #                 f"Can only aggregate FEATURES matrices. "
+        #                 f"Found {inst.domain} at {space}, radius {r}"
+        #             )
+        #             raise ValueError(msg)
 
         all_radii = [set(series.instances.keys()) for series in self._series.values()]
         common_radii = sorted(set.intersection(*all_radii))
@@ -88,13 +90,41 @@ class SimilarityFrame(MatrixFrame[SimilaritySeries]):
 
             result_instance = SimilarityMatrix(
                 matrix=agg_matrix,
-                space="AGGREGATED",
+                space=f"AGGREGATED",
                 radius=r,
-                domain=MatrixDomain.FEATURES,
+                domain={previous_domain},
             )
             result_instances.append(result_instance)
 
         return SimilaritySeries(instances_list=result_instances)
+
+    def __or__(self, other: SimilarityFrame) -> SimilarityFrame:
+        """Vertically stack frames (concatenate rows/individuals at each series).
+
+        Only allowed when domain is FEATURES.
+        Use this to combine populations, e.g. current + archive.
+
+        Args:
+            other: Another SimilarityFrame (must have matching labels and FEATURES)
+
+        Returns:
+            New SimilarityFrame with vstacked series
+        """
+        if not isinstance(other, SimilarityFrame):
+            return NotImplemented
+
+        common_labels = set(self._ordered_labels) & set(other._ordered_labels)
+        if not common_labels:
+            msg = "No common labels between frames"
+            raise ValueError(msg)
+
+        new_series = []
+        for label in self._ordered_labels:
+            if label in common_labels:
+                combined = self._series[label] | other._series[label]
+                new_series.append(combined)
+
+        return SimilarityFrame(series=new_series)
 
 
 if __name__ == "__main__":

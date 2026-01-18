@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import scipy.sparse as sp
+
 from ....base.matrix import MatrixSeries
 from ..options import MatrixDomain, Space, UmapConfig
 from .matrix import SimilarityMatrix
@@ -69,9 +71,7 @@ class SimilaritySeries(MatrixSeries[SimilarityMatrix]):
         """Aggregate all feature matrices by summing across radii.
 
         Collapses the radius dimension by element-wise summation.
-        Changes space to "AGGREGATED" since spatial hierarchy is merged.
-
-        ONLY works on MatrixDomain.FEATURES matrices.
+        Changes space to "AGGREGATED" + 'prev_space' since spatial hierarchy is merged.
 
         Returns
         -------
@@ -95,13 +95,11 @@ class SimilaritySeries(MatrixSeries[SimilarityMatrix]):
             msg = "Cannot aggregate empty SimilaritySeries"
             raise ValueError(msg)
 
+        previous_domain = ''
         for r, inst in self._instances.items():
-            if inst.domain != MatrixDomain.FEATURES.name:
-                msg = (
-                    f"Can only aggregate FEATURES matrices. "
-                    f"Found {inst.domain} at radius {r}"
-                )
-                raise ValueError(msg)
+            previous_domain = inst.domain
+            
+        previous_space = self.space
 
         sorted_radii = sorted(self._instances.keys())
 
@@ -113,9 +111,9 @@ class SimilaritySeries(MatrixSeries[SimilarityMatrix]):
 
         return SimilarityMatrix(
             matrix=agg_matrix,
-            space="AGGREGATED",
+            space=f"AGGREGATED_{previous_space}",
             radius=max_radius,
-            domain=MatrixDomain.FEATURES,
+            domain=f"AGGREGATED_{previous_domain}",
         )
 
     # --- Mappings ---
@@ -158,7 +156,34 @@ class SimilaritySeries(MatrixSeries[SimilarityMatrix]):
         return self.map(
             lambda inst: inst.normalize_by_radius(), inplace=inplace,
         )
-        
+
+    def __or__(self, other: SimilaritySeries) -> SimilaritySeries:
+        """Vertically stack series (concatenate rows/individuals at each radius).
+
+        Only allowed when domain is FEATURES.
+        Use this to combine populations, e.g. current + archive.
+
+        Args:
+            other: Another SimilaritySeries (must have matching radii and FEATURES)
+
+        Returns:
+            New SimilaritySeries with vstacked matrices at each radius
+        """
+        if not isinstance(other, SimilaritySeries):
+            return NotImplemented
+
+        common_radii = set(self._instances.keys()) & set(other._instances.keys())
+        if not common_radii:
+            msg = "No common radii between series"
+            raise ValueError(msg)
+
+        new_instances = []
+        for radius in sorted(common_radii):
+            combined = self._instances[radius] | other._instances[radius]
+            new_instances.append(combined)
+
+        return SimilaritySeries(instances_list=new_instances)
+
     def umap_embed(self, *, config: UmapConfig | None = None, inplace: bool = True) -> SimilaritySeries:
         return self.map(
             lambda inst: inst.umap_embed(config=config), inplace=inplace,

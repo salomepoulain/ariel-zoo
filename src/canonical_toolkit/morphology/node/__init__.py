@@ -23,6 +23,7 @@ from .tools.factory import (
     create_hinge_node,
     node_from_graph,
     node_from_string,
+    node_from_nde_genotype
     # from_nde_genotype,
 )
 
@@ -58,6 +59,7 @@ __all__ = [
     "create_hinge_node",
     "node_from_graph",
     "node_from_string",
+    "node_from_nde_genotype",
 
     # Utilities
     "suppress_face_errors",

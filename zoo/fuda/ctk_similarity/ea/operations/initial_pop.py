@@ -15,7 +15,8 @@ def initial_pop() -> Population:
         ]
         ind.fitness = 0.0
         ind.requires_eval = True
-        ind.tags['archive'] = False
+        # ind.tags['current'] = True
+        
         population.append(ind)
 
     return population

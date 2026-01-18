@@ -47,6 +47,7 @@ dependencies = [
   "holoviews>=1.22.0",
   "scikit-image>=0.25.2",
   "colorcet>=3.1.0",
+  "evotorch>=0.6.1",
 ]
 
 

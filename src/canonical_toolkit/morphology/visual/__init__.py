@@ -33,6 +33,8 @@ from .viewer import (
 
 from .snapshots import *
 
+from .plots import *
+
 # __all__ = [
 #     # Grid configs
 #     "EmbeddingGridConfig",

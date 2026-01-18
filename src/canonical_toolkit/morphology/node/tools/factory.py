@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 import networkx as nx
+import torch
 
 from ariel.body_phenotypes.robogen_lite.config import (
     ModuleFaces,
@@ -36,7 +37,7 @@ __all__ = [
     "create_hinge_node",
     "node_from_graph",
     "node_from_string",
-    "from_nde_genotype",
+    "node_from_nde_genotype",
 ]
 
 
@@ -279,11 +280,11 @@ def node_from_string(s: str) -> Node:
     return parse_node(0)[0]
 
 
-def from_nde_genotype(
+def node_from_nde_genotype(
     genotype: list[list[float]],
+    NDE: NeuralDevelopmentalEncoding,
     *,
     num_modules: int = 20,
-    auto_id: bool = False,
 ) -> Node:
     """
     Create a CanonicalizableNode from an NDE genotype.
@@ -297,16 +298,12 @@ def from_nde_genotype(
     -------
         Root CanonicalizableNode of the decoded tree
     """
-    raise DeprecationWarning
-    nde = NeuralDevelopmentalEncoding(number_of_modules=num_modules)
+    with torch.no_grad():
+        matrixes = NDE.forward(np.array(genotype))
+        
     hpd = HighProbabilityDecoder(num_modules=num_modules)
-
-    matrixes = nde.forward(np.array(genotype))
-    graph = hpd.probability_matrices_to_graph(
-        matrixes[0],
-        matrixes[1],
-        matrixes[2],
+    ind_graph = hpd.probability_matrices_to_graph(
+        matrixes[0], matrixes[1], matrixes[2],
     )
-
-    # Convert graph to canonical node
-    return node_from_graph(graph, auto_id=auto_id)
+    
+    return node_from_graph(ind_graph)

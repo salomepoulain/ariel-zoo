@@ -9,8 +9,7 @@ def parent_select_genotypes(population: Population) -> tuple[list[list[float]], 
     Selects 3 distinct parents uniformly at random using the config RNG.
     Returns their genotypes (List of Arrays).
     """
-
-    indices  = config.RNG.choice(len(population), 3, replace=False)
+    indices = config.RNG.choice((len(population)), 3, replace=False)
     
     p1: list[list[float]] = population[indices[0]].genotype
     p2: list[list[float]] = population[indices[1]].genotype
@@ -24,8 +23,8 @@ def revde(population: Population) -> Population:
     Applies Reversible Differential Evolution to create a new generation.
     Handles the 'List of Arrays' genotype structure by looping over parts.
     """
-    offspring_list: list[Individual] = []
-    
+    # valid_population = [ind for ind in population if ind.tags.get('current') == True]
+    offspring_list: list[Individual] = []        
     num_triplets = np.ceil(len(population) // 3)
 
     for _ in range(num_triplets):
@@ -59,8 +58,7 @@ def revde(population: Population) -> Population:
         child_3 = Individual()
         child_3.genotype = c3_parts
         child_3.requires_eval = True
-        
-        offspring_list.extend([child_1, child_2, child_3])
 
+        offspring_list.extend([child_1, child_2, child_3])
 
     return population + offspring_list
