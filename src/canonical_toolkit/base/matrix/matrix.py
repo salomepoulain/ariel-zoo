@@ -53,6 +53,9 @@ class MatrixInstance:
 
     # --- Public Read-Only Properties (Getters) ---
 
+    def items(self) -> tuple[list[int], sp.spmatrix | np.ndarray]:
+        return [i for i in range(len(self._matrix))], self._matrix.copy()
+
     @property
     def matrix(self) -> sp.spmatrix | np.ndarray:
         """Read-only access to raw matrix data."""
@@ -291,11 +294,27 @@ class MatrixInstance:
 
     # --- I/O Methods ---
 
+    @staticmethod
+    def _resolve_save_path(base_path: Path, overwrite: bool, suffix_number: bool) -> Path:
+        """Resolve the final save path, handling overwrites and numbering."""
+        if overwrite:
+            return base_path
+
+        counter, fmt = (0, "{name}_{i:04d}") if suffix_number else (2, "{name}_{i}")
+        path = base_path.with_name(fmt.format(name=base_path.name, i=counter)) if suffix_number else base_path
+
+        while path.with_suffix(".json").exists():
+            counter += 1
+            path = base_path.with_name(fmt.format(name=base_path.name, i=counter))
+
+        return path
+
     def save(
         self,
         file_path: Path | str | None = None,
         *,
         overwrite: bool = False,
+        suffix_number: bool = True,
     ) -> None:
         """Save instance to disk.
 
@@ -303,6 +322,8 @@ class MatrixInstance:
             file_path: Full path without extension. If None, uses default:
                       __data__/instances/{description}
             overwrite: If False, appends counter to avoid overwriting existing files
+            suffix_number: If True, always adds _0000, _0001 suffix. If False, first
+                          save has no suffix, subsequent saves get _2, _3, etc.
 
         Creates 2 files:
             {file_path}.json - metadata
@@ -311,16 +332,7 @@ class MatrixInstance:
         if file_path is None:
             file_path = DATA_INSTANCES / self.description
 
-            if not overwrite:
-                counter = 2
-                original_path = file_path
-                while (file_path.with_suffix(".json")).exists():
-                    file_path = original_path.with_name(
-                        f"{original_path.name}_{counter}",
-                    )
-                    counter += 1
-
-        file_path = Path(file_path)
+        file_path = self._resolve_save_path(Path(file_path), overwrite, suffix_number)
         folder = file_path.parent
         filename_stem = file_path.name
 

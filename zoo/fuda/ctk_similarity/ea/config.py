@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import json
+import shutil
 from datetime import datetime
 
 import click
@@ -271,9 +272,19 @@ def cli_options(func):
         overrides = {k.upper(): v for k, v in cli_args.items() if v is not None}
 
         if output_dir is not None:
+            # Warn and delete if folder already exists
+            if output_dir.exists():
+                console.log(f"⚠️  Deleting folder: {output_dir}", style="yellow")
+                shutil.rmtree(output_dir)
+
             # Build without auto-setup, then initialize with output_dir
             instance = Config.model_construct(**overrides)
             instance._skip_setup = True
+            # Apply validation that model_construct skips
+            if instance.STORE_NOVELTY is None:
+                object.__setattr__(instance, "STORE_NOVELTY", instance.FITNESS_NOVELTY)
+            if instance.STORE_SPEED is None:
+                object.__setattr__(instance, "STORE_SPEED", instance.FITNESS_SPEED)
             instance._initialize(output_dir=output_dir)
             config = instance
         else:

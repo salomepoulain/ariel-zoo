@@ -59,6 +59,9 @@ class MatrixSeries(Generic[I]):
 
         self._instances = dict(enumerate(instances_list))
 
+    def items(self) -> tuple[list[int], list[sp.spmatrix | np.ndarray]]:
+        return self.indices, self.matrices
+
     @property
     def label(self) -> str:
         """Return the label of all instances (guaranteed to be the same)."""
@@ -221,8 +224,28 @@ class MatrixSeries(Generic[I]):
 
     # --- I/O Methods ---
 
+    @staticmethod
+    def _resolve_save_path(base_path: Path, overwrite: bool, suffix_number: bool) -> Path:
+        """Resolve the final save path, handling overwrites and numbering."""
+        if overwrite:
+            return base_path
+
+        counter, fmt = (0, "{name}_{i:04d}") if suffix_number else (2, "{name}_{i}")
+        path = base_path.with_name(fmt.format(name=base_path.name, i=counter)) if suffix_number else base_path
+
+        while path.exists():
+            counter += 1
+            path = base_path.with_name(fmt.format(name=base_path.name, i=counter))
+
+        return path
+
     def save(
-        self, folder_path: Path | str | None = None, series_name: str | None = None, *, overwrite: bool = False
+        self,
+        folder_path: Path | str | None = None,
+        series_name: str | None = None,
+        *,
+        overwrite: bool = False,
+        suffix_number: bool = True,
     ) -> None:
         """Save series to disk.
 
@@ -231,6 +254,8 @@ class MatrixSeries(Generic[I]):
                         __data__/series/{series_name}
             series_name: Name for the series. defaults to description
             overwrite: If False, appends counter to avoid overwriting existing folders
+            suffix_number: If True, always adds _0000, _0001 suffix. If False, first
+                          save has no suffix, subsequent saves get _2, _3, etc.
 
         Creates:
             {folder_path}/series_meta.json - metadata with instance order & files
@@ -238,22 +263,13 @@ class MatrixSeries(Generic[I]):
             {folder_path}/{instance.description}.npz - instance data files
         """
         if folder_path is None:
-            folder_path = DATA_SERIES 
-        
+            folder_path = DATA_SERIES
+
         if series_name is None:
             series_name = self.description
 
-        original_path = Path(folder_path) / Path(series_name)
-        folder_path = original_path
-        
-        if not overwrite:
-            counter = 2
-            while folder_path.exists():
-                folder_path = original_path.with_name(
-                    f"{original_path.name}_{counter}"
-                )
-                counter += 1
-                
+        base_path = Path(folder_path) / Path(series_name)
+        folder_path = self._resolve_save_path(base_path, overwrite, suffix_number)
         folder_path.mkdir(parents=True, exist_ok=True)
 
         instance_files = {}

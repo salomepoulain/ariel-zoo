@@ -62,6 +62,9 @@ class MatrixFrame(Generic[S]):
         else:
             self._series = {}
             self._ordered_labels = []
+            
+    def items(self) -> tuple[list[str], list[S]]:
+        return self.labels, self.series
 
     @overload
     def __getitem__(self, key: slice) -> Self: ...
@@ -161,13 +164,13 @@ class MatrixFrame(Generic[S]):
             self._ordered_labels.append(label)
         self._series[label] = val
 
-    def keys(self) -> list[str]:
-        """Get all series labels in order."""
-        return self._ordered_labels
+    # def keys(self) -> list[str]:
+    #     """Get all series labels in order."""
+    #     return self._ordered_labels
 
-    def values(self) -> list[S]:
-        """Get all series in order."""
-        return [self._series[label] for label in self._ordered_labels]
+    # def values(self) -> list[S]:
+    #     """Get all series in order."""
+    #     return [self._series[label] for label in self._ordered_labels]
 
     @property
     def series(self) -> list[S]:
@@ -193,13 +196,13 @@ class MatrixFrame(Generic[S]):
         return [self._series[label].indices for label in self._ordered_labels]
 
     @property
-    def labels(self) -> list[list[Hashable]]:
+    def labels(self) -> list[str]:
         """Get 2D list of labels organized by series.
 
         Returns list where each element is a list of labels from one series,
         in index order.
         """
-        return [self._series[label].labels for label in self._ordered_labels]
+        return [self._series[label].label for label in self._ordered_labels]
 
     @property
     def loc(self) -> FrameLocIndexer:
@@ -330,6 +333,21 @@ class MatrixFrame(Generic[S]):
 
     # --- I/O Methods ---
 
+    @staticmethod
+    def _resolve_save_path(base_path: Path, overwrite: bool, suffix_number: bool) -> Path:
+        """Resolve the final save path, handling overwrites and numbering."""
+        if overwrite:
+            return base_path
+
+        counter, fmt = (0, "{name}_{i:04d}") if suffix_number else (2, "{name}_{i}")
+        path = base_path.with_name(fmt.format(name=base_path.name, i=counter)) if suffix_number else base_path
+
+        while path.exists():
+            counter += 1
+            path = base_path.with_name(fmt.format(name=base_path.name, i=counter))
+
+        return path
+
     @property
     def description(self) -> str:
         """Generate a descriptive name: 'classname_Ns_Mi' where M is max indices."""
@@ -351,6 +369,7 @@ class MatrixFrame(Generic[S]):
         frame_name: str | None = None,
         *,
         overwrite: bool = False,
+        suffix_number: bool = True,
     ) -> None:
         """Save frame to folder using hierarchical structure.
 
@@ -359,6 +378,8 @@ class MatrixFrame(Generic[S]):
                         __data__/frames/{frame_name}
             frame_name: defautls to description
             overwrite: If False, appends counter to avoid overwriting existing folders
+            suffix_number: If True, always adds _0000, _0001 suffix. If False, first
+                          save has no suffix, subsequent saves get _2, _3, etc.
 
         Creates hierarchical structure:
             {folder_path}/
@@ -371,22 +392,13 @@ class MatrixFrame(Generic[S]):
                     ...
         """
         if folder_path is None:
-            folder_path = DATA_FRAMES 
-        
+            folder_path = DATA_FRAMES
+
         if frame_name is None:
             frame_name = self.description
 
-        original_path = Path(folder_path) / Path(frame_name)
-        folder_path = original_path
-        
-        if not overwrite:
-            counter = 2
-            while folder_path.exists():
-                folder_path = original_path.with_name(
-                    f"{original_path.name}_{counter}"
-                )
-                counter += 1
-                
+        base_path = Path(folder_path) / Path(frame_name)
+        folder_path = self._resolve_save_path(base_path, overwrite, suffix_number)
         folder_path.mkdir(parents=True, exist_ok=True)
 
         series_folders = {
