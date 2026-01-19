@@ -20,10 +20,7 @@ if TYPE_CHECKING:
     import scipy.sparse as sp
 
 
-# ============================================================================
 # Utility Protocol
-# ============================================================================
-
 
 class SortableHashable(Protocol):
     """Protocol for objects that are both Hashable and Sortable (Comparable)."""
@@ -35,10 +32,7 @@ class SortableHashable(Protocol):
     def __eq__(self, other: Any) -> bool: ...
 
 
-# ============================================================================
 # LEVEL 1: Instance Protocol
-# ============================================================================
-
 
 class InstanceProtocol(Protocol):
     """
@@ -81,10 +75,7 @@ class InstanceProtocol(Protocol):
 I = TypeVar("I", bound=InstanceProtocol)
 
 
-# ============================================================================
 # LEVEL 2: Series Protocol
-# ============================================================================
-
 
 class SeriesProtocol(Protocol[I]):
     """
@@ -133,10 +124,7 @@ class SeriesProtocol(Protocol[I]):
 S = TypeVar("S")
 
 
-# ============================================================================
 # LEVEL 3: Frame Protocol
-# ============================================================================
-
 
 class FrameProtocol(Protocol[S]):
     """

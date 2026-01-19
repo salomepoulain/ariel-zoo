@@ -25,6 +25,11 @@ DATA_SERIES = DATA / "series"
 DATA_FRAMES = DATA / "frames"
 
 
+__all__ = [
+    "MatrixInstance"
+]
+
+
 class MatrixInstance:
     """
     Generic matrix wrapper with flexible metadata.

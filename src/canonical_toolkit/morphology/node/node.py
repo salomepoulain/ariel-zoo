@@ -7,17 +7,21 @@ if TYPE_CHECKING:
 
     from networkx import DiGraph
 
-    from canonical_toolkit.morphology.node.configs.canonical_config import (
+    from canonical_toolkit.morphology.node._configs.canonical_config import (
         CanonicalConfig,
     )
 
-import sys
+from rich.text import Text
 
 from ariel.body_phenotypes.robogen_lite.config import (
     ModuleFaces,
     ModuleRotationsIdx,
     ModuleType,
 )
+
+__all__ = [
+    "Node",
+]
 
 
 # MARK class ----
@@ -83,7 +87,8 @@ class Node:
 
         # Build face to placement mapping
         mapping: dict[
-            ModuleFaces, tuple[list[Node | None], int],
+            ModuleFaces,
+            tuple[list[Node | None], int],
         ] = {}
         for i, f in enumerate(config.axial_face_order):
             mapping[f] = (self._axial_list, i)
@@ -152,37 +157,15 @@ class Node:
         for child in self.children:
             yield from child
 
-    # def __repr__(self) -> str:
-    #     """Detailed attachment structure representation."""
-    #     axial_parts = []
-    #     for face, child in self.axial_children_items:
-    #         module = child.module_type.name[0].upper()
-    #         rot = child.internal_rotation
-    #         axial_parts.append(f"{face.name.lower()}:{module}{rot}")
-
-    #     radial_parts = []
-    #     for face, child in self.radial_children_items:
-    #         module = child.module_type.name[0].upper()
-    #         rot = child.internal_rotation
-    #         radial_parts.append(f"{face.name.lower()}:{module}{rot}")
-
-    #     axial_str = ", ".join(axial_parts) if axial_parts else "empty"
-    #     radial_str = ", ".join(radial_parts) if radial_parts else "empty"
-
-    #     if self.parent and self.parent_attachment_face:
-    #         prefix_str = f"{self.parent.module_type.name[0].upper()}{self.parent.internal_rotation}:{self.parent_attachment_face.name.lower()} → "
-    #     else:
-    #         prefix_str = ""
-
-    #     return f"{prefix_str}{self.module_type.name[0].upper()}{self._internal_rotation} → radial[{radial_str}] axial<{axial_str}>"
-
     def __repr__(self) -> str:
         return self.to_string()
+
+    def __rich__(self) -> str:
+        return Text("node-object:" + self.to_string())  # type: ignore
 
     def __str__(self) -> str:
         """Compact version."""
         return "node-object:" + self.to_string()
-        # return f"{self.module_type.name[0].upper()}{self._internal_rotation} (↑{sum(1 for c in self._axial_list if c)} ○{sum(1 for c in self._radial_list if c)})"
 
     # endregion
 
@@ -479,6 +462,7 @@ class Node:
             from .exceptions.exceptions import (
                 FaceNotFoundError,
             )
+
             raise FaceNotFoundError(face, self) from None
 
         child = self._get_child(face)
@@ -529,8 +513,7 @@ class Node:
 
     def traverse_depth_first(
         self,
-        visit_fn: Callable[[Node], Any]
-        | list[Callable[[Node], Any]],
+        visit_fn: Callable[[Node], Any] | list[Callable[[Node], Any]],
         *,
         pre_order: bool = True,
         post_order: bool = False,
@@ -555,8 +538,7 @@ class Node:
 
     def traverse_through_parents(
         self,
-        visit_fn: Callable[[Node], Any]
-        | list[Callable[[Node], Any]],
+        visit_fn: Callable[[Node], Any] | list[Callable[[Node], Any]],
         *,
         pre_order: bool = True,
         post_order: bool = False,
@@ -603,7 +585,8 @@ class Node:
                 node.tree_tags["max_id"] = -1
             if "id" in node.node_tags:
                 node.tree_tags["max_id"] = max(
-                    node.tree_tags["max_id"], node.node_tags["id"],
+                    node.tree_tags["max_id"],
+                    node.node_tags["id"],
                 )
             else:
                 node.tree_tags["max_id"] += 1
@@ -623,7 +606,7 @@ class Node:
 
     # region tool importations? -----
 
-    def canonicalize(self, limb_order:bool=True) -> Node:
+    def canonicalize(self, limb_order: bool = True) -> Node:
         from .tools.deriver import (
             canonicalize,
         )
@@ -648,8 +631,8 @@ class Node:
 
 
 if __name__ == "__main__":
-
     import sys
+
     sys.excepthook = sys.__excepthook__
 
     from .exceptions.suppress import (
@@ -666,7 +649,7 @@ if __name__ == "__main__":
     root.rotate_amt(3)
     root["top"]["fr"] = factory.create_brick_node()  # This will fail
     root.canonicalize()
-        # ... rest of code
+    # ... rest of code
 
     # except error as e:
     #     # Print ONLY the nice message

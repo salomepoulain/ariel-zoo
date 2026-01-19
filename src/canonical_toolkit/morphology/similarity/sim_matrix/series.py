@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import scipy.sparse as sp
+import numpy as np
 
 from ....base.matrix import MatrixSeries
 from ..options import MatrixDomain, Space, UmapConfig
 from .matrix import SimilarityMatrix
 
+__all__ = [
+    "SimilaritySeries"
+]
 
 class SimilaritySeries(MatrixSeries[SimilarityMatrix]):
     """
@@ -22,6 +26,9 @@ class SimilaritySeries(MatrixSeries[SimilarityMatrix]):
     """
 
     _instance_class = SimilarityMatrix
+
+    def items(self) -> tuple[list[int], sp.spmatrix | np.ndarray]:
+        return [i for i in range(len(self._matrix))], self._matrix
 
     # --- Similarity-specific properties ---
 

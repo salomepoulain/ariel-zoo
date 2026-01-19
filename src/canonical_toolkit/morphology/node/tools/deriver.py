@@ -6,7 +6,9 @@ from ..node import Node
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
     import networkx as nx
+
     from ariel.body_phenotypes.robogen_lite.config import ModuleFaces
 
 
@@ -112,7 +114,9 @@ def collect_subtrees(
     canonicalized: bool = True,
 ) -> dict[int, list[str | nx.DiGraph[Any] | Node]]:
     """Collect all subtrees from a node tree."""
-    node_to_process = canonicalize(starting_node) if canonicalized else starting_node
+    node_to_process = (
+        canonicalize(starting_node) if canonicalized else starting_node
+    )
     list_dict = {}
 
     node_distance = _calculate_subtree_height(node_to_process)
@@ -406,18 +410,18 @@ if __name__ == "__main__":
     from rich.console import Console
 
     import canonical_toolkit as ctk
-    from .serializer import (
-        to_string,
-        to_graph,
+    from ariel_experiments.gui_vis.view_mujoco import view
+    from ariel_experiments.gui_vis.visualize_tree import (
+        visualize_tree_from_graph,
     )
-    
     from ariel_experiments.utils.initialize import (
         generate_random_individual,
     )
 
-    from ariel_experiments.gui_vis.visualize_tree import visualize_tree_from_graph
-
-    from ariel_experiments.gui_vis.view_mujoco import view
+    from .serializer import (
+        to_graph,
+        to_string,
+    )
 
     console = Console()
 

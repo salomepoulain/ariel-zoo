@@ -1,34 +1,34 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import networkx as nx
-import torch
+import numpy as np
+from networkx import topological_sort
 
 from ariel.body_phenotypes.robogen_lite.config import (
     ModuleFaces,
     ModuleRotationsIdx,
     ModuleType,
 )
-from ..configs.canonical_config import (
+from ariel.body_phenotypes.robogen_lite.decoders.hi_prob_decoding import (
+    HighProbabilityDecoder,
+)
+
+from .._configs.canonical_config import (
     CANONICAL_CONFIGS,
 )
 from ..node import (
     Node,
 )
-import numpy as np
-from ariel.body_phenotypes.robogen_lite.decoders.hi_prob_decoding import (
-    HighProbabilityDecoder,
-)
-from ariel.ec.genotypes.nde.nde import (
-    NeuralDevelopmentalEncoding,
-)
 
+if TYPE_CHECKING:
+    from ariel.ec.genotypes.nde.nde import (
+        NeuralDevelopmentalEncoding,
+    )
+    from networkx import DiGraph
 
 PRE_DEFINED_CONFIGS = CANONICAL_CONFIGS
-MODULE_BY_LETTER: dict[str, ModuleType] = {
-    mt.name[0]: mt for mt in ModuleType
-}
+MODULE_BY_LETTER: dict[str, ModuleType] = {mt.name[0]: mt for mt in ModuleType}
 
 __all__ = [
     "create_root_node",
@@ -129,7 +129,7 @@ def create_hinge_node(
 
 
 def node_from_graph(
-    graph: nx.DiGraph[Any],
+    graph: DiGraph[Any],
     *,
     auto_id: bool = False,
     skip_type: ModuleType = ModuleType.NONE,
@@ -153,7 +153,7 @@ def node_from_graph(
         root.tree_tags["max_id"] = root_id
 
     # Build tree structure - process nodes in topological order
-    for node_id in nx.topological_sort(graph):
+    for node_id in topological_sort(graph):
         if node_id not in node_map:
             continue
 
@@ -298,12 +298,19 @@ def node_from_nde_genotype(
     -------
         Root CanonicalizableNode of the decoded tree
     """
-    with torch.no_grad():
+    try:
+        from torch import no_grad
+    except ImportError as e:
+        raise ImportError("Torch Required") from e
+
+    with no_grad():
         matrixes = NDE.forward(np.array(genotype))
-        
+
     hpd = HighProbabilityDecoder(num_modules=num_modules)
     ind_graph = hpd.probability_matrices_to_graph(
-        matrixes[0], matrixes[1], matrixes[2],
+        matrixes[0],
+        matrixes[1],
+        matrixes[2],
     )
-    
+
     return node_from_graph(ind_graph)

@@ -5,6 +5,6 @@ This package contains domain-agnostic building blocks that can be used
 across different applications (similarity analysis, feature extraction, etc.).
 """
 
-from . import matrix
+# Not importing matrix package by default, as similarity Matrix should be the preffered chooice. 
 
-__all__ = ["matrix"]
+from .plotters import *

@@ -13,12 +13,17 @@ from rich.table import Table
 
 from ._indexer import FrameLocIndexer
 from .matrix import DATA_FRAMES, MatrixInstance
-from .matrix_types import S
 from .series import MatrixSeries
+from .matrix_types import S
+
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Hashable
 
+
+__all__ = [
+    "MatrixFrame"
+]
 
 class MatrixFrame(Generic[S]):
     """

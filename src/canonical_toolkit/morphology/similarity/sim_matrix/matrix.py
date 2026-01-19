@@ -1,17 +1,21 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Any, cast
+
 import numpy as np
 import scipy.sparse as sp
 from sklearn.metrics.pairwise import cosine_similarity
-from umap import UMAP
-from typing import Any, cast, TYPE_CHECKING
+# from umap import UMAP
 
 if TYPE_CHECKING:
     from pathlib import Path
 
 from ....base.matrix import MatrixInstance
+from ..options import MatrixDomain, Space, UmapConfig
 
-from ..options import Space, MatrixDomain, UmapConfig
+__all__ = [
+    "SimilarityMatrix",
+]
 
 
 class SimilarityMatrix(MatrixInstance):
@@ -97,11 +101,12 @@ class SimilarityMatrix(MatrixInstance):
         Args:
             file_path: Full path without extension
 
-        Returns:
+        Returns
+        -------
             Loaded SimilarityMatrix
         """
-        from pathlib import Path
         import json
+        from pathlib import Path
 
         file_path = Path(file_path)
         folder = file_path.parent
@@ -147,7 +152,8 @@ class SimilarityMatrix(MatrixInstance):
         Args:
             other: Another SimilarityMatrix (must have same columns and be FEATURES)
 
-        Returns:
+        Returns
+        -------
             New SimilarityMatrix with vstacked matrices
         """
         if not isinstance(other, SimilarityMatrix):
@@ -165,14 +171,13 @@ class SimilarityMatrix(MatrixInstance):
 
     def normalize_by_radius(self, in_place: bool = True) -> SimilarityMatrix:
         """Normalize matrix by dividing by (radius + 1)."""
-        
-        matrix_as_array = cast(np.ndarray, self._matrix)
+        matrix_as_array = cast("np.ndarray", self._matrix)
         normalized_values = matrix_as_array / (self.radius + 1)
 
         if in_place:
             self._matrix = normalized_values
             return self
-    
+
         return SimilarityMatrix(
             matrix=normalized_values,
             space=self.space,
@@ -180,15 +185,18 @@ class SimilarityMatrix(MatrixInstance):
             domain=self.domain,
             tags=self.tags,
         )
-        
 
     def cosine_similarity(self) -> SimilarityMatrix:
         """Compute cosine similarity matrix."""
         if self._tags.get("domain") == MatrixDomain.SIMILARITY.name:
-            raise ValueError("Matrix is already a similarity matrix")
+            msg = "Matrix is already a similarity matrix"
+            raise ValueError(msg)
         sim_matrix = cosine_similarity(self._matrix)
         return SimilarityMatrix(
-            sim_matrix, self.space, self.radius, MatrixDomain.SIMILARITY
+            sim_matrix,
+            self.space,
+            self.radius,
+            MatrixDomain.SIMILARITY,
         )
 
     def sum_to_rows(
@@ -207,7 +215,8 @@ class SimilarityMatrix(MatrixInstance):
             largest: If True, use k largest values; if False, use k smallest
             normalise_by_pop_len: If True, divide sum by number of values summed
 
-        Returns:
+        Returns
+        -------
             Array of scores per row (normalized if normalise_by_pop_len=True)
         """
         # if self._tags.get("domain") != MatrixDomain.SIMILARITY.name:
@@ -227,7 +236,7 @@ class SimilarityMatrix(MatrixInstance):
             scores = matrix.sum(axis=1)
             if normalise_by_pop_len:
                 n_summed = matrix.shape[1] - (1 if zero_diagonal else 0)
-                scores = scores / n_summed
+                scores /= n_summed
             return scores
 
         scores = np.zeros(matrix.shape[0])
@@ -239,7 +248,7 @@ class SimilarityMatrix(MatrixInstance):
             scores[i] = matrix[i][indices].sum()
 
         if normalise_by_pop_len:
-            scores = scores / k
+            scores /= k
 
         return scores
 
@@ -251,7 +260,9 @@ class SimilarityMatrix(MatrixInstance):
         """Get indices of the lowest values in the upper triangle (excluding diagonal)."""
         return self._get_sorted_indices(amt=amt, reverse=False)
 
-    def _get_sorted_indices(self, amt: int, reverse: bool) -> list[tuple[int, int]]:
+    def _get_sorted_indices(
+        self, amt: int, reverse: bool
+    ) -> list[tuple[int, int]]:
         """Helper to find top/bottom values in a symmetric matrix."""
         matrix = self._matrix
         if sp.issparse(matrix):
@@ -271,7 +282,7 @@ class SimilarityMatrix(MatrixInstance):
             idx = np.argsort(values)[:amt]
 
         # Map back to matrix coordinates
-        return list(zip(rows[idx], cols[idx]))
+        return list(zip(rows[idx], cols[idx], strict=False))
 
     def umap_embed(
         self,
@@ -279,43 +290,59 @@ class SimilarityMatrix(MatrixInstance):
         config: UmapConfig | None = None,
     ) -> SimilarityMatrix:
         """Reduce dimensionality using UMAP. Works on features or similarity matrices."""
+        try:
+            from umap import UMAP # Type: ignore
+        except ImportError as e:
+            raise ImportError(
+                "umap-learn is required for this method. Install it with `pip install umap-learn`"
+            ) from e
+
         is_similarity = self._tags.get("domain") == MatrixDomain.SIMILARITY.name
-        
+
         if not config:
-            config = UmapConfig(metric="precomputed" if is_similarity else "cosine")
+            config = UmapConfig(
+                metric="precomputed" if is_similarity else "cosine"
+            )
 
         kwargs = config.get_kwargs()
-        print(kwargs)
-        
+
         if self._tags.get("domain") == MatrixDomain.EMBEDDING.name:
-            raise ValueError("Matrix is already an embedding")
-        
+            msg = "Matrix is already an embedding"
+            raise ValueError(msg)
+
         if kwargs.get("metric") == "cosine" and is_similarity:
-            raise ValueError("Similarity domain and UMAP cosine not compatible. Use cosine on raw Features or set UMAP metric to 'precomputed'")
+            msg = "Similarity domain and UMAP cosine not compatible. Use cosine on raw Features or set UMAP metric to 'precomputed'"
+            raise ValueError(msg)
 
         matrix = (
             self._matrix.toarray()
             if sp.issparse(self._matrix)
             else self._matrix
         )
-        
+
         umap_model = UMAP(**kwargs)
         embedding = umap_model.fit_transform(matrix)
-        
+
         return SimilarityMatrix(
-            embedding, Space[self.space], self.radius, MatrixDomain.EMBEDDING
+            embedding,
+            Space[self.space],
+            self.radius,
+            MatrixDomain.EMBEDDING,
         )
 
 
 if __name__ == "__main__":
     import scipy.sparse as sp
-    from ..options import Space, MatrixDomain
 
-    print("Testing SimilarityMatrix...")
+    from ..options import MatrixDomain, Space
 
     # Test 1: Create sparse feature matrix
     sparse_features = sp.random(
-        10, 50, density=0.3, format="csr", random_state=42
+        10,
+        50,
+        density=0.3,
+        format="csr",
+        random_state=42,
     )
     sim_mat = SimilarityMatrix(
         matrix=sparse_features,
@@ -324,51 +351,22 @@ if __name__ == "__main__":
         domain=MatrixDomain.FEATURES,
     )
 
-    print(sim_mat)
-
-    print(f"✓ SimilarityMatrix created: {sim_mat.label}")
-    print(f"  Space (typed): {sim_mat.space}")
-    print(f"  Radius (typed): {sim_mat.radius}")
-    print(f"  Domain (typed): {sim_mat.domain}")
-    print(f"  Label (generic): {sim_mat.label}")
-
     # Test 2: Cosine similarity transformation
-    print("\n✓ Computing cosine similarity...")
     sim_matrix = sim_mat.cosine_similarity()
-    print(f"  Result: {sim_matrix.label}")
-    print(f"  Domain: {sim_matrix.domain}")
-    print(f"  Shape: {sim_matrix.shape}")
 
     # Test 3: Sum similarity scores
-    print("\n✓ Summing similarity scores...")
     scores = sim_matrix.sum_to_rows(zero_diagonal=True)
-    print(f"  Scores shape: {scores.shape}")
-    print(f"  Mean score: {scores.mean():.3f}")
 
     # Test 4: Top-k similarity scores
-    print("\n✓ Top-3 similarity scores...")
     top3_scores = sim_matrix.sum_to_rows(k=3, largest=True)
-    print(f"  Top-3 mean: {top3_scores.mean():.3f}")
 
     # Test 5: UMAP embedding
-    print("\n✓ Computing UMAP embedding...")
     embedding = sim_matrix.umap_embed(
-        n_neighbors=5, n_components=2, random_state=42
+        n_neighbors=5,
+        n_components=2,
+        random_state=42,
     )
-    print(f"  Embedding: {embedding.label}")
-    print(f"  Domain: {embedding.domain}")
-    print(f"  Shape: {embedding.shape}")
-    print(embedding)
 
     # Test 6: Pretty printing
-    print("\n✓ Display matrix:")
-    print(sim_mat)
 
     # Test 7: Chaining:
-    print("\n✓ Chaining operations...")
-    print(sim_mat.cosine_similarity())
-    print(sim_mat.cosine_similarity().sum_to_rows(zero_diagonal=False))
-    print(sim_mat.cosine_similarity().sum_to_rows())
-    print(sim_mat.cosine_similarity().sum_to_rows().mean())
-
-    print("\n✅ All SimilarityMatrix tests passed!")

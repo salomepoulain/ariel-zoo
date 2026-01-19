@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-import networkx as nx
+from networkx import DiGraph
 
 from ariel.body_phenotypes.robogen_lite.config import (
     ModuleFaces,
@@ -21,7 +21,7 @@ __all__ = [
 ]
 
 
-def to_graph(root_node: Node) -> nx.DiGraph[Any]:
+def to_graph(root_node: Node) -> DiGraph[Any]:
     """
     Convert a node tree to a NetworkX DiGraph.
 
@@ -29,7 +29,7 @@ def to_graph(root_node: Node) -> nx.DiGraph[Any]:
     Creates a copy to avoid modifying the original tree.
     """
     root_copy = root_node.copy(deep=True, copy_children=True)
-    graph = nx.DiGraph()
+    graph = DiGraph()
 
     max_attempts = 2
     for attempt in range(max_attempts):
@@ -39,9 +39,7 @@ def to_graph(root_node: Node) -> nx.DiGraph[Any]:
 
                 node_attrs = {
                     "type": node.module_type.name,
-                    "rotation": ModuleRotationsIdx(
-                        node.internal_rotation
-                    ).name,
+                    "rotation": ModuleRotationsIdx(node.internal_rotation).name,
                 }
                 graph.add_node(node_id, **node_attrs)
 
@@ -120,9 +118,7 @@ def _format_children_group(
         total_faces = len(node.config.radial_face_order)
 
     # First pass: compute formulas
-    face_formulas = [
-        (face, to_string(child)) for face, child in children
-    ]
+    face_formulas = [(face, to_string(child)) for face, child in children]
 
     # Second pass: group by formula
     formula_to_faces = {}

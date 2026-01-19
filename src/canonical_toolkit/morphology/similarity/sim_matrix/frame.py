@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 from ....base.matrix import MatrixFrame
-
-from .matrix import SimilarityMatrix
 from ..options import MatrixDomain, Space
+from .matrix import SimilarityMatrix
 from .series import SimilaritySeries
+
+__all__ = [
+    "SimilarityFrame",
+]
+
 
 class SimilarityFrame(MatrixFrame[SimilaritySeries]):
     """
@@ -18,7 +22,7 @@ class SimilarityFrame(MatrixFrame[SimilaritySeries]):
     Type-safe: Inherits Generic[SimilaritySeries], so frame["FRONT"] returns SimilaritySeries
     (which returns SimilarityMatrix when indexed).
     """
-    
+
     _series_class = SimilaritySeries
 
     def to_cumulative(self, *, inplace: bool = True) -> SimilarityFrame:
@@ -32,7 +36,9 @@ class SimilarityFrame(MatrixFrame[SimilaritySeries]):
         -------
             Self if inplace=True, new MatrixFrame if inplace=False
         """
-        return self.map(lambda s: s.to_cumulative(inplace=False), inplace=inplace)
+        return self.map(
+            lambda s: s.to_cumulative(inplace=False), inplace=inplace
+        )
 
     def aggregate(self) -> SimilaritySeries:
         """Aggregate all series by summing across series at each radius.
@@ -43,11 +49,13 @@ class SimilarityFrame(MatrixFrame[SimilaritySeries]):
 
         ONLY works on MatrixDomain.FEATURES matrices.
 
-        Returns:
+        Returns
+        -------
             Single SimilaritySeries with space=AGGREGATED, containing one summed
             instance per radius (summed across all series).
 
-        Raises:
+        Raises
+        ------
             ValueError: If frame is empty or contains non-FEATURES matrices
 
         Example:
@@ -62,7 +70,7 @@ class SimilarityFrame(MatrixFrame[SimilaritySeries]):
             raise ValueError(msg)
 
         previous_domain = ""
-        for space, series in self._series.items():
+        for series in self._series.values():
             for r, inst in series.instances.items():
                 previous_domain = inst.domain
         #         if inst.domain != MatrixDomain.FEATURES.name:
@@ -72,7 +80,9 @@ class SimilarityFrame(MatrixFrame[SimilaritySeries]):
         #             )
         #             raise ValueError(msg)
 
-        all_radii = [set(series.instances.keys()) for series in self._series.values()]
+        all_radii = [
+            set(series.instances.keys()) for series in self._series.values()
+        ]
         common_radii = sorted(set.intersection(*all_radii))
 
         if not common_radii:
@@ -86,11 +96,11 @@ class SimilarityFrame(MatrixFrame[SimilaritySeries]):
 
             agg_matrix = instances_at_r[0].matrix.copy()
             for inst in instances_at_r[1:]:
-                agg_matrix = agg_matrix + inst.matrix
+                agg_matrix += inst.matrix
 
             result_instance = SimilarityMatrix(
                 matrix=agg_matrix,
-                space=f"AGGREGATED",
+                space="AGGREGATED",
                 radius=r,
                 domain={previous_domain},
             )
@@ -107,7 +117,8 @@ class SimilarityFrame(MatrixFrame[SimilaritySeries]):
         Args:
             other: Another SimilarityFrame (must have matching labels and FEATURES)
 
-        Returns:
+        Returns
+        -------
             New SimilarityFrame with vstacked series
         """
         if not isinstance(other, SimilarityFrame):
@@ -129,16 +140,12 @@ class SimilarityFrame(MatrixFrame[SimilaritySeries]):
 
 if __name__ == "__main__":
     import scipy.sparse as sp
+
+    from ..options import MatrixDomain, Space
     from .matrix import SimilarityMatrix
     from .series import SimilaritySeries
-    from ..options import Space, MatrixDomain
-
-    print("=" * 80)
-    print("SIMILARITY FRAME TESTS")
-    print("=" * 80)
 
     # Test 1: Create frame with multiple series
-    print("\n[1] Creating SimilarityFrame...")
 
     # Create front series
     front_instances = []
@@ -148,7 +155,7 @@ if __name__ == "__main__":
             matrix=mat,
             space=Space.FRONT,
             radius=r,
-            domain=MatrixDomain.FEATURES
+            domain=MatrixDomain.FEATURES,
         )
         front_instances.append(inst)
     front_series = SimilaritySeries(instances_list=front_instances)
@@ -161,44 +168,30 @@ if __name__ == "__main__":
             matrix=mat,
             space=Space.BACK,
             radius=r,
-            domain=MatrixDomain.FEATURES
+            domain=MatrixDomain.FEATURES,
         )
         back_instances.append(inst)
     back_series = SimilaritySeries(instances_list=back_instances)
 
     frame = SimilarityFrame(series=[front_series, back_series])
-    print(f"✓ Created frame with {len(list(frame.keys()))} series")
 
     # Test 2: Frame slicing by radius
-    print("\n[2] SimilarityFrame radius slicing:")
     sliced = frame[:2]
-    print(f"✓ frame[:2] → {type(sliced).__name__}")
 
     # Test 3: Frame selection by space
-    print("\n[3] SimilarityFrame space selection:")
     selected = frame[[Space.FRONT, Space.BACK]]
-    print(f"✓ frame[[FRONT, BACK]] → {len(list(selected.keys()))} series")
 
     # Test 4: Aggregate
-    print("\n[4] SimilarityFrame aggregation:")
     aggregated = frame.aggregate()
-    print(f"✓ Aggregated: space={aggregated.space}, {len(aggregated.radii)} radii")
 
     # Test 5: Frame repr
-    print("\n[5] SimilarityFrame representation:")
-    print(frame)
 
     # Test 6: Save/Load
-    print("\n[6] SimilarityFrame save/load:")
     # Save with default path using new hierarchical API
     frame.save()
     from ....base.matrix import DATA_FRAMES
+
     default_path = DATA_FRAMES / frame.description
-    print(f"✓ Saved to default location: {default_path}")
 
     # Load it back
     loaded = SimilarityFrame.load(default_path)
-    print(f"✓ Loaded: {len(list(loaded.keys()))} series")
-    print(loaded)
-
-    print("\n✅ All SimilarityFrame tests passed!")

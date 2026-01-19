@@ -7,12 +7,22 @@ from __future__ import annotations
 
 import math
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import mujoco
-import numpy as np
+# import mujoco
+from mujoco import (
+    MjData,
+    mj_forward,
+    mj_resetData,
+    mjtBuiltin,
+    mjtGeom,
+    mjtTexture,
+)
+
+if TYPE_CHECKING:
+    from networkx import DiGraph
+
 from mujoco import viewer
-from networkx import DiGraph
 from rich.console import Console
 
 try:
@@ -28,7 +38,12 @@ from ariel.body_phenotypes.robogen_lite.constructor import (
 from ariel.simulation.environments._base_world import BaseWorld
 from ariel.utils.renderers import single_frame_renderer
 
-from ._utils import look_at, remove_black_background_and_crop, visual_dimensions, remove_white_background_and_crop
+from .utils import (
+    look_at,
+    remove_black_background_and_crop,
+    remove_white_background_and_crop,
+    visual_dimensions,
+)
 
 # Global constants
 CWD = Path.cwd()
@@ -36,7 +51,11 @@ DATA = Path(CWD / "__data__")
 SEED = 42
 
 console = Console()
-RNG = np.random.default_rng(SEED)
+
+__all__ = [
+    "RobotViewer",
+    "quick_view",
+]
 
 
 class RobotViewer:
@@ -44,7 +63,7 @@ class RobotViewer:
 
     def __init__(
         self,
-        robot: DiGraph[Any] | mujoco.MjSpec | Any,
+        robot: DiGraph[Any],
         world: BaseWorld | None = None,
         rectangle_hinge: bool = False,
     ) -> None:
@@ -63,33 +82,29 @@ class RobotViewer:
         self.data = None
 
         # Default rendering options
-        self.width = 500
-        self.height = 500
+        self.width = 960
+        self.height = 960
         self.transparent_parts = False
 
-    def _resolve_robot(self, robot: Any) -> Any:
+    def _resolve_robot(self, robot: DiGraph[Any]) -> Any:
         """Convert input to MjSpec or compatible object."""
-        if isinstance(robot, DiGraph):
-            # Use larger dimensions for visualization
-            if self.rectangle_hinge:
-                with visual_dimensions(
-                    stator_dims=(
-                        0.025,
-                        0.01,
-                        0.025,
-                    ),  # VISUALLY CHANGE THE HINGE APPEARANCE
-                    rotor_dims=(
-                        0.005,
-                        0.04,
-                        0.025,
-                    ),  # VISUALLY CHANGE THE HINGE APPEARANCE
-                ):
-                    return construct_mjspec_from_graph(robot)
-            else:
-                with visual_dimensions():
-                    return construct_mjspec_from_graph(robot)
+        if self.rectangle_hinge:
+            with visual_dimensions(
+                stator_dims=(
+                    0.025,
+                    0.01,
+                    0.025,
+                ),  # VISUALLY CHANGE THE HINGE APPEARANCE
+                rotor_dims=(
+                    0.005,
+                    0.04,
+                    0.025,
+                ),  # VISUALLY CHANGE THE HINGE APPEARANCE
+            ):
+                return construct_mjspec_from_graph(robot)
 
-        return robot
+        with visual_dimensions():
+            return construct_mjspec_from_graph(robot)
 
     def configure_scene(
         self,
@@ -97,7 +112,7 @@ class RobotViewer:
         transparent_parts: bool = False,
         bright_lights: bool = True,
         camera_lights: bool = False,
-        white_background: bool = False, 
+        white_background: bool = False,
     ) -> None:
         """Set up the environment (lights, floor, materials)."""
         if camera_lights:
@@ -105,10 +120,10 @@ class RobotViewer:
 
         if add_floor:
             self._add_floor()
-            
+
         if transparent_parts:
             self.transparent_parts = True
-            
+
         if white_background:
             self._set_white_background()
 
@@ -161,8 +176,8 @@ class RobotViewer:
         """Add a checkered floor to the world spec."""
         self.world.spec.add_texture(
             name="custom_grid",
-            type=mujoco.mjtTexture.mjTEXTURE_2D,
-            builtin=mujoco.mjtBuiltin.mjBUILTIN_CHECKER,
+            type=mjtTexture.mjTEXTURE_2D,
+            builtin=mjtBuiltin.mjBUILTIN_CHECKER,
             rgb1=[0.9, 0.9, 0.9],
             rgb2=[0.95, 0.95, 0.95],
             width=800,
@@ -177,7 +192,7 @@ class RobotViewer:
         )
         self.world.spec.worldbody.add_geom(
             name="floor",
-            type=mujoco.mjtGeom.mjGEOM_PLANE,
+            type=mjtGeom.mjGEOM_PLANE,
             size=[10, 10, 0.1],
             material="custom_floor_material",
             rgba=[0.9, 0.9, 0.9, 1.0],
@@ -204,7 +219,7 @@ class RobotViewer:
         self.world.spawn(spec_to_spawn)
 
         self.model = self.world.spec.compile()
-        self.data = mujoco.MjData(self.model)
+        self.data = MjData(self.model)
 
     def _set_bright_lighting(self) -> None:
         """Enhance lighting for better visualization."""
@@ -217,23 +232,21 @@ class RobotViewer:
 
     def _set_white_background(self) -> None:
         """Configures the MuJoCo spec to have a solid white background via textures."""
-
         self.world.spec.add_texture(
             name="white_sky",
-            type=mujoco.mjtTexture.mjTEXTURE_SKYBOX,
-            builtin=mujoco.mjtBuiltin.mjBUILTIN_FLAT,
+            type=mjtTexture.mjTEXTURE_SKYBOX,
+            builtin=mjtBuiltin.mjBUILTIN_FLAT,
             rgb1=[1, 1, 1],
             rgb2=[1, 1, 1],
             width=800,
             height=800,
         )
-        
+
         self.world.spec.add_material(
             name="white_bg_mat",
             textures=["white_sky"],
             rgba=[1, 1, 1, 1],
         )
-
 
     def render_image(
         self,
@@ -260,8 +273,8 @@ class RobotViewer:
             self._compile()  # Ensure compiled
 
         # Reset simulation state
-        mujoco.mj_resetData(self.model, self.data)
-        mujoco.mj_forward(self.model, self.data)  # Update geometry
+        mj_resetData(self.model, self.data)
+        mj_forward(self.model, self.data)  # Update geometry
 
         render_width = width or self.width
         render_height = height or self.height
@@ -290,8 +303,8 @@ class RobotViewer:
                 self.model,
                 self.data,
                 steps=1,
-                width=960,
-                height=960,
+                width=width,
+                height=height,
                 cam_pos=cam_pos,
                 cam_quat=cam_quat,
                 cam_fovy=2,
@@ -328,8 +341,7 @@ class RobotViewer:
 
 
 # --- Legacy Functional API Wrapper ---
-
-
+# TODO; a mess. turn into data config
 def quick_view(
     robot: DiGraph[Any] | Any,
     *,
@@ -337,6 +349,8 @@ def quick_view(
     with_viewer: bool = False,
     remove_background: bool = True,
     white_background: bool = False,
+    width: int | None = None,
+    height: int | None = None,
     tilted: bool = True,
     rectangle_hinge: bool = True,
     return_img: bool = False,
@@ -363,7 +377,7 @@ def quick_view(
         # transparent_parts=True,
         # bright_lights=True,
         camera_lights=True,
-        white_background=white_background
+        white_background=white_background,
     )
 
     if save_file:
@@ -379,7 +393,9 @@ def quick_view(
     img = viewer_inst.render_image(
         tilted=tilted,
         remove_background=remove_background,
-        white_background=white_background
+        white_background=white_background,
+        width=width,
+        height=height,
     )
 
     if return_img:

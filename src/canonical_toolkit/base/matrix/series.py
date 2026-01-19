@@ -20,6 +20,11 @@ if TYPE_CHECKING:
     import numpy as np
 
 
+__all__ = [
+    "MatrixSeries"
+]
+
+
 class MatrixSeries(Generic[I]):
     """Generic collection of matrices sharing the same label.
 
