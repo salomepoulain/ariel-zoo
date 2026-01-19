@@ -1,8 +1,7 @@
 
-import matplotlib.pyplot as plt
 
 # from examples.z_ec_course.A3_template import NUM_OF_MODULES
-import mujoco
+
 import numpy as np
 
 # from ariel_experiments.characterize.individual import analyze_neighbourhood
@@ -12,20 +11,7 @@ import numpy as np
 # matrix_derive_neighbourhood_cross_pop,
 # )
 import torch
-from ariel.body_phenotypes.robogen_lite.constructor import construct_mjspec_from_graph
-from ariel.body_phenotypes.robogen_lite.modules.core import CoreModule
-from ariel.simulation.controllers.controller import Controller
-from ariel.simulation.controllers.na_cpg import NaCPG, create_fully_connected_adjacency
-from ariel.simulation.environments._simple_flat import SimpleFlatWorld
-from ariel.utils.renderers import single_frame_renderer
-from ariel.utils.tracker import Tracker
 
-from rich.console import Console
-from scipy.spatial.distance import pdist, squareform
-from sklearn.feature_extraction import FeatureHasher
-from sklearn.feature_extraction.text import TfidfTransformer
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.preprocessing import normalize
 
 from ariel.body_phenotypes.robogen_lite.decoders.hi_prob_decoding import (
     HighProbabilityDecoder,
@@ -38,11 +24,9 @@ from ariel.ec.a004 import (
     Population,
 )
 from ariel.ec.genotypes.nde.nde import NeuralDevelopmentalEncoding
-from ariel_experiments.characterize.canonical.core.toolkit import (
-    CanonicalToolKit as ctk,
-)
-from fitness_fnc import fitness
+import canonical_toolkit as ctk
 
+from fitness_fnc import fitness
 
 
 #from examples.z_ec_course.A3_template import NUM_OF_MODULES
@@ -50,6 +34,7 @@ from fitness_fnc import fitness
 import networkx as nx
 from ariel_experiments.gui_vis.view_mujoco import view
 import matplotlib.pyplot as plt
+
 
 NUM_OF_MODULES = 20
 SEED = 42
@@ -64,16 +49,13 @@ diversity_archive = []  # NEW: Archive of past tree hashes for novelty search
 EA_CONFIG = EASettings(
     is_maximisation=True,
     num_of_generations=100,
-    target_population_size=1, # check with guszti
+    target_population_size=500,  
 )
 
-# evaluation settings
-SIM_CONFIG = ctk.SimilarityConfig()
-SIM_CONFIG.max_tree_radius = 10
-SIM_CONFIG.radius_strategy = ctk.CollectionStrategy.SUBTREES
 
 
-NUM_OF_MODULES = 20
+
+
 GENOTYPE_SIZE = 64
 SCALE = 8192  # ADDED: Following A3_template pattern
 
@@ -93,15 +75,20 @@ K_NEIGHBORS = 9
 # ADDED: Global NDE for deterministic genotype-to-phenotype mapping (following A3_template pattern)
 GLOBAL_NDE = NeuralDevelopmentalEncoding(number_of_modules=NUM_OF_MODULES)
 
+def _ind_to_graph(individual: Individual):
+    with torch.no_grad():
+        matrixes = GLOBAL_NDE.forward(np.array(individual.genotype))
+        hpd = HighProbabilityDecoder(num_modules=NUM_OF_MODULES)
+        ind_graph = hpd.probability_matrices_to_graph(
+            matrixes[0], matrixes[1], matrixes[2],
+        )
+        return ind_graph
+
+def _store_ctk_string(individual: Individual):
+    ctk_string = ctk.node_from_graph(_ind_to_graph(individual)).to_string()
+    individual.tags["ctk_string"] = ctk_string 
 
 
-def decode_genotype_to_string(genotype: list) -> str:
-    """Helper: decode genotype to phenotype string using GLOBAL_NDE."""
-    matrixes = GLOBAL_NDE.forward(np.array(genotype))
-    hpd = HighProbabilityDecoder(num_modules=NUM_OF_MODULES)
-    graph = hpd.probability_matrices_to_graph(matrixes[0], matrixes[1], matrixes[2])
-    tree = ctk.from_graph(graph)
-    return ctk.to_string(tree)
 
 
 def float_creep(
@@ -148,7 +135,7 @@ def make_random_robot(genotype_size: int = GENOTYPE_SIZE) -> Individual:
     ]
     ind.fitness = 0.0
     ind.requires_eval = True
-    ind.tags['ctk_string'] = decode_genotype_to_string(ind.genotype)
+    _store_ctk_string(ind)
     return ind
 
 
@@ -238,18 +225,8 @@ def mutation(population: Population) -> Population:
     
     for ind in population:
         if ind.tags.get("mut", False):
-            # DEBUG: Show before mutation
-            # if debug_count < max_debug:
-                # print(f'\n--- Individual {debug_count + 1} ---')
-            # print(f'Genotype BEFORE (first 5 genes): {ind.genotype[0][:5]}')
-            # print(decode_genotype_to_string(ind.genotype))
-            # print(decode_genotype_to_string(ind.genotype))
-            # print(decode_genotype_to_string(ind.genotype))
-            # print(decode_genotype_to_string(ind.genotype))
-            # print(decode_genotype_to_string(ind.genotype))
 
-            # print(f'Phenotype BEFORE: {before_string}')
-            
+
             # Apply mutation
             genes = ind.genotype
             mutated = [
@@ -258,18 +235,8 @@ def mutation(population: Population) -> Population:
                 float_creep(individual=genes[2], mutation_probability=mutation_rate),
             ]
             ind.genotype = mutated
-            
-            # DEBUG: Show after mutation
-        # if debug_count < max_debug:
-            # print(f'Genotype AFTER (first 5 genes): {ind.genotype[0][:5]}')
-            # after_string = decode_genotype_to_string(ind.genotype)
-            # print(f'Phenotype AFTER: {after_string}')
-            
-            # if before_string == after_string:
-                # print('⚠️  WARNING: Phenotype unchanged!')
-            # else:
-                # print('✓ Phenotype changed')
-                
+
+  
                             
             ind.tags["mut"] = False
             ind.requires_eval = True
@@ -277,21 +244,7 @@ def mutation(population: Population) -> Population:
     return population
 
 
-def fitness_tester(population: Population) -> Population:
-    """Simple fitness function for testing: length of tree string."""
-    for ind in population:
-        if ind.requires_eval:
-            # Use global NDE + new HPD (following A3_template pattern)
-            matrixes = GLOBAL_NDE.forward(np.array(ind.genotype))
-            hpd = HighProbabilityDecoder(num_modules=NUM_OF_MODULES)
-            ind_graph = hpd.probability_matrices_to_graph(
-                matrixes[0], matrixes[1], matrixes[2],
-            )
-            ind.tags["ctk_string"] = ctk.to_string(ctk.from_graph(ind_graph))
-            ind.fitness = len(ind.tags["ctk_string"]) + 0.0
-            ind.requires_eval = False
 
-    return population
 
 
 def survivor_selection_tournament(population: Population) -> Population:
@@ -327,17 +280,6 @@ def survivor_selection_tournament(population: Population) -> Population:
         current_pop_size -= 1
 
     return population
-
-
-
-
-
-
-
-
-
-
-
 
 
 
