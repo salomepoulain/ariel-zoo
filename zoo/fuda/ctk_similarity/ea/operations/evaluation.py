@@ -39,20 +39,33 @@ def _store_ctk_string(individual: Individual, graph: DiGraph[Any]):
         
         
 def evaluate_pop(population: Population):
-    novelty_scores = evaluate_novelty(population)
+    novelty_scores = evaluate_novelty(population) if config.STORE_NOVELTY else None
     
     for idx, ind in enumerate(population):
         if ind.requires_eval:
             ind_graph = _ind_to_graph(ind)
             _store_ctk_string(ind, ind_graph) if config.STORE_STRING else None
-
-            novelty = novelty_scores[idx]
-            ind.tags['novelty'] = novelty
-            assert novelty <= 1, f'found novelty {novelty} for index {idx} {novelty_scores}'
             
-            speed = _evaluate_speed(ind) if config.SPEED_EVAL else 1.0
-            ind.tags['speed'] = speed
-            ind.fitness = novelty * speed
+            fitness_novelty = 1.0
+            if config.STORE_NOVELTY:
+                novelty = novelty_scores[idx] if config.STORE_NOVELTY else 1.0 # type: ignore
+                ind.tags['novelty'] = novelty
+                assert novelty <= 1, f'found novelty {novelty} for index {idx} {novelty_scores}'
+                if config.FITNESS_NOVELTY:
+                    fitness_novelty = novelty
+            
+            fitness_speed = 1.0
+            if config.STORE_SPEED:
+                speed = _evaluate_speed(ind) if config.STORE_SPEED else 1.0
+                ind.tags['speed'] = speed
+                if config.FITNESS_SPEED:
+                    fitness_speed = speed
+                    
+            fitness_penalty = 1.0
+            if config.PENALTY:
+                fitness_penalty = _calc_penalty(ind)
+            
+            ind.fitness = fitness_novelty * fitness_speed * fitness_penalty
             
             if config.RNG.random() < config.ARCHIVE_CHANCE:
                 ind.tags['archived'] = True
@@ -79,14 +92,20 @@ def evaluate_novelty(population: Population) -> np.ndarray:
     novelty_array = 1 - similarity_array
     return np.clip(novelty_array, 0, 1.0)
     
+#TODO setup multiprocess?
 
 # TODO. is displacement in meter
 def _evaluate_speed(
     individual: Individual,
     duration: float = 60.0,
+    warmup: float = 30.0,
     show_viewer: bool = False,
 ) -> float:
-    """Simulate robot and return speed (displacement / time)."""
+    """Simulate robot and return speed (displacement / time).
+
+    Speed is measured only after the warmup period to allow the robot's
+    gait to stabilize before measuring locomotion performance.
+    """
     robot = construct_mjspec_from_graph(_ind_to_graph(individual))
 
     mujoco.set_mjcb_control(None)
@@ -112,14 +131,18 @@ def _evaluate_speed(
 
     mujoco.mj_resetData(model, data)
     while data.time < duration:
-        mujoco.mj_step(model, data, nstep=100)                                                          
+        mujoco.mj_step(model, data, nstep=100)
 
     pos_data = tracker.history["xpos"][0]
-    start_xy = (pos_data[0][0], pos_data[0][1])
+    total_entries = len(pos_data)
+    warmup_index = int((warmup / duration) * total_entries)
+
+    start_xy = (pos_data[warmup_index][0], pos_data[warmup_index][1])
     end_xy = (pos_data[-1][0], pos_data[-1][1])
 
     displacement = xy_displacement(start_xy, end_xy)
-    speed = displacement / data.time
+    measurement_time = duration - warmup
+    speed = displacement / measurement_time
 
     if show_viewer:
         mujoco.mj_resetData(model, data)
@@ -127,3 +150,45 @@ def _evaluate_speed(
         viewer.launch(model, data)
 
     return speed
+
+
+
+def _calc_limb_length(node: ctk.Node) -> float:
+    """Calculate the Length of Limbs descriptor (E) for a robot morphology.
+
+    E measures how extended/elongated the limbs are versus how branched:
+    - High E (approaching 1.0): Long chain-like limbs (snake-like)
+    - Low E (approaching 0.0): Short limbs with lots of branching (tree-like)
+
+    Formula: E = e / emax if m >= 3, else 0
+    Where:
+        m = total modules
+        e = modules with exactly 2 faces attached (excluding core)
+        emax = m - 2
+    """
+    m = 0 
+    e = 0 
+
+    def _count_module(n: ctk.Node) -> None:
+        nonlocal m, e
+        m += 1
+        if n.is_root:
+            return
+        num_children = sum(1 for _ in n.children)
+        num_connected_faces = 1 + num_children
+        if num_connected_faces == 2:
+            e += 1
+
+    node.traverse_depth_first(_count_module)
+    if m < 3:
+        return 0.0
+
+    emax = m - 2
+    return e / emax if emax > 0 else 0.0
+
+
+def _calc_penalty(individual: Individual) -> float:
+    node = ctk.node_from_nde_genotype(individual.genotype, config.NDE)
+    E = _calc_limb_length(node)
+
+    return max(0.1, 1.0 - E)
