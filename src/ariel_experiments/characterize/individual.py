@@ -22,7 +22,7 @@ from ariel.body_phenotypes.robogen_lite.modules.hinge import (
 from typing import Any, cast
 
 
-from ariel_experiments.characterize.canonical_toolkit.tests.old.toolkit import CanonicalToolKit as ctk, TreeHash
+# import canonical_toolkit as ctk
 
 
 
@@ -75,15 +75,15 @@ class PropertyAnalyzer(Protocol[T]):
     def __call__(self, individual: DiGraph[Any]) -> NamedGraphPropertiesT[T]: ...
 
 
-def analyze_neighbourhood(individual: DiGraph[Any], config: ctk.SimilarityConfig) -> NamedGraphPropertiesT[dict[int, list[TreeHash]]]:
-    node = ctk.from_graph(individual)
-    obtained_dict = ctk.collect_tree_hash_config_mode(node, config=config)
-    return {"neighbourhood": cast(dict[int, list[TreeHash]], obtained_dict)}
+# def analyze_neighbourhood(individual: DiGraph[Any], config: ctk.SimilarityConfig) -> NamedGraphPropertiesT[dict[int, list]]:
+#     node = ctk.from_graph(individual)
+#     obtained_dict = ctk.collect_tree_hash_config_mode(node, config=config)
+#     return {"neighbourhood": cast(dict[int, list], obtained_dict)}
 
-def analyze_canonical_string(individual: DiGraph[Any]) -> NamedGraphPropertiesT[str]:
-    node = ctk.from_graph(individual)
-    string = ctk.to_canonical_string(node)
-    return {"canonical_string": string}
+# def analyze_canonical_string(individual: DiGraph[Any]) -> NamedGraphPropertiesT[str]:
+#     node = ctk.from_graph(individual)
+#     string = ctk.to_canonical_string(node)
+#     return {"canonical_string": string}
 
 def analyze_module_counts(individual: DiGraph[Any]) -> NamedGraphPropertiesT[int]:
     """
