@@ -291,10 +291,14 @@ def cli_options(func):
             if not file_exists:
                 writer.writerow(["datetime", "cli_args", "output_folder"])
             cli_str = " ".join(f"--{k}={v}" for k, v in overrides.items())
+            try:
+                output_path = str(config.OUTPUT_FOLDER.relative_to(Path.cwd()))
+            except ValueError:
+                output_path = str(config.OUTPUT_FOLDER)
             writer.writerow([
                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 cli_str,
-                str(config.OUTPUT_FOLDER.relative_to(Path.cwd())),
+                output_path,
             ])
 
         return func()

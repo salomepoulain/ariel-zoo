@@ -30,7 +30,7 @@ OUTPUT_DIR="__data__/${RUN_NAME}_${TASK_ID}"
 mkdir -p "$OUTPUT_DIR"
 
 # Redirect all stdout/stderr to output dir from now on
-exec > "$OUTPUT_DIR/slurm.out" 2> "$OUTPUT_DIR/slurm.err"
+exec > "$OUTPUT_DIR/logs/slurm.out" 2> "$OUTPUT_DIR/logs/slurm.err"
 
 # --- 2. Setup Environment ---
 # Load Modules (Standard Snellius 2023 stack)
