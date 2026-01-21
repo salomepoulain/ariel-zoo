@@ -320,3 +320,85 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("Got ctrl+c, stopping ea")
 
+
+
+
+
+
+# FUDA STYLE POST EA NOVELTY SELECTION
+from sklearn.metrics import pairwise_distances
+from fitness_fnc import _ind_to_graph
+from ariel_experiments.characterize.individual import analyze_branching, analyze_coverage, analyze_joints, analyze_number_of_limbs, analyze_proportion_literature, analyze_symmetry
+from ariel_experiments.characterize.population import get_raw_population_properties
+import numpy as np
+
+morphological_analysers = [analyze_branching,analyze_number_of_limbs,analyze_coverage,analyze_joints,analyze_proportion_literature,analyze_symmetry]
+
+# Selecting size of test suite
+N_SELECT = 20
+
+def fuda_selection(
+    population: Population,
+    morphological_analysers,
+    n_select: int = 20,
+    seed: int = 42,
+):
+
+    rng = np.random.default_rng(seed)
+
+    # Decoding all individuals to graphs
+    graphs = []
+    valid_inds = []
+
+    for ind in population:
+        try:
+            graph = _ind_to_graph(ind)
+            graphs.append(graph)
+            valid_inds.append(ind)
+        except Exception:
+            continue
+
+    # Extracting morphological features
+    documents = get_raw_population_properties(graphs, morphological_analysers)
+    X = np.array(list(documents.values())).T
+
+    # Computing distance matrix
+    D = pairwise_distances(X, metric="euclidean")
+
+    n = len(valid_inds)
+    assert n >= n_select, "Population smaller than needed"
+
+    # Greedy novelty selection
+    selected_idx = []
+
+    # Starting from a random individual
+    first = rng.integers(0, n)
+    selected_idx.append(first)
+    remaining = set(range(n))
+    remaining.remove(first)
+
+    while len(selected_idx) < n_select:
+        best_candidate = None
+        best_score = -np.inf
+        for i in remaining:
+            # Computing the distance to the closest selected individual
+            d_min = min(D[i, j] for j in selected_idx)
+            if d_min > best_score:
+                best_score = d_min
+                best_candidate = i
+        selected_idx.append(best_candidate)
+        remaining.remove(best_candidate)
+    selected_individuals = [valid_inds[i] for i in selected_idx]
+
+    return selected_individuals
+
+
+final_population = ea.population
+
+test_suite = fuda_selection(
+    population=final_population,
+    morphological_analysers=morphological_analysers,
+    n_select=20,
+)
+
+print(f"Selected {len(test_suite)} morphologically novel robots using Fuda's method")
