@@ -1,18 +1,15 @@
 """Type protocols and generics for the matrix hierarchy.
 
 This module defines the type structure for the three-level matrix system:
-- Instance level: Individual matrices (MatrixInstance, SimilarityMatrix, etc.)
-- Series level: Collections of instances (MatrixSeries, SimilaritySeries, etc.)
-- Frame level: Collections of series (MatrixFrame, SimilarityFrame, etc.)
-
-The type system uses:
-- Protocols: Structural typing contracts (duck typing for type checkers)
-- Generics: Type parameters that flow through the hierarchy
+- Instance level: Individual matrix wrappers with metadata.
+- Series level: Ordered collections of instances sharing a label (e.g., Radii).
+- Frame level: Collections of series organized by distinct labels (e.g., Body Parts).
 """
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar, Self
+from typing import TYPE_CHECKING, Any, Protocol, TypeVar, Self, overload, runtime_checkable
+from collections.abc import Iterable, Iterator
 
 if TYPE_CHECKING:
     from collections.abc import Hashable
@@ -20,54 +17,38 @@ if TYPE_CHECKING:
     import scipy.sparse as sp
 
 
-# Utility Protocol
+# --- LEVEL 1: Instance Protocol ---
 
-class SortableHashable(Protocol):
-    """Protocol for objects that are both Hashable and Sortable (Comparable)."""
-
-    def __hash__(self) -> int: ...
-
-    def __lt__(self, other: Any) -> bool: ...
-
-    def __eq__(self, other: Any) -> bool: ...
-
-
-# LEVEL 1: Instance Protocol
-
+@runtime_checkable
 class InstanceProtocol(Protocol):
-    """
-    Protocol defining what any matrix instance must provide.
-
-    Any class that has these properties/methods automatically satisfies
-    this protocol (structural typing - no explicit inheritance needed).
-    """
+    """Protocol for an individual matrix wrapper (the 'Leaf' node)."""
 
     @property
     def matrix(self) -> sp.spmatrix | np.ndarray:
-        """The underlying matrix data (sparse or dense)."""
+        """The underlying numeric matrix data (sparse or dense)."""
         ...
 
     @property
     def shape(self) -> tuple[int, int]:
-        """Shape of the matrix (rows, cols)."""
+        """Dimensions of the underlying matrix."""
         ...
 
     @property
     def label(self) -> str:
-        """Generic label for this instance."""
+        """The identifying label for this specific instance."""
         ...
 
     @property
     def tags(self) -> dict[str, Any]:
-        """Metadata tags for this instance."""
+        """Flexible metadata dictionary associated with this matrix."""
         ...
 
-    def replace(self, **changes) -> Self:
-        """Create a new instance with updated fields."""
+    def replace(self, **changes: Any) -> Self:
+        """Create a new instance of the same type with specific fields updated."""
         ...
 
     def __add__(self, other: InstanceProtocol) -> Self:
-        """Add two instances element-wise."""
+        """Element-wise addition of two matrix instances."""
         ...
 
 
@@ -75,86 +56,108 @@ class InstanceProtocol(Protocol):
 I = TypeVar("I", bound=InstanceProtocol)
 
 
-# LEVEL 2: Series Protocol
+# --- LEVEL 2: Series Protocol ---
 
+@runtime_checkable
 class SeriesProtocol(Protocol[I]):
-    """
-    Protocol defining what any series must provide.
-
-    Generic over I (the instance type it contains).
-    A series is a collection of instances with the same label.
-    """
+    """Protocol for an ordered collection of instances (the 'Column')."""
 
     @property
     def label(self) -> str:
-        """The common label shared by all instances in this series."""
+        """The common label shared by all instances in this series (e.g., 'FRONT')."""
         ...
 
     @property
-    def instances(self) -> dict[Hashable, I]:
-        """All instances in this series, indexed by their position."""
+    def instances(self) -> list[I]:
+        """Ordered list of actual Instance objects."""
         ...
 
     @property
-    def indices(self) -> list[SortableHashable]:
-        """Sorted list of indices in this series."""
+    def indices(self) -> list[int]:
+        """Sorted list of integer keys (e.g., Radii) representing the sequence."""
         ...
 
-    @property
-    def matrices(self) -> list[sp.spmatrix | np.ndarray]:
-        """List of matrices in index order."""
+    def items(self) -> Iterable[tuple[int, I]]:
+        """Dictionary-like iterator yielding (index, InstanceObject) pairs."""
         ...
 
-    def __getitem__(self, key: Hashable) -> I:
-        """Get instance at given index."""
+    def __iter__(self) -> Iterator[I]:
+        """Direct iterator yielding InstanceObjects in order."""
         ...
 
-    def __setitem__(self, key: Hashable, instance: I) -> None:
-        """Set instance at given index."""
+    @overload
+    def __getitem__(self, key: slice) -> Self: ...
+
+    @overload
+    def __getitem__(self, key: int) -> I: ...
+
+    def __getitem__(self, key: int | slice) -> I | Self:
+        """Access a specific instance by index or a subset via slicing."""
         ...
 
-    def replace(self, **changes) -> Self:
-        """Create a new series with updated fields."""
+    def __setitem__(self, key: int, instance: I) -> None:
+        """Insert or update an instance at a specific index."""
+        ...
+
+    def replace(self, **changes: Any) -> Self:
+        """Create a new series of the same type with specific fields updated."""
         ...
 
 
-# TypeVar for series types (any class implementing SeriesProtocol)
-# Note: We don't bind to SeriesProtocol[Any] because it causes type checker issues.
-# The structural typing via Protocol provides the contract without needing a bound.
-S = TypeVar("S")
+# TypeVar for series types
+S = TypeVar("S", bound=SeriesProtocol[Any])
 
 
-# LEVEL 3: Frame Protocol
+# --- LEVEL 3: Frame Protocol ---
 
+@runtime_checkable
 class FrameProtocol(Protocol[S]):
-    """
-    Protocol defining what any frame must provide.
-
-    Generic over S (the series type it contains).
-    A frame is a collection of series with different labels.
-    """
+    """Protocol for a collection of matrix series (the 'Grid')."""
 
     @property
     def series(self) -> list[S]:
-        """All series in this frame, in order."""
+        """Ordered list of Series objects contained within the frame."""
         ...
 
-    def keys(self) -> list[Hashable]:
-        """Get all series labels in order."""
+    @property
+    def labels(self) -> list[str]:
+        """Ordered list of strings representing the series labels (e.g., ['FRONT', 'BACK'])."""
         ...
 
-    def values(self) -> list[S]:
-        """Get all series in order."""
+    def items(self) -> Iterable[tuple[Hashable, S]]:
+        """Iterator yielding (label, SeriesObject) pairs."""
         ...
 
-    def __getitem__(self, key: Hashable) -> S:
-        """Get series by label."""
+    def __iter__(self) -> Iterator[S]:
+        """Direct iterator yielding SeriesObjects in the frame's order."""
+        ...
+
+    @overload
+    def __getitem__(self, key: tuple[slice, Any]) -> Any: ...
+
+    @overload
+    def __getitem__(self, key: list[Hashable]) -> Self: ...
+
+    @overload
+    def __getitem__(self, key: slice) -> Self: ... # type: ignore
+
+    @overload
+    def __getitem__(self, key: Hashable) -> S: ...
+
+    def __getitem__(self, key: Any) -> Any:
+        """
+        Retrieve data from the frame.
+
+        - 2D Tuple: Returns a sub-grid or specific values.
+        - List/Slice: Returns a sub-frame (Self).
+        - Hashable: Returns a specific series (S).
+        """
         ...
 
     def __setitem__(self, key: Hashable, series: S) -> None:
-        """Set series at given label."""
+        """Insert or update a series associated with a specific label."""
         ...
 
-    def replace(self, **changes) -> Self:
-        """Create a new frame with updated fields."""
+    def replace(self, **changes: Any) -> Self:
+        """Create a new frame of the same type with specific fields updated."""
         ...

@@ -64,29 +64,24 @@ def collect_subtrees(node: Node, output_type: OutputType):
 def collect_hash_fingerprint(
     node: Node, 
     *, 
-    config: SimilaritySpaceConfig | None
+    config: SimilaritySpaceConfig | None = None
 ) -> HashFingerprint:
-    if not config:
-        config = SimilaritySpaceConfig()
+    config = config or SimilaritySpaceConfig()
+    node = node.copy()
     
-    if not config.space.value == '':
-        node = node.copy()
+    if config.space != Space.WHOLE:
         
-        # detatch radial children, if you want axial hashes
         if config.space.value == 'A_#__':
             for radial_child in node.radial_children:
                 radial_child.detatch_from_parent()
-                
-        # detatch axial children, if you want radial hashes
         elif config.space.value == 'R_#__':
             for axial_child in node.axial_children:
                 axial_child.detatch_from_parent()
-        
-        # just get hashes from 1 limb   
         else:
-            node = node.get(config.space.name)
-            if not node:
-                return {-1: []}
+            target_node = node.get(config.space.name)
+            if not target_node:
+                return {0: []}
+            node = target_node
             node.detatch_from_parent()
                 
     return deriver.collect_neighbourhoods(
@@ -116,71 +111,30 @@ def series_from_population_fingerprint(
     hasher: FeatureHasherProtocol | None = None,
     n_features: int = 2 ** 24,
 ) -> SimilaritySeries:
-    """Create SimilaritySeries from population neighbourhood dictionaries.
-
-    Converts neighbourhood strings to sparse feature matrices using
-    feature hashing, creating one MatrixInstance per radius.
-
-    Args:
-        population_neighbourhoods: List of neighbourhood dicts, one per individual.
-            Each dict maps radius -> list of neighbourhood strings.
-            Example: [{0: ['r0__B', 'r0__H'], 1: ['r1__BB']}, ...]
-        space: VectorSpace or custom space name for the morphology
-        n_features: Size of the hash space (number of features)
-        hasher: Optional hasher implementing FeatureHasherProtocol.
-            Must have .transform(list[list[str]]) -> sparse matrix.
-            Defaults to FeatureHasher(n_features, input_type='string').
-        max_radius: Maximum radius to process. Auto-detected if None.
-
-    Returns
-    -------
-        SimilaritySeries with one MatrixInstance per radius, indexed by radius.
-        Each matrix has shape (n_individuals, n_features) and is sparse.
-
-    Example:
-        >>> neighbourhoods = [
-        ...     {0: ["r0__B"], 1: ["r1__BB", "r1__BH"]},  # Individual 0
-        ...     {0: ["r0__H"], 1: ["r1__HB"]},  # Individual 1
-        ... ]
-        >>> series = MatrixSeries.from_neighbourhood_dicts(
-        ...     neighbourhoods, space=VectorSpace.FRONT_LIMB, n_features=1000
-        ... )
-        >>> series[1].shape  # Access radius 1 matrix
-        (2, 1000)  # 2 individuals, 1000 features
-        >>> series[1][0, 5]  # Individual 0, feature 5
     """
-    # Create hasher if not provided
+    Transforms tree fingerprints into a typed SimilaritySeries.
+    """
     if hasher is None:
         hasher = FeatureHasher(n_features=n_features, input_type="string")
 
-    # Auto-detect max radius
     if max_radius is None:
-        max_radius = max(max(d.keys()) for d in population_fingerprint)
+        max_radius = max((max(d.keys()) for d in population_fingerprint if d), default=0)
 
-    # Build instances for each radius
-    instances_list = []
+    instances = []
     for radius in range(max_radius + 1):
-        # Collect features at this radius from all individuals
-        radius_features = [
-            pop_neigh.get(radius, []) for pop_neigh in population_fingerprint
-        ]
-
-        # Transform to sparse matrix: (n_individuals, n_features)
+        radius_features = [pop_neigh.get(radius, []) for pop_neigh in population_fingerprint]
         sparse_matrix = hasher.transform(radius_features)
 
-        # Wrap in MatrixInstance
         instance = SimilarityMatrix(
             matrix=sparse_matrix,
             space=space,
             radius=radius,
             domain=MatrixDomain.FEATURES,
         )
-        instances_list.append(instance)
+        instances.append(instance)
 
-    return SimilaritySeries(
-        instances_list=instances_list
-    )
-    
+    return SimilaritySeries(instances=instances)
+
 # Region nx based pipeline helpers
 
 def series_from_graph_population(
@@ -225,6 +179,21 @@ def frame_from_graph_population(
     population: list[DiGraph[Any]], 
     space_configs: list[SimilaritySpaceConfig]
 ) -> SimilarityFrame:
-    all_series = [series_from_graph_population(population, config) for config in space_configs]    
-    frame = SimilarityFrame(all_series)
-    return frame
+    """
+    Highest level of the pipeline: DiGraph List -> SimilarityFrame.
+    """
+    node_population = [node_from_graph(graph) for graph in population]
+    
+    all_series = []
+    for config in space_configs:
+        fingerprint = [collect_hash_fingerprint(n, config=config) for n in node_population]
+        
+        series = series_from_population_fingerprint(
+            population_fingerprint=fingerprint, 
+            space=config.space, 
+            max_radius=config.max_hop_radius, 
+            hasher=config.hasher
+        )
+        all_series.append(series)
+    
+    return SimilarityFrame(series=all_series)

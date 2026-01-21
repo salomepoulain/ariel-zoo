@@ -23,7 +23,6 @@ from ariel.utils.tracker import Tracker
 from ea.config import config, logger
 
 NUM_WORKERS = int(os.environ.get("SLURM_CPUS_PER_TASK", os.cpu_count() or 4))
-logger.info(f"Running simulations with {NUM_WORKERS} cores")
 
 if TYPE_CHECKING:
     from networkx import DiGraph
@@ -41,11 +40,11 @@ def _ind_to_graph(individual: Individual) -> DiGraph[Any]:
 def evaluate_pop(population: Population):
     t_start = time.perf_counter()
 
-    t_novelty_total = 0.0
+    t_novelty_total = 0.0  #~~~~~~~~~~~~ time
     if config.STORE_NOVELTY:
-        t0 = time.perf_counter()
+        t0 = time.perf_counter()  #~~~~~~~~~~~~ time
         novelty_scores = evaluate_novelty(population)
-        t_novelty_total = time.perf_counter() - t0
+        t_novelty_total = time.perf_counter() - t0  #~~~~~~~~~~~~ time
     else:
         novelty_scores = None
     
@@ -54,17 +53,17 @@ def evaluate_pop(population: Population):
 
     # --- Parallel MuJoCo speed evaluation ---
     speed_map = {}
-    t_speed_total = 0.0
+    t_speed_total = 0.0  #~~~~~~~~~~~~ time
     if config.STORE_SPEED and eval_indices:
-        t0 = time.perf_counter()
+        t0 = time.perf_counter()  #~~~~~~~~~~~~ time
         tasks = [(idx, population[idx].genotype) for idx in eval_indices]
         with Pool(processes=NUM_WORKERS) as pool:
             results = pool.map(_evaluate_speed_from_genotype, tasks)
         speed_map = dict(results)
-        t_speed_total = time.perf_counter() - t0
+        t_speed_total = time.perf_counter() - t0  #~~~~~~~~~~~~ time
 
-    # --- Sequential: graph, novelty assignment, penalty, fitness ---
-    t_graph_total, t_penalty_total = 0.0, 0.0
+    # --- Sequential: novelty assignment, penalty, fitness ---
+    t_penalty_total = 0.0 #~~~~~~~~~~~~ time
 
     for idx in eval_indices:
         ind = population[idx]
@@ -86,9 +85,9 @@ def evaluate_pop(population: Population):
 
         fitness_penalty = 1.0
         if config.PENALTY:
-            t0 = time.perf_counter()
+            t0 = time.perf_counter() #~~~~~~~~~~~~ time
             fitness_penalty = _calc_penalty(ind)
-            t_penalty_total += time.perf_counter() - t0
+            t_penalty_total += time.perf_counter() - t0 #~~~~~~~~~~~~ time
 
         ind.fitness = fitness_novelty * fitness_speed * fitness_penalty
 
@@ -113,27 +112,46 @@ def evaluate_novelty(population: Population) -> np.ndarray:
     # Sort by ctk_string for consistent feature storage order
     sorted_indices = sorted(range(len(population)), key=lambda i: population[i].tags["ctk_string"])
     sorted_pop = [population[i] for i in sorted_indices]
-
     nodes = [ctk.node_from_string(ind.tags["ctk_string"]) for ind in sorted_pop]
-    pop_series = ctk.series_from_node_population(nodes, space_config=config.SIM_CONFIG)
-    pop_series.save(config.OUTPUT_FOLDER / 'features', 'generation')
+
+    # Build frame with ALL STORE_SPACES
+    series_list = [
+        ctk.series_from_node_population(nodes, space_config=sim_config)
+        for sim_config in config.SIM_CONFIGS
+    ]
+    pop_frame = ctk.SimilarityFrame(series=series_list)
+    pop_frame.save(config.OUTPUT_FOLDER / 'feature_frames', 'gen')
+
+    # For novelty: select only NOVELTY_SPACES and combine with archive
+    novelty_spaces = config.NOVELTY_SPACES or config.STORE_SPACES
+    novelty_series_list = []
+    for space in novelty_spaces:
+        space_name = space.name
+        pop_series = pop_frame[space_name]
+
+        # Try to load and combine with archive
+        try:
+            archive_series = ctk.SimilaritySeries.load(config.OUTPUT_FOLDER / 'archive' / space_name)
+            combined = pop_series | archive_series
+        except Exception:
+            combined = pop_series
+
+        novelty_series_list.append(combined)
+
+    # Aggregate across spaces and calculate novelty
+    novelty_frame = ctk.SimilarityFrame(series=novelty_series_list)
+    aggregated_series = novelty_frame.aggregate()
+    aggregated_series.map('cosine_similarity')
+    matrix = aggregated_series.aggregate()
+    matrix.normalize_by_radius()
 
     # Create reverse mapping to return novelty in original population order
     reverse_indices = [0] * len(population)
     for new_idx, orig_idx in enumerate(sorted_indices):
         reverse_indices[orig_idx] = new_idx
 
-    try:                                   
-        archive_series = ctk.SimilaritySeries.load(config.OUTPUT_FOLDER / 'archive')                                                                                             
-        series = pop_series | archive_series                                                                                          
-    except Exception:                                                                                                                                             
-        series = pop_series  
-
-    series.cosine_similarity()
-    matrix = series.aggregate()
-    matrix.normalize_by_radius()
     pop_size = len(population)
-    similarity_array = matrix.sum_to_rows(zero_diagonal=True, k=config.K_NOVELTY, largest=True)[:pop_size]
+    similarity_array = matrix.sum_to_rows(zero_diagonal=True, k=config.K_NOVELTY, largest=True, normalise=True)[:pop_size]
     novelty_sorted = 1 - similarity_array
 
     # Reorder novelty back to original population order

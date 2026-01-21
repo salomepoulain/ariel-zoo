@@ -1,25 +1,25 @@
 #!/bin/bash
-#SBATCH --job-name=ctk_ea
+#SBATCH --job-name=ctk_penalty
 #SBATCH --output=/dev/null
 #SBATCH --error=/dev/null
 #SBATCH --partition=genoa
 #SBATCH --cpus-per-task=192
-#SBATCH --mem=42G 
+#SBATCH --mem=96G
 #SBATCH --ntasks=1
-#SBATCH --time=02:30:00
-#SBATCH --array=1-10%4
+#SBATCH --time=03:30:00
+#SBATCH --array=1-10%1
 
 
 
 # --- 1. EA Parameters (edit these) ---
-RUN_NAME="best_params"
+RUN_NAME="penalty"
 POPULATION_SIZE=500
-NUM_GENERATIONS=2
+NUM_GENERATIONS=100
 
 # Flags (true/false)
-QUIET=true
+QUIET=false
 NO_TOURNAMENT=false      # -T: disable tournament selection
-PENALTY=false            # -P: enable penalty
+PENALTY=true            # -P: enable penalty
 NO_FITNESS_NOVELTY=false # -N: disable novelty in fitness
 NO_FITNESS_SPEED=false   # -S: disable speed in fitness
 STORE_NOVELTY=false      # -n: store novelty (even if not in fitness)
@@ -45,6 +45,19 @@ echo "==========================="
 module purge
 module load 2023
 module load Python/3.11.3-GCCcore-12.3.0
+
+# --- ADD THESE LINES HERE ---
+unset DISPLAY
+unset WAYLAND_DISPLAY
+export MUJOCO_GL="egl"
+export PYOPENGL_PLATFORM="egl"
+# ----------------------------
+
+
+# Test which GL backend is available
+echo "Testing MuJoCo GL backends..."
+uv run python -c "import os; os.environ['MUJOCO_GL']='egl'; import mujoco; print('EGL works')" 2>/dev/null && echo "✓ EGL available" || echo "✗ EGL failed"
+uv run python -c "import os; os.environ['MUJOCO_GL']='osmesa'; import mujoco; print('OSMesa works')" 2>/dev/null && echo "✓ OSMesa available" || echo "✗ OSMesa failed"
 
 # --- 4. Build flags ---
 FLAGS=""

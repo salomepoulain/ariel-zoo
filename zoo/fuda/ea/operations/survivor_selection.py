@@ -59,12 +59,24 @@ def _deterministic_survival(population: Population) -> Population:
     return population
 
 def _fix_archive(population: Population):
-    new_archived = [ctk.node_from_nde_genotype(ind.genotype, config.NDE) for ind in population if ind.tags.get('archived') and not ind.alive]
-    if new_archived:
-        new_series = ctk.series_from_node_population(new_archived, space_config=config.SIM_CONFIG)
+    new_archived = [
+        ctk.node_from_string(ind.tags['ctk_string'])
+        for ind in population
+        if ind.tags.get('archived') and not ind.alive
+    ]
+    if not new_archived:
+        return
+
+    # Save archive per space (all STORE_SPACES, not just NOVELTY_SPACES)
+    for sim_config in config.SIM_CONFIGS:
+        space_name = sim_config.space.name
+        archive_path = config.OUTPUT_FOLDER / 'archive' / space_name
+
+        new_series = ctk.series_from_node_population(new_archived, space_config=sim_config)
         try:
-            archive_series = ctk.SimilaritySeries.load(config.OUTPUT_FOLDER / 'archive')
-            archive_series = new_series | archive_series
+            existing = ctk.SimilaritySeries.load(archive_path)
+            combined = new_series | existing
         except Exception:
-            archive_series = new_series
-        archive_series.save(config.OUTPUT_FOLDER, series_name='archive', overwrite=True)   
+            combined = new_series
+
+        combined.save(config.OUTPUT_FOLDER / 'archive', series_name=space_name, overwrite=True)   

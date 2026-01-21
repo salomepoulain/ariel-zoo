@@ -15,89 +15,59 @@ from .matrix import DATA_SERIES, MatrixInstance
 from .matrix_types import I
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
-
+    from collections.abc import Callable, Iterator, Iterable
     import numpy as np
 
-
-__all__ = [
-    "MatrixSeries"
-]
+__all__ = ["MatrixSeries"]
 
 
 class MatrixSeries(Generic[I]):
-    """Generic collection of matrices sharing the same label.
-
-    Generic over I (the instance type). Defaults to MatrixInstance when not specified.
-    Subclasses can specify their instance type: SimilaritySeries(MatrixSeries[SimilarityMatrix])
-    """
+    """Generic collection of matrices sharing the same label."""
 
     _instance_class = MatrixInstance
 
     def __init__(
-        self,
-        instances_list: list[I] | None = None,
+        self, instances: Iterable[I], label: str | None = None
     ) -> None:
-        """Initialize MatrixSeries.
+        """Initialize series from a collection of instances."""
+        
+        self._instances: dict[int, I] = {}
 
-        Args:
-            instances_list: List of instance objects (type I). All must have same label.
-                           Cannot be empty or None.
-
-        Raises
-        ------
-            ValueError: If instances_list is empty/None, has duplicate indices,
-                       or instances have different labels
-        """
-        if not instances_list:
-            msg = "instances_list cannot be empty or None. MatrixSeries requires at least one instance."
+        if not instances:
+            msg = "instances cannot be empty or None. MatrixSeries requires at least one instance."
             raise ValueError(msg)
 
-        labels = [inst.label for inst in instances_list]
-        unique_labels = set(labels)
-        if len(unique_labels) > 1:
-            msg = (
-                f"All instances must have the same label. "
-                f"Found {len(unique_labels)} different labels: {unique_labels}"
-            )
-            raise ValueError(msg)
+        instances_list = list(instances)
 
-        self._instances = dict(enumerate(instances_list))
+        for i, inst in enumerate(instances_list):
+            idx = inst.tags.get("radius", i)
+            self._instances[int(idx)] = inst
 
-    def items(self) -> tuple[list[int], list[sp.spmatrix | np.ndarray]]:
-        return self.indices, self.matrices
+        if label:
+            self._label = label
+        elif self._instances:
+            self._label = next(iter(self._instances.values())).label
+        else:
+            self._label = "unlabeled_series"
 
     @property
     def label(self) -> str:
-        """Return the label of all instances (guaranteed to be the same)."""
-        return next(iter(self._instances.values())).label
+        return self._label
 
     @property
-    def instances(self) -> dict[int, I]:
-        """Read-only access to instances dict."""
-        return self._instances.copy()  # type: ignore[return-value]
+    def instances(self) -> list[I]:
+        return [self._instances[k] for k in sorted(self._instances)]
 
     @property
     def indices(self) -> list[int]:
-        """Get sorted list of indices."""
-        return sorted(self._instances.keys())  # type: ignore[return-value]
+        return sorted(self._instances.keys())
 
-    @property
-    def matrices(self) -> list[sp.spmatrix | np.ndarray]:
-        """Get list of matrices in index order."""
-        return [self._instances[idx].matrix for idx in self.indices]
+    def items(self) -> Iterable[tuple[int, I]]:
+        for k in sorted(self._instances):
+            yield k, self._instances[k]
 
-    @property
-    def labels(self) -> list[str]:
-        """Get list of labels in index order (all same, one per instance)."""
-        return [self._instances[idx].label for idx in self.indices]
-
-    @property
-    def description(self) -> str:
-        """Generate descriptive name: 'classname_label_Ni'."""
-        class_name = self.__class__.__name__.lower()
-        num_instances = len(self._instances)
-        return f"{class_name}_{self.label}_{num_instances}i".lower()
+    def __iter__(self) -> Iterator[I]:
+        return iter(self.instances)
 
     @overload
     def __getitem__(self, key: slice) -> Self: ...
@@ -106,67 +76,20 @@ class MatrixSeries(Generic[I]):
     def __getitem__(self, key: int) -> I: ...
 
     def __getitem__(self, key: int | slice) -> I | Self:
-        """
-        Access instances by index or slice.
+        if isinstance(key, slice):
+            sliced_keys = sorted(self._instances.keys())[key]
+            subset = [self._instances[k] for k in sliced_keys]
+            # FIXED: Argument name changed from instances_list to instances
+            return self.replace(instances=subset)
 
-        Examples
-        --------
-            series[2]      # Get MatrixInstance at index 2
-            series[:3]     # Get MatrixSeries with indices 0,1,2,3
-            series[1:4]    # Get MatrixSeries with indices 1,2,3,4
-            series[::2]    # Get every other index
-        """
-        if not isinstance(key, slice):
-            return self._instances[key]
+        if key not in self._instances:
+            raise KeyError(
+                f"Index/Radius {key} not found in series '{self.label}'"
+            )
+        return self._instances[key]
 
-        all_indices = sorted(self._instances.keys())
-        selected_indices = all_indices[key]
-        new_instances_list = [self._instances[idx] for idx in selected_indices]
-
-        return self.__class__(instances_list=new_instances_list)
-
-    def __setitem__(self, index: int, instance: I) -> None:
-        """Set instance at given index."""
-        self._instances[index] = instance
-
-    def __iter__(self) -> Iterator[int]:
-        """Iterate over sorted indices."""
-        return iter(sorted(self._instances.keys()))
-
-    def __repr__(self) -> str:
-        """Pretty table representation."""
-        label = self.label
-
-        table = Table(
-            title=f"{self.__class__.__name__}: {label}",
-            title_style="bold bright_cyan",
-            title_justify="left",
-            show_header=True,
-            header_style="bold cyan",
-        )
-        table.add_column("Index", style="cyan", justify="right")
-        table.add_column(label, justify="center")
-
-        for idx in sorted(self._instances.keys()):
-            inst = self._instances[idx]
-            rows, cols = inst.shape
-
-            shape_str = f"{rows}×{cols}"
-            storage_abbr = "Sparse" if sp.issparse(inst.matrix) else "Dense"
-
-            tags_str = ""
-            if inst.tags:
-                tags_str = f" {inst.tags}"
-
-            cell_content = f"[{shape_str}] {storage_abbr}{tags_str}"
-            table.add_row(str(idx), cell_content)
-
-        string_buffer = io.StringIO()
-        temp_console = Console(
-            file=string_buffer, force_terminal=True, width=80
-        )
-        temp_console.print(table)
-        return string_buffer.getvalue().rstrip()
+    def __setitem__(self, key: int, instance: I) -> None:
+        self._instances[key] = instance
 
     def replace(self, **changes: Any) -> Self:
         """Create a new MatrixSeries with updated fields.
@@ -182,52 +105,55 @@ class MatrixSeries(Generic[I]):
         new_instances_dict = changes.get("_instances", self._instances.copy())
         new_instances_list = list(new_instances_dict.values())
 
-        return self.__class__(instances_list=new_instances_list)
+        return self.__class__(instances=new_instances_list)
 
-    def map(
-        self,
-        func: Callable[[I], I],
-        *,
-        inplace: bool = True,
-    ) -> Self:
-        """Apply function to all instances in the series.
+    @property
+    def description(self) -> str:
+        class_name = self.__class__.__name__.lower()
+        num_instances = len(self._instances)
+        return f"{class_name}_{self.label}_{num_instances}i".lower()
 
-        Args:
-            func: Function to apply to each instance (type I)
-            inplace: If True, modify self and return self (faster, saves memory).
-                    If False, create new instance of same type (safer). Default: True.
-                    When False, also attempts to pass inplace=False to func if it accepts it.
+    def __repr__(self) -> str:
+        label = self.label
+        table = Table(
+            title=f"{self.__class__.__name__}: {label}",
+            title_style="bold bright_cyan",
+            title_justify="left",
+            show_header=True,
+            header_style="bold cyan",
+        )
+        table.add_column("Index", style="cyan", justify="right")
+        table.add_column(label, justify="center")
 
-        Returns
-        -------
-            Self if inplace=True, new instance of same type if inplace=False
-        """
+        for idx in sorted(self._instances.keys()):
+            inst = self._instances[idx]
+            shape_str = f"{inst.shape[0]}×{inst.shape[1]}"
+            storage_abbr = "Sparse" if sp.issparse(inst.matrix) else "Dense"
+            tags_str = f" {inst.tags}" if inst.tags else ""
+            table.add_row(str(idx), f"[{shape_str}] {storage_abbr}{tags_str}")
+
+        string_buffer = io.StringIO()
+        Console(file=string_buffer, force_terminal=True, width=80).print(table)
+        return string_buffer.getvalue().rstrip()
+
+    def map(self, func: Callable[[I], I] | str, *, inplace: bool = True, **kwargs: Any) -> Self:
         new_data = {}
         for idx, inst in self._instances.items():
-            if not inplace:
-                # Try to pass inplace=False to the function if it accepts it
-                try:
-                    new_data[idx] = func(inst, inplace=False)
-                except TypeError:
-                    # Function doesn't accept inplace parameter
-                    new_data[idx] = func(inst)
+            if isinstance(func, str):
+                new_data[idx] = getattr(inst, func)(**kwargs)
             else:
                 new_data[idx] = func(inst)
 
         if inplace:
             self._instances = new_data
             return self
-
         return self.replace(_instances=new_data)
 
     def __add__(self, other: MatrixSeries[I]) -> Self:
-        """Add two series element-wise at matching indices."""
         common = set(self._instances) & set(other._instances)
         new_instances = {idx: self[idx] + other[idx] for idx in common}
-
         return self.replace(_instances=new_instances)
 
-    # --- I/O Methods ---
 
     @staticmethod
     def _resolve_save_path(base_path: Path, overwrite: bool, suffix_number: bool) -> Path:
@@ -347,48 +273,8 @@ class MatrixSeries(Generic[I]):
             msg = f"No instances found in {folder_path}"
             raise ValueError(msg)
 
-        series = cls(instances_list=instances_list)
+        series = cls(instances=instances_list)
         new_instances = dict(zip(instance_indices, instances_list, strict=True))
         series._instances = new_instances
 
         return series
-
-
-if __name__ == "__main__":
-    import tempfile
-    from pathlib import Path
-
-    import scipy.sparse as sp
-
-    # Test 1: Create series from instances list
-    n_individuals = 10
-    n_features = 100
-    instances_list = []
-    for idx in range(5):
-        mat = sp.random(n_individuals, n_features, density=0.3, format="csr")
-        inst = MatrixInstance(
-            matrix=mat,
-            label="experiment_A",
-            tags={"type": "features", "index": idx},
-        )
-        instances_list.append(inst)
-
-    series = MatrixSeries(instances_list=instances_list)
-
-    # Test 2: Series slicing
-    sliced = series[:3]
-
-    # Test 5: Save/Load with custom path
-    with tempfile.TemporaryDirectory() as tmpdir:
-        test_path = Path(tmpdir) / "test_series"
-        series.save(test_path)
-        loaded = MatrixSeries.load(test_path)
-
-    # Test 6: Save/Load with default path
-    series.save()  # Uses default __data__/series/{description}
-    from .matrix import DATA_SERIES
-
-    default_path = DATA_SERIES / series.description
-
-    # Test 7: Load from default path
-    loaded_from_default = MatrixSeries.load(default_path)

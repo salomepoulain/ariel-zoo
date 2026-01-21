@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Self
 
+import inspect
 import numpy as np
 import scipy.sparse as sp
 from rich.console import Console
@@ -18,6 +19,7 @@ if TYPE_CHECKING:
     from .matrix_types import InstanceProtocol
 
 # Default save directories
+console = Console()
 CWD = Path.cwd()
 DATA = CWD / "__data__"
 DATA_INSTANCES = DATA / "instances"
@@ -56,18 +58,15 @@ class MatrixInstance:
         self._label = getattr(label, "name", str(label))
         self._tags = tags if tags is not None else {}
 
-    # --- Public Read-Only Properties (Getters) ---
-
-    def items(self) -> tuple[list[int], sp.spmatrix | np.ndarray]:
-        return [i for i in range(len(self._matrix))], self._matrix.copy()
+    # --- Protocol Properties ---
 
     @property
     def matrix(self) -> sp.spmatrix | np.ndarray:
-        """Read-only access to raw matrix data."""
+        """Access the underlying matrix data."""
         return self._matrix
 
     @property
-    def shape(self):
+    def shape(self) -> tuple[int, int]:
         """Shape of the underlying matrix."""
         return self._matrix.shape
 
@@ -78,7 +77,7 @@ class MatrixInstance:
 
     @property
     def tags(self) -> dict[str, Any]:
-        """Returns a COPY of tags to prevent mutation bugs. Tags are immutable after creation."""
+        """Returns a copy of tags to prevent mutation bugs."""
         return self._tags.copy()
 
     @property
@@ -88,22 +87,33 @@ class MatrixInstance:
         class_name = self.__class__.__name__.lower()
         return f"{class_name}_{self.shape[0]}x{self.shape[1]}_{storage}".lower()
 
-    # --- Indexing ---
+    # --- Indexing & Math ---
 
     def __getitem__(
         self,
         key: int | tuple[int | slice, ...] | slice,
     ) -> np.ndarray | sp.spmatrix | np.number:
-        """Delegate indexing to the underlying matrix.
+        """Delegate indexing to the underlying matrix."""
+        return self._matrix[key] # type: ignore
 
-        Supports both single indexing and tuple indexing:
-        - instance[i] -> returns row i
-        - instance[i, j] -> returns element at (i, j)
-        - instance[:, j] -> returns column j
-        - etc. (all standard numpy/scipy indexing)
+    def __add__(self, other: InstanceProtocol) -> Self:
+        """Add two matrix instances element-wise."""
+        if not isinstance(other, MatrixInstance):
+            return NotImplemented
+        new_matrix = self._matrix + other.matrix
+        return self.replace(matrix=new_matrix)
+
+    def replace(self, **changes: Any) -> Self:
         """
-        # Sparse matrices support __getitem__ but scipy type stubs are incomplete
-        return self._matrix[key]  # type: ignore[index]
+        Returns a new instance with updated fields.
+        Manually constructs new object to ensure validation runs.
+        """
+        new_args = {
+            "matrix": self._matrix,
+            "label": self._label,
+            "tags": self._tags.copy(),
+        } | changes
+        return self.__class__(**new_args)
 
     # --- Visualization ---
 
@@ -265,38 +275,6 @@ class MatrixInstance:
             return self._repr_sparse(shape_str)
         return self._repr_dense(shape_str)
 
-    # --- Abstraction & Modification ---
-
-    def replace(self, **changes: Any) -> Self:
-        """
-        Returns a new instance with updated fields.
-        Manually constructs new object to ensure validation runs.
-        """
-        new_args = {
-            "matrix": self._matrix,
-            "label": self._label,
-            "tags": self._tags.copy(),
-        } | changes
-        return self.__class__(**new_args)
-
-    # --- Math Transforms ---
-
-    def __add__(self, other: InstanceProtocol) -> Self:
-        """Add two matrix instances element-wise.
-
-        Args:
-            other: Another matrix instance (must have compatible shape)
-
-        Returns
-        -------
-            New instance with summed matrices
-        """
-        if not isinstance(other, MatrixInstance):
-            return NotImplemented
-
-        new_matrix = self._matrix + other._matrix
-        return self.replace(matrix=new_matrix)
-
     # --- I/O Methods ---
 
     @staticmethod
@@ -313,6 +291,7 @@ class MatrixInstance:
             path = base_path.with_name(fmt.format(name=base_path.name, i=counter))
 
         return path
+
 
     def save(
         self,
@@ -402,6 +381,8 @@ class MatrixInstance:
             label=label,
             tags=tags,
         )
+
+
 
 
 if __name__ == "__main__":

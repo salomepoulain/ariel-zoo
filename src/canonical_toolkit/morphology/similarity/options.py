@@ -52,6 +52,8 @@ class Space(Enum):
     Note: 'R' stands for Radial. 'A' stands for Axial
     """
 
+    # TODO: actually try to make it more efficient? idk
+    
     WHOLE = ""
     FRONT = "R_f__"
     BACK = "R_b__"
@@ -62,12 +64,14 @@ class Space(Enum):
 
     RADIAL = "R_#__"
     AXIAL = "A_#__"
-    # AGGREGATED = auto()
 
-    # @classmethod
-    # # TODO where used????
-    # def limb_spaces_only(cls) -> list[Space]:
-    #     return [cls.FRONT_LIMB, cls.LEFT_LIMB, cls.BACK_LIMB, cls.RIGHT_LIMB]
+    @classmethod
+    def limb_spaces_only(cls) -> list[Space]:
+        return [cls.FRONT, cls.LEFT, cls.BACK, cls.RIGHT, cls.TOP, cls.BOTTOM]
+    
+    @classmethod
+    def all_spaces(cls) -> list[Space]:
+        return cls.limb_spaces_only() + [cls.RADIAL, cls.AXIAL, cls.WHOLE]
 
 
 @dataclass
@@ -75,6 +79,7 @@ class UmapConfig:
     n_neighbors: int = 15
     n_components: int = 2
     metric: str = "cosine"  # "precomputed"
+    """use 'precomputed' if already cosine was applied"""
     random_state: int | None = 42
     init = ("random",)
     transform_seed: int | None = 42

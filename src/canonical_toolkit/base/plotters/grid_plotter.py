@@ -161,6 +161,7 @@ class GridPlotter:
         )
         self._margin_axs, self._padding_axs = [], []
         self._needs_refresh = True
+        self._image_pixel_dims = None  # (max_h, max_w) for pixel-perfect mode
 
     def __getitem__(self, key: Any) -> AxesProxy:
         self._refresh()
@@ -304,34 +305,6 @@ class GridPlotter:
         top = va * (max_h - scaled_h)
         return [left, left + scaled_w, top + scaled_h, top]
 
-    def _calculate_pixel_figure_size(self, max_h, max_w):
-        """Calculate figure size in inches based on pixel dimensions (like images.py)."""
-        dpi = self.config.dpi
-        m = self.config.margin
-        rs, cs = self.config.row_space, self.config.col_space
-
-        # Cell size in inches (1 pixel = 1 display pixel at this DPI)
-        cell_w_inches = max_w / dpi
-        cell_h_inches = max_h / dpi
-
-        # Data area in inches
-        data_w = self._n_data_cols * cell_w_inches
-        data_h = self._n_data_rows * cell_h_inches
-
-        # Padding between cells in inches (proportional to cell size)
-        pad_w = (self._n_data_cols - 1) * cs * cell_w_inches
-        pad_h = (self._n_data_rows - 1) * rs * cell_h_inches
-
-        # Margins in inches (proportional to cell size)
-        margin_w = (m[1] + m[3]) * cell_w_inches
-        margin_h = (m[0] + m[2]) * cell_h_inches
-
-        # Total figure size
-        fig_w = data_w + pad_w + margin_w
-        fig_h = data_h + pad_h + margin_h
-
-        return fig_w, fig_h
-
     # def add_data(self, data_list: list, shape: tuple[int, int] = None,
     #              titles: list = None, force_type: str = None, **kwargs):
     #     if shape:
@@ -370,7 +343,7 @@ class GridPlotter:
 
     #         elif isinstance(plot_data, (list, np.ndarray)) and len(plot_data) == 2 and np.ndim(plot_data[0]) == 1:
     #             ax.axis('on')
-    #             cell.artist = ax.plot(plot_data[0], plot_data[1], **kwargs)[0]
+    #             cell.artist = ax.show(plot_data[0], plot_data[1], **kwargs)[0]
     #             cell.raw_data = np.array(plot_data)
     #             cell.cell_type = CellType.LINE
 
@@ -464,7 +437,7 @@ class GridPlotter:
         if cfg.grid_on:
             group.grid(True, linestyle="--", alpha=0.5)
 
-    def plot(
+    def show(
         self,
         highlight_margin=False,
         highlight_padding=False,
@@ -510,18 +483,32 @@ class GridPlotter:
         plt.show()
 
     def _calculate_figure_size(self):
-        m, rs, cs = (
-            self.config.margin,
-            self.config.row_space,
-            self.config.col_space,
-        )
+        m = self.config.margin
+        rs, cs = self.config.row_space, self.config.col_space
+
+        # NOTE: Pixel-perfect mode commented out for testing.
+        # Uncomment to enable 1:1 pixel rendering (figure size varies with image resolution)
+        # if self._image_pixel_dims:
+        #     # Pixel-perfect: base cell size from image dimensions
+        #     max_h, max_w = self._image_pixel_dims
+        #     cell_h = max_h / self.config.dpi
+        #     cell_w = max_w / self.config.dpi
+        # else:
+
+        # Always use fig_height as base (cell_ratio derived from images in _scan_content_scales)
         h_units = m[0] + self._n_data_rows + (self._n_data_rows - 1) * rs + m[2]
-        w_units = self._cell_ratio * (
-            m[3] + self._n_data_cols + (self._n_data_cols - 1) * cs + m[1]
-        )
-        fh = self.config.fig_height
-        fw = fh * (self._fig_ratio or (w_units / h_units))
-        return fw, fh
+        cell_h = self.config.fig_height / h_units
+        cell_w = cell_h * self._cell_ratio
+
+        # Common spacing logic
+        data_w = self._n_data_cols * cell_w
+        data_h = self._n_data_rows * cell_h
+        pad_w = (self._n_data_cols - 1) * cs * cell_w
+        pad_h = (self._n_data_rows - 1) * rs * cell_h
+        margin_w = (m[1] + m[3]) * cell_w
+        margin_h = (m[0] + m[2]) * cell_h
+
+        return data_w + pad_w + margin_w, data_h + pad_h + margin_h
 
     def _calculate_ratios(self, axis):
         m, s, n = (
@@ -596,7 +583,7 @@ class GridPlotter:
                 and np.ndim(data[0]) == 1
             ):
                 ax.axis("on")
-                cell.artist = ax.plot(data[0], data[1], **kwargs)[0]
+                cell.artist = ax.show(data[0], data[1], **kwargs)[0]
                 cell.raw_data = np.array(data)
                 cell.cell_type = CellType.LINE
 
@@ -658,10 +645,10 @@ class GridPlotter:
         valid_data = [d for d in data_list if d is not None]
         max_h, max_w = self._scan_content_scales(valid_data)
 
-        # 3. PIXEL-PERFECT: Calculate and set figure size from actual pixels
+        # 3. Enable pixel-perfect mode (refresh happens lazily in add_subplot)
         if max_h > 0 and max_w > 0:
-            fig_w, fig_h = self._calculate_pixel_figure_size(max_h, max_w)
-            self._fig.set_size_inches(fig_w, fig_h)
+            self._image_pixel_dims = (max_h, max_w)
+            self._set_refresh_flag()
 
         # 4. Plotting Loop with pixel-perfect rendering
         for i, data in enumerate(data_list):
@@ -691,7 +678,7 @@ class GridPlotter:
                     plot_data,
                     extent=ext,
                     aspect="equal",
-                    interpolation="nearest",
+                    interpolation="antialiased",
                     **kwargs,
                 )
                 cell.raw_data = plot_data

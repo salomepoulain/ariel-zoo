@@ -97,7 +97,8 @@ class Config(BaseModel):
     TOURNAMENT: bool = True
     K_TOURNAMENT: int = 2
     # ? ------------------------
-    SIM_SPACE: ctk.Space = ctk.Space.WHOLE
+    STORE_SPACES: list[ctk.Space] = ctk.Space.all_spaces()
+    NOVELTY_SPACES: list[ctk.Space] | None = [ctk.Space.WHOLE]
     MAX_HOP_RADIUS: int | None = None
     # ? ------------------------
     K_NOVELTY: int = 1
@@ -108,7 +109,7 @@ class Config(BaseModel):
     NDE: NeuralDevelopmentalEncoding = Field(default=None, validate_default=False) # type: ignore[assignment]
     REVDE: RevDE = Field(default=RevDE(-0.5), validate_default=False)
     EA_SETTINGS: EASettings = Field(default=EASettings, validate_default=False)  # type: ignore[assignment]
-    SIM_CONFIG: ctk.SimilaritySpaceConfig = Field(default=ctk.SimilaritySpaceConfig(), validate_default=False)
+    SIM_CONFIGS: list[ctk.SimilaritySpaceConfig] = Field(default=[], validate_default=False)
     OUTPUT_FOLDER: Path = Field(default=Path("__data__"), validate_default=False)
 
     @model_validator(mode="after")
@@ -118,12 +119,16 @@ class Config(BaseModel):
             object.__setattr__(self, "STORE_NOVELTY", self.FITNESS_NOVELTY)
         if self.STORE_SPEED is None:
             object.__setattr__(self, "STORE_SPEED", self.FITNESS_SPEED)
+        if self.NOVELTY_SPACES is None:
+            object.__setattr__(self, "NOVELTY_SPACES", self.STORE_SPACES)
 
         # Validate: can't use for fitness without storing
         if self.FITNESS_NOVELTY and not self.STORE_NOVELTY:
             raise ValueError("FITNESS_NOVELTY requires STORE_NOVELTY to be True")
         if self.FITNESS_SPEED and not self.STORE_SPEED:
             raise ValueError("FITNESS_SPEED requires STORE_SPEED to be True")
+        if not set(self.NOVELTY_SPACES).issubset(set(self.STORE_SPACES)):
+            raise ValueError("NOVELTY_SPACES must be a subset of STORE_SPACES")
         return self
 
     def _initialize(self, folder: Path | None = None, output_dir: Path | None = None) -> None:
@@ -161,10 +166,10 @@ class Config(BaseModel):
         object.__setattr__(self, "OUTPUT_FOLDER", folder)
         object.__setattr__(self, "NDE", NeuralDevelopmentalEncoding(self.NUM_MODULES, self.GENOTYPE_SIZE))
         object.__setattr__(self, "REVDE", RevDE(self.REV_SCALING_FACTOR))
-        object.__setattr__(self, "SIM_CONFIG", ctk.SimilaritySpaceConfig(
-            space=self.SIM_SPACE,
-            max_hop_radius=self.MAX_HOP_RADIUS
-        ))
+        object.__setattr__(self, "SIM_CONFIGS", [
+            ctk.SimilaritySpaceConfig(space=space, max_hop_radius=self.MAX_HOP_RADIUS)
+            for space in self.STORE_SPACES
+        ])
 
         ea_settings = EASettings(
             output_folder=folder,
@@ -190,7 +195,7 @@ class Config(BaseModel):
     def save(self, path: Path) -> None:
         """Save config to JSON file (excludes non-serializable fields)."""
         path.write_text(
-            self.model_dump_json(indent=2, exclude={"RNG", "EA_SETTINGS", "REVDE", "NDE", "SIM_CONFIG", "OUTPUT_FOLDER"})
+            self.model_dump_json(indent=2, exclude={"RNG", "EA_SETTINGS", "REVDE", "NDE", "SIM_CONFIGS", "OUTPUT_FOLDER"})
         )
 
     def __rich__(self) -> Table:
@@ -222,7 +227,7 @@ class Config(BaseModel):
         table.add_column("Type", style="dim")
 
         # Exclude non-serializable derived fields
-        exclude = {"RNG", "EA_SETTINGS", "REVDE", "NDE", "SIM_CONFIG"}
+        exclude = {"RNG", "EA_SETTINGS", "REVDE", "NDE", "SIM_CONFIGS"}
 
         for field_name, field_info in self.model_fields.items():
             if field_name in exclude:

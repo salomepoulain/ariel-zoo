@@ -17,6 +17,12 @@ from bokeh.models import (
 from bokeh.palettes import Viridis256
 from bokeh.plotting import figure, show
 from pydantic import BaseModel, ConfigDict
+from bokeh.palettes import linear_palette, Blues256
+
+import logging
+
+# Silence specific Bokeh validation warnings (like MISSING_RENDERERS)
+logging.getLogger("bokeh.core.validation.check").setLevel(logging.ERROR)
 
 __all__ = [
     "BokehConfig",
@@ -96,6 +102,14 @@ class BokehGridPlotter:
             otypes=[str],
         )
         self._init_storage()
+
+    def transpose(self) -> BokehGridPlotter:
+        """Transpose the subplot grid (rows become columns)."""
+        # Swap dimensions
+        self.n_rows, self.n_cols = self.n_cols, self.n_rows
+        # Transpose the numpy array holding the cell data
+        self._cells = self._cells.T
+        return self
 
     def _get_html_img_pair(self, pair) -> str:
         """Convert a pair (id1, id2) to two side-by-side img tags."""
@@ -240,9 +254,9 @@ class BokehGridPlotter:
         if is_heatmap:
             h, w = cell.raw_heatmap.shape
             mapper = LinearColorMapper(
-                palette=Viridis256,
-                low=float(cell.raw_heatmap.min()),
-                high=float(cell.raw_heatmap.max()),
+                palette=Blues256, 
+                low=float(cell.raw_heatmap.max()),
+                high=float(cell.raw_heatmap.min()),
             )
 
             # Flatten heatmap to rect glyph data (Bokeh standard for interactive heatmaps)
@@ -256,12 +270,20 @@ class BokehGridPlotter:
 
             # Add IDs and images if available
             if cell.heatmap_ids is not None:
-                ds_data["ids"] = [str(p) for p in cell.heatmap_ids.flatten()]
+                ds_data["ids"] = [f"({int(p[0])}, {int(p[1])})" for p in cell.heatmap_ids.flatten()]
                 ds_data["imgs"] = cell.heatmap_images.flatten()
-                # Store id1 and id2 separately for JS selection linking
+                
                 flat_ids = cell.heatmap_ids.flatten()
+                # Cast to standard int here as well
                 ds_data["id1"] = [int(p[0]) for p in flat_ids]
                 ds_data["id2"] = [int(p[1]) for p in flat_ids]
+                
+                # ds_data["ids"] = [str(p) for p in cell.heatmap_ids.flatten()]
+                # ds_data["imgs"] = cell.heatmap_images.flatten()
+                # # Store id1 and id2 separately for JS selection linking
+                # flat_ids = cell.heatmap_ids.flatten()
+                # ds_data["id1"] = [int(p[0]) for p in flat_ids]
+                # ds_data["id2"] = [int(p[1]) for p in flat_ids]
 
             source = ColumnDataSource(data=ds_data)
 
