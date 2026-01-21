@@ -47,6 +47,27 @@ class MatrixFrame(Generic[S]):
         else:
             self._series = {}
             self._ordered_labels = []
+        
+        self.align()
+
+    def align(self) -> Self:
+        """
+        Fills all gaps in all series so that every series shares 
+        the exact same set of indices.
+        """
+        # 1. Find the union of all indices
+        all_indices = set()
+        for s in self.series:
+            all_indices.update(s.indices)
+        sorted_indices = sorted(list(all_indices))
+
+        # 2. Reindex every series
+        new_series = []
+        for s in self.series:
+            # Assume each series has at least one matrix to use as a shape template
+            new_series.append(s.reindex(sorted_indices))
+
+        return self.__class__(series=new_series)
 
     # --- Protocol Properties ---
 
@@ -67,76 +88,141 @@ class MatrixFrame(Generic[S]):
 
     # --- Indexing ---
 
-    @overload
-    def __getitem__(self, key: tuple[slice, Any]) -> Any: ...
 
     @overload
-    def __getitem__(self, key: list[str]) -> Self: ...
+    def __getitem__(self, key: int) -> Self: ...
 
     @overload
     def __getitem__(self, key: slice) -> Self: ...
 
     @overload
+    def __getitem__(self, key: list[str]) -> Self: ...
+
+    @overload
     def __getitem__(self, key: str) -> S: ...
 
-    def __getitem__(self, key: Any) -> Any:
+    @overload
+    def __getitem__(self, key: tuple[int | slice, int | slice | str | list[str]]) -> S | Self: ...
+
+    
+    def __getitem__(self, key: Any) -> S | Self:
         """
-        Retrieve data via 2D slicing, 1D slicing, or label lookup.
+        Comprehensive indexing for MatrixFrame.
+        
+        Rules:
+        1. Single int (radius): Returns Frame with all series at that radius index
+        2. Single slice (radius): Returns Frame with all series sliced by radius indices
+        3. Single str: Returns the Series object for that label
+        4. List of str: Returns Frame with selected series
+        5. Tuple (2D): (radius_selector, series_selector)
         """
-        # 1. 2D Tuple Indexing: frame[idx_slice, series_selector]
+        
+        # --- 1. Handle 2D Tuple Indexing: frame[radius, series] ---
         if isinstance(key, tuple) and len(key) == 2:
-            idx_slice, series_key = key
-            if not isinstance(idx_slice, slice):
-                raise TypeError(
-                    f"First index must be a slice, got {type(idx_slice).__name__}"
-                )
-
-            # Positional slice on series dimension
-            if isinstance(series_key, slice):
-                selected_labels = self._ordered_labels[series_key]
-                new_series = [
-                    self._series[lbl][idx_slice] for lbl in selected_labels
-                ]
-                return self.__class__(series=new_series)
-
-            # List of labels
-            if isinstance(series_key, list):
-                new_series = [
-                    self._series[str(k)][idx_slice]
-                    for k in series_key
-                    if str(k) in self._series
-                ]
-                return self.__class__(series=new_series)
-
-            # Single label
-            label = getattr(series_key, "name", str(series_key))
-            return self._series[label][idx_slice]
-
-        # 2. 1D Slicing (Rows/Indices)
+            rad_selector, series_selector = key
+            
+            # Handle series selector first to simplify
+            # Determine which series we're working with
+            if isinstance(series_selector, int):
+                # Single series by position
+                series = self.series[series_selector]
+            elif isinstance(series_selector, str):
+                # Single series by label
+                series = self._series[series_selector]
+            elif isinstance(series_selector, slice):
+                # Multiple series by position slice
+                series_list = self.series[series_selector]
+            elif isinstance(series_selector, list):
+                # Multiple series by label list
+                series_list = [self._series[lbl] for lbl in series_selector if lbl in self._series]
+            else:
+                raise TypeError(f"Invalid series selector: {type(series_selector)}")
+            
+            # Now handle radius selector on the selected series
+            if isinstance(rad_selector, int):
+                # Single radius - return a Frame with single matrices from each selected series
+                if 'series_list' in locals():
+                    # Multiple series were selected
+                    new_series = []
+                    for s in series_list:
+                        # Get the matrix at this radius key (not index!)
+                        try:
+                            matrix_instance = s[rad_selector]  # Uses Series.__getitem__
+                            # Create a new series with just this matrix
+                            new_series.append(
+                                self._series_class(
+                                    instances=[matrix_instance],
+                                    label=s.label
+                                )
+                            )
+                        except KeyError:
+                            # This series doesn't have this radius
+                            continue
+                    return self.__class__(series=new_series)
+                else:
+                    # Single series was selected
+                    # If rad_selector is int, Series.__getitem__ returns a single MatrixInstance
+                    # But we need to return it directly (not wrapped in a Series)
+                    return series[rad_selector]
+            
+            elif isinstance(rad_selector, slice):
+                # Radius slice - return sliced series
+                if 'series_list' in locals():
+                    # Multiple series were selected
+                    new_series = [s[rad_selector] for s in series_list]
+                    return self.__class__(series=new_series)
+                else:
+                    # Single series was selected
+                    return series[rad_selector]
+            
+            else:
+                raise TypeError(f"Radius selector must be int or slice, got {type(rad_selector)}")
+        
+        # --- 2. Handle Single Integer: frame[3] -> Frame with all series at radius 3 ---
+        if isinstance(key, int):
+            # Return a new Frame with single matrices from each series at this radius
+            new_series = []
+            for series in self.series:
+                try:
+                    matrix_instance = series[key]  # Uses Series.__getitem__
+                    # Create a new series with just this matrix
+                    new_series.append(
+                        self._series_class(
+                            instances=[matrix_instance],
+                            label=series.label
+                        )
+                    )
+                except KeyError:
+                    # This series doesn't have this radius
+                    continue
+            
+            if not new_series:
+                raise KeyError(f"No series have radius/index {key}")
+            
+            return self.__class__(series=new_series)
+        
+        # --- 3. Handle Single Slice: frame[:3] -> Frame with sliced radii ---
         if isinstance(key, slice):
-            new_series = [s[key] for s in self.series]
+            new_series = [series[key] for series in self.series]
             return self.__class__(series=new_series)
-
-        # 3. List Selection (Columns/Labels)
+        
+        # --- 4. Handle List of Labels: frame[["A", "B"]] -> Frame with selected series ---
         if isinstance(key, list):
-            new_series = [
-                self._series[str(k)] for k in key if str(k) in self._series
-            ]
+            new_series = []
+            for k in key:
+                label = getattr(k, "name", str(k))
+                if label in self._series:
+                    new_series.append(self._series[label])
             return self.__class__(series=new_series)
-
-        # 4. Single Label Lookup
+        
+        # --- 5. Handle Single Label: frame["FRONT"] -> Series ---
         label = getattr(key, "name", str(key))
         if label in self._series:
             return self._series[label]
-
+        
         raise KeyError(f"Key not found: {key}")
-
-    def __setitem__(self, key: Hashable, val: S) -> None:
-        label = getattr(key, "name", str(key))
-        if label not in self._series:
-            self._ordered_labels.append(label)
-        self._series[label] = val
-
+   
+   
     # --- Iteration & Dict-like ---
 
     def __iter__(self) -> Iterator[S]:
@@ -311,11 +397,17 @@ class MatrixFrame(Generic[S]):
             self._series[label].save(folder_path, series_folders[label], overwrite=True)
 
     @classmethod
-    def load(cls, folder_path: Path | str) -> Self:
-        """Load frame from folder using hierarchical structure.
+    def load(cls, folder_path: Path | str,
+            subset_indices: list[int] | None = None,
+            subset_matrices: list[int] | slice | None = None,
+            subset_series: list[str] | list[int] | None = None) -> Self:
+        """Load frame from folder using hierarchical structure with optional subsetting.
 
         Args:
             folder_path: Directory to load from
+            subset_indices: Optional list of matrix row/column indices to keep
+            subset_matrices: Optional list/slice of matrix indices (radii) to keep
+            subset_series: Optional list of series labels or positions to keep
 
         Returns
         -------
@@ -338,6 +430,17 @@ class MatrixFrame(Generic[S]):
         series_labels = metadata.get("series_labels", [])
         series_folders = metadata.get("series_folders", {})
         
+        # Filter which series to load
+        if subset_series is not None:
+            if subset_series and isinstance(subset_series[0], str):
+                # Filter by label names
+                series_labels = [label for label in series_labels 
+                            if label in subset_series]
+            else:
+                # Filter by position indices
+                series_labels = [series_labels[i] for i in subset_series 
+                            if i < len(series_labels)]
+        
         # Load each series from its subfolder using the folder mapping
         series_list = []
         # Use the class's specified series class (polymorphic!)
@@ -349,11 +452,18 @@ class MatrixFrame(Generic[S]):
 
             if series_folder.exists() and series_folder.is_dir():
                 try:
-                    series = series_class.load(series_folder)
+                    series = series_class.load(
+                        series_folder,
+                        subset_indices=subset_indices,
+                        subset_matrices=subset_matrices
+                    )
                     series_list.append(series)
-                except Exception:
+                except Exception as e:
+                    # Optional: log the error but continue
+                    import warnings
+                    warnings.warn(f"Failed to load series '{label}': {e}")
                     # Skip series that fail to load
-                    pass
+                    continue
         
         if not series_list:
             msg = f"No series found in {folder_path}"

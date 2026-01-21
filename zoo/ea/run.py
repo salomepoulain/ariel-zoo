@@ -30,7 +30,7 @@ def main():
     
     # print(config.STORE_IMG)
     ops = [
-        EAStep("mutation", revde),
+        EAStep("children", revde),
         EAStep("store_string", store_string),
         EAStep("store_img", store_img) if config.STORE_IMG else None,
         EAStep("save_features", save_features),

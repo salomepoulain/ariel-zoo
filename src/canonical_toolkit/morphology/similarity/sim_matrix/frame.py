@@ -27,6 +27,28 @@ class SimilarityFrame(MatrixFrame[SimilaritySeries]):
     """
 
     _series_class = SimilaritySeries
+    
+    def align(self) -> Self:
+        """
+        Ensures all series in the frame have the exact same radii.
+        Fills gaps with zero matrices.
+        """
+        if not self.series:
+            return self
+
+        # 1. Find the union of all radii across all series
+        all_radii = set()
+        for s in self.series:
+            all_radii.update(s.radii)
+        sorted_radii = sorted(list(all_radii))
+
+        # 2. Reindex every series (calls the fixed SimilaritySeries.reindex)
+        new_series = [s.reindex(sorted_radii) for s in self.series]
+
+        # 3. Update internal state
+        self._series = {s.label: s for s in new_series}
+        self._ordered_labels = [s.label for s in new_series]
+        return self
 
     def to_cumulative(self, *, inplace: bool = True) -> SimilarityFrame:
         """Convert all series to cumulative sum across radii."""
@@ -88,6 +110,21 @@ class SimilarityFrame(MatrixFrame[SimilaritySeries]):
                 new_series.append(combined)
 
         return SimilarityFrame(series=new_series)
+
+    def get_raw(self):
+        """Get raw matrices in frame layout: series × radii."""
+        return [
+            [inst.matrix for inst in series.instances]
+            for series in self.series
+        ]
+    
+    def get_row_raw(self, radius: int):
+        """Get raw matrices for all series at specific radius."""
+        return [series[radius].matrix for series in self.series]
+    
+    def get_col_raw(self, series_label: str):
+        """Get all raw matrices for specific series."""
+        return [inst.matrix for inst in self[series_label]]
 
 
 # --- Test Sync ---

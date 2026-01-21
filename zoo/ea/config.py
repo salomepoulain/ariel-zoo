@@ -104,8 +104,8 @@ class Config(BaseModel):
     K_TOURNAMENT: int = 2
     # ? ------------------------
     SAVE_SPACES: list[ctk.Space] | None = ctk.Space.all_spaces()
-    NOVELTY_SPACES: list[ctk.Space] | None = [ctk.Space.WHOLE]
-    MAX_HOP_RADIUS: int | None = None
+    NOVELTY_SPACES: list[ctk.Space] | None = [ctk.Space.WHOLE, ctk.Space.AXIAL]
+    MAX_HOP_RADIUS: int | None = 
     # ? ------------------------
     K_NOVELTY: int = 1
     ARCHIVE_CHANCE: float = 0.1

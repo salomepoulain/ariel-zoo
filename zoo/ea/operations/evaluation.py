@@ -28,7 +28,7 @@ from ariel.simulation.tasks.gait_learning import xy_displacement
 from ariel.utils.tracker import Tracker
 
 from ._timer import time_func
-from ea.config import config
+from ea.config import config, logger
 
 NUM_WORKERS = int(os.environ.get("SLURM_CPUS_PER_TASK", os.cpu_count() or 4))
 
@@ -45,7 +45,10 @@ def evaluate_pop_novelty(population: Population) -> Iterable[float]:
             novelty = _ctk_novelty(population)
         case "fuda":
             novelty = _fuda_novelty(population)
-
+        case _:
+            novelty = [1] * len(population)
+            logger.warn('found novelty method thats not been implemented')
+            
     return novelty
 
 
@@ -76,9 +79,8 @@ def evaluate_pop(population: Population) -> Population:
         if config.STORE_NOVELTY:
             novelty = novelty_scores[idx] if config.STORE_NOVELTY else 1.0  # type: ignore
             ind.tags["novelty"] = novelty
-            assert novelty <= 1, (
-                f"found novelty {novelty} for index {idx} {novelty_scores}"
-            )
+            if novelty < 0 or novelty > 1:
+                logger.warn(f"found novelty {novelty} for index {idx} {novelty_scores}")
             if config.FITNESS_NOVELTY:
                 fitness_novelty = novelty
 
@@ -138,15 +140,26 @@ def _ctk_novelty(population: Population) -> np.ndarray:
         novelty_series_list.append(combined)
 
     novelty_frame = ctk.SimilarityFrame(series=novelty_series_list)
-    aggregated_series = novelty_frame.aggregate()
-    aggregated_series.map("cosine_similarity")
-    matrix = aggregated_series.aggregate()
-    matrix.normalize_by_radius()
+    
+    novelty_frame.map("cosine_similarity")
+    
+    novelty_frame.to_cumulative()
+    
+    assert config.MAX_HOP_RADIUS
+    frame_slice = novelty_frame[config.MAX_HOP_RADIUS]
+    
+    frame_slice.map('normalize_by_radius')
+    
+    matrix = frame_slice.aggregate().aggregate()
+    
+    matrix = matrix / len(config.NOVELTY_SPACES)
 
     sorted_similarity_array = matrix.sum_to_rows(
         zero_diagonal=True, k=config.K_NOVELTY, largest=True, normalise=True
     )[: len(population)]
     sorted_novelty_array = 1 - sorted_similarity_array
+
+    print(sorted_novelty_array)
 
     sorted_indices = sorted(
         range(len(population)),

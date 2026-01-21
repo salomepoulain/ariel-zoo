@@ -28,9 +28,34 @@ class SimilaritySeries(MatrixSeries[SimilarityMatrix]):
     """
 
     _instance_class = SimilarityMatrix
+    
+    def reindex(self, target_indices: Iterable[int], fill_shape: tuple[int, int] | None = None) -> Self:
+        """
+        Overridden reindex to handle SimilarityMatrix metadata requirements.
+        Passes 'space' and 'radius' to the zeros() factory.
+        """
+        # 1. Use the first instance as a template for shape and domain
+        template = self.instances[0]
+        fill_shape = fill_shape or template.shape
+        is_sparse = sp.issparse(template.matrix)
+        
+        new_instances = self._instances.copy()
 
-    # --- Similarity-specific properties ---
-
+        for idx in target_indices:
+            if idx not in new_instances:
+                # We explicitly pass 'space' and 'radius' (idx) here
+                # This matches the signature SimilarityMatrix.zeros() expects
+                new_instances[idx] = self._instance_class.zeros(
+                    shape=fill_shape,
+                    space=self.space,   # From the series property
+                    radius=idx,         # The current gap index becomes the radius
+                    domain=template.domain,
+                    sparse=is_sparse
+                )
+                
+        # Return a new series of the same type (SimilaritySeries)
+        return self.replace(_instances=new_instances)
+    
     @property
     def space(self) -> str:
         """Return the morphological space (guaranteed to be the same for all)."""

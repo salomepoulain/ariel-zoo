@@ -50,6 +50,28 @@ class MatrixSeries(Generic[I]):
         else:
             self._label = "unlabeled_series"
 
+    def reindex(self, target_indices: Iterable[int], fill_shape: tuple[int, int] | None = None) -> Self:
+        """
+        Ensure the series contains all target_indices. 
+        Missing indices are filled with zero matrices.
+        """
+        if fill_shape is None:
+            # Use the shape of the first existing matrix as a template
+            fill_shape = self.instances[0].shape
+
+        new_instances = self._instances.copy()
+        is_sparse = sp.issparse(self.instances[0].matrix)
+
+        for idx in target_indices:
+            if idx not in new_instances:
+                new_instances[idx] = self._instance_class.zeros(
+                    shape=fill_shape,
+                    label=self.label,
+                    sparse=is_sparse
+                )
+        
+        return self.replace(_instances=new_instances)
+
     @property
     def label(self) -> str:
         return self._label
@@ -75,13 +97,32 @@ class MatrixSeries(Generic[I]):
     @overload
     def __getitem__(self, key: int) -> I: ...
 
+
     def __getitem__(self, key: int | slice) -> I | Self:
         if isinstance(key, slice):
-            sliced_keys = sorted(self._instances.keys())[key]
-            subset = [self._instances[k] for k in sliced_keys]
-            # FIXED: Argument name changed from instances_list to instances
-            return self.replace(instances=subset)
-
+            all_keys = sorted(self._instances.keys())
+            sliced_keys = all_keys[key]
+            
+            if not sliced_keys:
+                if not self._instances:
+                    raise ValueError("Cannot slice empty series")
+                
+                # Get any instance for template
+                first_key = next(iter(self._instances.keys()))
+                dummy_instance = self._instances[first_key]
+                
+                # Create series with dummy instance
+                new_series = self.__class__(instances=[dummy_instance], label=self.label)
+                new_series._instances = {}
+                return new_series
+            new_series = self.__class__(
+                instances=[self._instances[sliced_keys[0]]], 
+                label=self.label
+            )
+            new_series._instances = {k: self._instances[k] for k in sliced_keys}
+            return new_series
+        
+        # Integer case
         if key not in self._instances:
             raise KeyError(
                 f"Index/Radius {key} not found in series '{self.label}'"
@@ -230,11 +271,15 @@ class MatrixSeries(Generic[I]):
             self._instances[idx].save(file_path, overwrite=True)
 
     @classmethod
-    def load(cls, folder_path: Path | str) -> Self:
-        """Load series from disk.
+    def load(cls, folder_path: Path | str, 
+            subset_indices: list[int] | None = None,
+            subset_matrices: list[int] | slice | None = None) -> Self:
+        """Load series from disk with optional subsetting.
 
         Args:
             folder_path: Directory to load from
+            subset_indices: Optional list of matrix row/column indices to keep
+            subset_matrices: Optional list/slice of matrix indices (radii) to keep
 
         Returns
         -------
@@ -260,13 +305,24 @@ class MatrixSeries(Generic[I]):
             msg = f"No instance_files mapping found in metadata: {meta_path}"
             raise ValueError(msg)
 
+        # Filter which matrices to load
+        if subset_matrices is not None:
+            if isinstance(subset_matrices, slice):
+                # Apply slice to the list of indices
+                instance_indices = instance_indices[subset_matrices]
+            else:
+                # Keep only specified indices
+                instance_indices = [idx for idx in instance_indices 
+                                if idx in subset_matrices]
+
         instances_list = []
         instance_class = cls._instance_class or MatrixInstance
         for idx in instance_indices:
             filename = instance_files[str(idx)]
             file_path = folder_path / filename
 
-            inst = instance_class.load(file_path)
+            # Pass subset_indices to instance load
+            inst = instance_class.load(file_path, subset_indices=subset_indices)
             instances_list.append(inst)
 
         if not instances_list:

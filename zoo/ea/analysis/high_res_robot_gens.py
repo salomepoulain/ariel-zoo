@@ -94,7 +94,7 @@ def high_res_robot_gens(gen_df, config, top_n=3, n_samples=5, by='fitness') -> c
             titles_2d[j].append(f"Gen {gen} | ID {row.id} | {by}={metric_val:.3f}")                                                         
                                                                                                                                             
     plotter = ctk.GridPlotter()                                                                                                             
-    plotter.config.title_size = 5                                                                                                           
+    plotter.config.title_size = 10                                                                                                           
     plotter.config.margin = (0.3, 0, 0, 0)                                                                                                  
     plotter.config.col_space = 0.23                                                                                                         
     plotter.config.dpi = 300                                                                                                                

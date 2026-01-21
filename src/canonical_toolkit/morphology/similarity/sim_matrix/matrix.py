@@ -57,6 +57,46 @@ class SimilarityMatrix(MatrixInstance):
             tags=final_tags,
         )
 
+    @classmethod
+    def zeros(
+        cls,
+        shape: tuple[int, int],
+        space: Space | str,
+        radius: int,
+        domain: MatrixDomain | str = MatrixDomain.FEATURES,
+        sparse: bool = True,
+        **tags: Any,
+    ) -> SimilarityMatrix:
+        """
+        Create a zero-filled SimilarityMatrix to fill gaps in a Frame.
+
+        Args:
+            shape: (rows, cols)
+            space: The morphological space label
+            radius: The neighborhood radius
+            domain: The data domain (default: FEATURES)
+            sparse: Whether to use a sparse CSR matrix or dense numpy array
+            **tags: Additional metadata
+        """
+        # 1. Create the underlying zero data
+        if sparse:
+            matrix = sp.csr_matrix(shape)
+        else:
+            matrix = np.zeros(shape)
+
+        # 2. Ensure we mark it as a gap in the tags
+        final_tags = tags.copy()
+        final_tags["is_gap"] = True
+
+        # 3. Return a fully typed SimilarityMatrix
+        return cls(
+            matrix=matrix,
+            space=space,
+            radius=radius,
+            domain=domain,
+            tags=final_tags,
+        )
+
     # --- Similarity Specific Properties ---
 
     @property
@@ -96,14 +136,16 @@ class SimilarityMatrix(MatrixInstance):
         return SimilarityMatrix(**filtered_args)
     
     @classmethod
-    def load(cls, file_path: Path | str):
-        """Load SimilarityMatrix from disk.
+    def load(cls, file_path: Path | str, subset_indices: list[int] | None = None):
+        """Load SimilarityMatrix from disk, optionally subsetting.
 
         Overrides base class load() to translate generic format (label, tags)
         to similarity-specific format (space, radius, domain).
 
         Args:
             file_path: Full path without extension
+            subset_indices: Optional list of row/column indices to keep.
+                        If provided, returns matrix[subset_indices, subset_indices].
 
         Returns
         -------
@@ -137,6 +179,16 @@ class SimilarityMatrix(MatrixInstance):
             matrix = sp.load_npz(matrix_path)
         else:
             matrix = np.load(matrix_path)
+
+        # Apply subset if requested
+        if subset_indices is not None:
+            # Use numpy's ix_ for proper row/column subsetting
+            matrix = matrix[np.ix_(subset_indices, subset_indices)]
+            
+            # Update shape in tags/metadata
+            tags = tags.copy()  # Don't modify original
+            tags['original_shape'] = matrix.shape  # Store original for reference
+            # Optional: update radius or other metadata if needed
 
         # Call __init__ with similarity-specific signature
         return cls(
