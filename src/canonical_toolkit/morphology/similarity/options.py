@@ -67,11 +67,11 @@ class Space(Enum):
 
     @classmethod
     def limb_spaces_only(cls) -> list[Space]:
-        return [cls.FRONT, cls.LEFT, cls.BACK, cls.RIGHT, cls.TOP, cls.BOTTOM]
+        return [cls.LEFT, cls.FRONT, cls.RIGHT, cls.BACK, cls.TOP, cls.BOTTOM]
     
     @classmethod
     def all_spaces(cls) -> list[Space]:
-        return cls.limb_spaces_only() + [cls.RADIAL, cls.AXIAL, cls.WHOLE]
+        return [cls.WHOLE, cls.RADIAL, cls.AXIAL] + cls.limb_spaces_only()
 
 
 @dataclass

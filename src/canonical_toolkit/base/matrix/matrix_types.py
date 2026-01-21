@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Any, Protocol, TypeVar, Self, overload, runtim
 from collections.abc import Iterable, Iterator
 
 if TYPE_CHECKING:
-    from collections.abc import Hashable
     import numpy as np
     import scipy.sparse as sp
 
@@ -124,7 +123,7 @@ class FrameProtocol(Protocol[S]):
         """Ordered list of strings representing the series labels (e.g., ['FRONT', 'BACK'])."""
         ...
 
-    def items(self) -> Iterable[tuple[Hashable, S]]:
+    def items(self) -> Iterable[tuple[str, S]]:
         """Iterator yielding (label, SeriesObject) pairs."""
         ...
 
@@ -136,13 +135,13 @@ class FrameProtocol(Protocol[S]):
     def __getitem__(self, key: tuple[slice, Any]) -> Any: ...
 
     @overload
-    def __getitem__(self, key: list[Hashable]) -> Self: ...
+    def __getitem__(self, key: list[str]) -> Self: ...
 
     @overload
     def __getitem__(self, key: slice) -> Self: ... # type: ignore
 
     @overload
-    def __getitem__(self, key: Hashable) -> S: ...
+    def __getitem__(self, key: str) -> S: ...
 
     def __getitem__(self, key: Any) -> Any:
         """
@@ -150,11 +149,11 @@ class FrameProtocol(Protocol[S]):
 
         - 2D Tuple: Returns a sub-grid or specific values.
         - List/Slice: Returns a sub-frame (Self).
-        - Hashable: Returns a specific series (S).
+        - str: Returns a specific series (S).
         """
         ...
 
-    def __setitem__(self, key: Hashable, series: S) -> None:
+    def __setitem__(self, key: str, series: S) -> None:
         """Insert or update a series associated with a specific label."""
         ...
 
