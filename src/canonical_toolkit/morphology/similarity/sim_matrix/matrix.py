@@ -250,7 +250,7 @@ class SimilarityMatrix(MatrixInstance):
             return self
         return self.replace(matrix=normalized_values)
 
-    def cosine_similarity(self) -> SimilarityMatrix:
+    def cosine_similarity(self, inplace:bool=True) -> SimilarityMatrix:
         """Compute cosine similarity matrix."""
         if self.domain == MatrixDomain.SIMILARITY.name:
             raise ValueError("Matrix is already a similarity matrix")
@@ -263,7 +263,14 @@ class SimilarityMatrix(MatrixInstance):
         else:
             sim_matrix = cosine_similarity(self._matrix)
 
-        return self.replace(matrix=sim_matrix, domain=MatrixDomain.SIMILARITY)
+        new_version = self.replace(matrix=sim_matrix, domain=MatrixDomain.SIMILARITY)
+
+        if inplace:
+            self.__dict__.update(new_version.__dict__)
+            return self
+
+        return new_version
+
 
     def sum_to_rows(
         self,

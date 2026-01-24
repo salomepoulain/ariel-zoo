@@ -4,7 +4,7 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any, cast
-
+import re
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.axes._axes import Axes
@@ -606,6 +606,7 @@ class GridPlotter:
         data_folder: str | None = None,
         shape: tuple[int, int] | None = None,
         titles: list | None = None,
+        auto_title: bool = False,
         **kwargs,
     ):
         """Pixel-perfect image rendering. Supports data_folder path and None entries."""
@@ -618,29 +619,36 @@ class GridPlotter:
             "Provide either data_list or data_folder."
         )
 
+        def natural_sort_key(s):
+            return [int(text) if text.isdigit() else text.lower() 
+                    for text in re.split('([0-9]+)', str(s))]
         # 1. Handle folder loading
         if data_folder:
             from pathlib import Path
-
             from PIL import Image
 
             path = Path(data_folder)
             extensions = (".png", ".jpg", ".jpeg", ".bmp", ".gif")
-            img_files = sorted([
-                f for f in path.iterdir() if f.suffix.lower() in extensions
-            ])
+            img_files = sorted(
+                [f for f in path.iterdir() if f.suffix.lower() in extensions],
+                key=natural_sort_key
+            )
 
             data_list = []
-            titles = []
+            # Only populate folder_titles if auto_title is True
+            folder_titles = [] if auto_title else None 
+            
             for f in img_files:
                 try:
                     img = Image.open(f)
                     img.load()
                     data_list.append(img)
-                    titles.append(f.stem)
+                    if auto_title:
+                        folder_titles.append(f.stem)
                 except Exception:
                     pass
-
+            
+            titles = folder_titles
         # 2. Global Scale Scan (Filter out None for scanning)
         valid_data = [d for d in data_list if d is not None]
         max_h, max_w = self._scan_content_scales(valid_data)
@@ -770,6 +778,8 @@ class GridPlotter:
             titles=flat_titles,
             **kwargs,
         )
+
+
 
     def add_2D_numeric_data(
         self,
