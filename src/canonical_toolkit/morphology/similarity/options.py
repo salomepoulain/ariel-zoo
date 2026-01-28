@@ -4,14 +4,18 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
 from enum import Enum, auto
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
+from polars import Object
 from sklearn.feature_extraction import FeatureHasher
 
 from ..node.tools import (
     serializer,
 )
 from .sim_types import FeatureHasherProtocol
+
+if TYPE_CHECKING:
+    from umap import UMAP # type: ignore (stubs missing)
 
 __all__ = [
     "MatrixDomain",
@@ -23,12 +27,12 @@ __all__ = [
 ]
 
 
-class MatrixDomain(Enum):
+class MatrixDomain(str, Enum):
     """Defines the topology and mathematical meaning of the matrix."""
 
-    FEATURES = auto()  # N x M: Raw Counts or TFIDF (Must be Sparse)
-    SIMILARITY = auto()  # N x N: Pairwise relationships (Must be Dense)
-    EMBEDDING = auto()  # N x D: Reduced dimensions (Must be Dense)
+    FEATURES = "FEATURES"       # N x M: Raw Counts or TFIDF (likely to be Sparse)
+    SIMILARITY = "SIMILARITY"   # N x N: Pairwise relationships (Must be Dense)
+    EMBEDDING = "EMBEDDING"     # N x D: Reduced dimensions (Must be Dense?)
 
 
 class OutputType(Enum):
@@ -53,7 +57,7 @@ class Space(Enum):
     """
 
     # TODO: actually try to make it more efficient? idk
-    
+
     WHOLE = ""
     FRONT = "R_f__"
     BACK = "R_b__"
@@ -68,7 +72,7 @@ class Space(Enum):
     @classmethod
     def limb_spaces_only(cls) -> list[Space]:
         return [cls.LEFT, cls.FRONT, cls.RIGHT, cls.BACK, cls.TOP, cls.BOTTOM]
-    
+
     @classmethod
     def all_spaces(cls) -> list[Space]:
         return [cls.WHOLE, cls.RADIAL, cls.AXIAL] + cls.limb_spaces_only()
@@ -78,10 +82,11 @@ class Space(Enum):
 class UmapConfig:
     n_neighbors: int = 15
     n_components: int = 2
+    min_dist: float = 0.0
     metric: str = "cosine"  # "precomputed"
     """use 'precomputed' if already cosine was applied"""
     random_state: int | None = 42
-    init = ("random",)
+    init: str = "random"
     transform_seed: int | None = 42
     n_jobs: int = 1
 
@@ -97,6 +102,21 @@ class UmapConfig:
         return {**params, **extras}
 
 
+    def get_umap(self, **umap_kwargs: Any) -> UMAP:
+        try:
+            from umap import UMAP  # type: ignore (stub files missing)
+        except ImportError as e:
+            msg = "pip install umap-learn to use this method."
+            raise ImportError(
+                msg,
+            ) from e
+
+        kwargs = self.get_kwargs() | umap_kwargs
+
+        print(kwargs)
+        return UMAP(**kwargs)
+
+
 @dataclass(slots=True)
 class SimilaritySpaceConfig:
     """Configuration for calculating neighborhood similarity space."""
@@ -104,9 +124,11 @@ class SimilaritySpaceConfig:
     space: Space = Space.WHOLE
 
     # collection
-    radius_strategy: RadiusStrategy = RadiusStrategy.NODE_LOCAL
+    radius_strategy: RadiusStrategy = RadiusStrategy.TREE_GLOBAL
     min_hop_radius: int = 0  # TODO
-    max_hop_radius: int | None = None
+    max_hop_radius: int | None = 3
+
+    skip_empty: bool = False
 
     # processing
     n_features: int = 2**24

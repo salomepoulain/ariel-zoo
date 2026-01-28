@@ -60,7 +60,7 @@ def to_graph(root_node: Node) -> DiGraph[Any]:
 
 
 def to_string(node: Node) -> str:
-    """Generate the canonical string representation of a node tree."""
+    """Generate the string representation of a node tree."""
     name = node.module_type.name[0]
     if node.internal_rotation != 0:
         name += str(int(node.internal_rotation))

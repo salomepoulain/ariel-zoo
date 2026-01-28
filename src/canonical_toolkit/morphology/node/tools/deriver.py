@@ -301,6 +301,7 @@ def collect_neighbourhoods(
     canonicalized: bool = True,
     do_radius_prefix: bool = True,
     hash_prefix: str | None = None,
+    # empty_value: str | None = None
 ) -> dict[int, list[Any]]:
     """
     Collect neighborhoods around each node in the tree, strating at starting_node
@@ -356,6 +357,7 @@ def collect_neighbourhoods(
 
                 if hash_prefix:
                     serialized = hash_prefix + serialized
+
 
             result_per_radius[radius].append(serialized)
 
