@@ -48,6 +48,8 @@ class CellData:
     raw_data: np.ndarray | None = None
     artist: Any = None
     cell_type: CellType = CellType.EMPTY
+    generations: list[np.ndarray] | None = None  # For animation support
+    global_ids: np.ndarray | None = None  # For style cache lookup
 
 
 class PlotterConfig(BaseModel):
@@ -71,11 +73,17 @@ class PlotterConfig(BaseModel):
 
     # Theme Defaults (Applied in background)
     title_size: float = 12.0
+    subtitle_size: float = 5.0
     label_size: float = 8.0
     tick_size: float = 5.0
     spine_color: str = "black"
     spine_width: float = 0.8
     grid_on: bool = False
+
+    # Scatter Plot Defaults
+    dot_size: float = 10.0
+    dot_color: str = "blue"
+    cmap: str = "viridis"
 
     _on_change_callback: Callable[[], None] | None = None
 
@@ -144,6 +152,8 @@ class GridPlotter:
         self._n_data_cols = n_cols or self.config.n_cols
         self._cell_ratio = cell_ratio or self.config.cell_ratio
         self._fig_ratio = fig_ratio or self.config.fig_ratio
+
+        self.style_cache = {}
 
         self._init_storage()
         self._fig = plt.figure(dpi=self.config.dpi)
@@ -429,13 +439,33 @@ class GridPlotter:
 
     def _apply_theme(self) -> None:
         cfg = self.config
-        group = self[:, :]
-        group.tick_params(axis="both", which="major", labelsize=cfg.tick_size)
-        for edge in ["top", "right", "bottom", "left"]:
-            group.spines[edge].set_color(cfg.spine_color)
-            group.spines[edge].set_linewidth(cfg.spine_width)
-        if cfg.grid_on:
-            group.grid(True, linestyle="--", alpha=0.5)
+        # Get all axes that exist
+        axes = [cell.ax for cell in self._cells.flatten() if cell.ax is not None]
+        if not axes:
+            return
+        for ax in axes:
+            ax.tick_params(axis="both", which="major", labelsize=cfg.tick_size)
+            for edge in ["top", "right", "bottom", "left"]:
+                ax.spines[edge].set_color(cfg.spine_color)
+                ax.spines[edge].set_linewidth(cfg.spine_width)
+            if cfg.grid_on:
+                ax.grid(True, linestyle="--", alpha=0.5)
+
+    def _apply_scatter_styles(self) -> None:
+        """Apply style_cache to all scatter plots. Called before show()."""
+        if not self.style_cache:
+            return
+        from matplotlib.colors import to_rgba
+        for cell in self._cells.flatten():
+            if cell.cell_type != CellType.SCATTER or cell.artist is None:
+                continue
+            if cell.global_ids is None:
+                continue
+            colors, sizes, alphas = self._apply_style_cache(cell.global_ids)
+            # Convert colors to RGBA with per-point alpha
+            rgba_colors = np.array([to_rgba(c, a) for c, a in zip(colors, alphas)])
+            cell.artist.set_facecolors(rgba_colors)
+            cell.artist.set_sizes(sizes)
 
     def show(
         self,
@@ -445,6 +475,7 @@ class GridPlotter:
     ) -> None:
         self._refresh()
         self._apply_theme()
+        self._apply_scatter_styles()
         for ax in self._margin_axs:
             ax.patch.set_visible(highlight_margin)
             if highlight_margin:
@@ -532,6 +563,7 @@ class GridPlotter:
     def save(self, filepath, **kwargs) -> None:
         self._refresh()
         self._apply_theme()
+        self._apply_scatter_styles()
         save_params = {
             "dpi": self.config.dpi,
             "bbox_inches": None,
@@ -540,64 +572,56 @@ class GridPlotter:
         save_params.update(kwargs)
         self._fig.savefig(filepath, **save_params)
 
-    def add_numeric_data(
+    def _apply_style_cache(self, ids):
+        """
+        Apply cached styles to data arrays based on IDs.
+
+        Args:
+            ids: Array or list of IDs to look up in style_cache
+
+        Returns:
+            Tuple of (colors, sizes, alphas) arrays
+        """
+        colors = []
+        sizes = []
+        alphas = []
+
+        for id_ in ids:
+            style = self.style_cache.get(id_, {})
+            colors.append(style.get("color", self.config.dot_color))
+            sizes.append(style.get("size", self.config.dot_size))
+            alphas.append(style.get("alpha", 1.0))
+
+        return np.array(colors), np.array(sizes), np.array(alphas)
+
+    def add_id_styling(
         self,
-        data_list: list,
-        shape: tuple[int, int] | None = None,
-        titles: list | None = None,
-        **kwargs,
+        ids: list,
+        colors: list | None = None,
+        sizes: list | None = None,
+        alphas: list | None = None,
     ):
-        """Handles Scatter (Nx2), Lines ([x,y]), and Heatmaps (MxN). Supports None."""
-        if shape:
-            self._n_data_rows, self._n_data_cols = shape
-            self._init_storage()
-            self._refresh()
+        """
+        Store per-ID styling that will be applied during plotting.
 
-        for i, data in enumerate(data_list):
-            if i >= self._n_data_rows * self._n_data_cols:
-                break
-            if data is None:
-                continue
+        Args:
+            ids: List of IDs to style
+            colors: List of colors (matplotlib color strings or hex)
+            sizes: List of marker sizes
+            alphas: List of alpha values (0-1)
 
-            r, c = divmod(i, self._n_data_cols)
-            ax = self.add_subplot(r, c)
-            cell = self._cells[r, c]
-
-            if titles and i < len(titles):
-                ax.set_title(titles[i], fontsize=self.config.title_size)
-
-            is_scatter_shape = np.ndim(data) == 2 and np.shape(data)[1] == 2
-            is_square = (
-                np.ndim(data) == 2 and np.shape(data)[0] == np.shape(data)[1]
-            )
-
-            if is_scatter_shape and not is_square:
-                ax.axis("on")
-                cell.artist = ax.scatter(data[:, 0], data[:, 1], **kwargs)
-                cell.raw_data = np.array(data)
-                cell.cell_type = CellType.SCATTER
-
-            elif (
-                isinstance(data, (list, np.ndarray))
-                and len(data) == 2
-                and np.ndim(data[0]) == 1
-            ):
-                ax.axis("on")
-                cell.artist = ax.show(data[0], data[1], **kwargs)[0]
-                cell.raw_data = np.array(data)
-                cell.cell_type = CellType.LINE
-
-            elif isinstance(data, np.ndarray) and data.ndim == 2:
-                h, w = data.shape[:2]
-                ext = self._get_img_extent(h, w, h, w)
-                cell.artist = ax.imshow(
-                    data, extent=ext, aspect="auto", **kwargs
-                )
-                cell.raw_data = data
-                cell.cell_type = CellType.HEATMAP
-                ax.set_xlim(0, 1)
-                ax.set_ylim(0, 1)
-
+        Returns:
+            self for chaining
+        """
+        for i, id_ in enumerate(ids):
+            style = self.style_cache.get(id_, {})
+            if colors is not None:
+                style["color"] = colors[i]
+            if sizes is not None:
+                style["size"] = sizes[i]
+            if alphas is not None:
+                style["alpha"] = alphas[i]
+            self.style_cache[id_] = style
         return self
 
     def add_image_data(
@@ -620,7 +644,7 @@ class GridPlotter:
         )
 
         def natural_sort_key(s):
-            return [int(text) if text.isdigit() else text.lower() 
+            return [int(text) if text.isdigit() else text.lower()
                     for text in re.split('([0-9]+)', str(s))]
         # 1. Handle folder loading
         if data_folder:
@@ -636,8 +660,8 @@ class GridPlotter:
 
             data_list = []
             # Only populate folder_titles if auto_title is True
-            folder_titles = [] if auto_title else None 
-            
+            folder_titles = [] if auto_title else None
+
             for f in img_files:
                 try:
                     img = Image.open(f)
@@ -647,7 +671,7 @@ class GridPlotter:
                         folder_titles.append(f.stem)
                 except Exception:
                     pass
-            
+
             titles = folder_titles
         # 2. Global Scale Scan (Filter out None for scanning)
         valid_data = [d for d in data_list if d is not None]
@@ -779,11 +803,320 @@ class GridPlotter:
             **kwargs,
         )
 
+    def add_collapsed_data(
+        self,
+        data: list[np.ndarray] | np.ndarray,
+        row: int = 0,
+        col: int = 0,
+        title: str | None = None,
+        rainbow: bool = True,
+        show_colorbar: bool = True,
+        **kwargs
+    ):
+        """
+        Collapses input data into a single scatter plot.
+        Accepts a list of arrays (generations) or a single 2D array.
+        """
+        import warnings
+
+        # 1. Handle Single Array vs List of Arrays
+        if isinstance(data, np.ndarray):
+            # Check for 'flatness': At least one dimension should be small (usually 2 for X/Y)
+            # If it's e.g. 100x100, it's not a standard coordinate list.
+            if data.ndim == 2 and min(data.shape) > 10:
+                warnings.warn(
+                    f"Data shape {data.shape} does not look like a coordinate list (N x 2). "
+                    "Collapsing large 2D arrays may result in unintended visualizations.",
+                    UserWarning
+                )
+
+            # Wrap in list so the rest of the logic remains the same
+            valid_data = [data]
+            # If it's just one array, a rainbow doesn't make sense by index
+            rainbow = False
+        else:
+            # Flatten nested lists and filter out None entries
+            valid_data = []
+            for d in data:
+                if d is None:
+                    continue
+                if isinstance(d, np.ndarray):
+                    valid_data.append(d)
+                elif isinstance(d, (list, tuple)) and len(d) > 0:
+                    # Handle nested list: extract arrays from inner list
+                    for inner in d:
+                        if inner is not None and isinstance(inner, np.ndarray):
+                            valid_data.append(inner)
+
+        if not valid_data:
+            return self
+
+        # 2. Stack and Map Colors
+        stacked_data = np.vstack(valid_data)
+
+        if rainbow and "c" not in kwargs:
+            # Color by which array in the list the point came from
+            kwargs["c"] = np.concatenate([
+                np.full(len(d), i) for i, d in enumerate(valid_data)
+            ])
+            kwargs["cmap"] = kwargs.get("cmap", self.config.cmap)
+
+        # 3. Plotting
+        ax = self.add_subplot(row, col)
+        ax.axis("on")
+        if title:
+            ax.set_title(title, fontsize=self.config.title_size)
+
+        s = kwargs.pop("s", self.config.dot_size)
+        c = kwargs.pop("c", self.config.dot_color)
+        cmap = kwargs.pop("cmap", None)
+
+        artist = ax.scatter(stacked_data[:, 0], stacked_data[:, 1], s=s, c=c, cmap=cmap, **kwargs)
+
+        # Update Cell Storage
+        cell = self._cells[row, col]
+        cell.artist, cell.raw_data, cell.cell_type = artist, stacked_data, CellType.SCATTER
+        cell.generations = valid_data  # Store for to_gif animation
+
+        if show_colorbar and rainbow:
+            cbar = self._fig.colorbar(artist, ax=ax, fraction=0.046, pad=0.04)
+            cbar.set_label('Index', size=self.config.label_size)
+            cbar.ax.tick_params(labelsize=self.config.tick_size)
+
+        return self
+
+
+    def to_gif(
+        self,
+        data: list[np.ndarray] | None = None,
+        filepath: str = "animation.gif",
+        *,
+        row: int = 0,
+        col: int = 0,
+        title: str | None = None,
+        cumulative: bool = True,
+        fps: int = 5,
+        rainbow: bool = True,
+        loop: int = 0,
+        **scatter_kwargs,
+    ) -> None:
+        try:
+            import imageio.v3 as iio
+        except ImportError:
+            raise ImportError("pip install imageio to use to_gif()")
+        from io import BytesIO
+
+        # Recover data from cell if not provided
+        if data is None:
+            cell = self._cells[row, col]
+            data = getattr(cell, "generations", None)
+        if not data:
+            print(f"No generational data found at cell [{row}, {col}].")
+            return
+
+        # 1. Setup Global Context
+        all_pts = np.vstack(data)
+        x_min, x_max = all_pts[:, 0].min(), all_pts[:, 0].max()
+        y_min, y_max = all_pts[:, 1].min(), all_pts[:, 1].max()
+        xm, ym = (x_max - x_min) * 0.05, (y_max - y_min) * 0.05
+        n_total_gens = len(data)
+
+        frames = []
+        plt.ioff() # Prevent window flickering
+
+        # 2. Render Frames
+        for idx in range(n_total_gens):
+            fig, ax = plt.subplots(figsize=(6, 6), dpi=self.config.dpi)
+
+            # Apply Theme
+            for edge in ["top", "right", "bottom", "left"]:
+                ax.spines[edge].set_color(self.config.spine_color)
+                ax.spines[edge].set_linewidth(self.config.spine_width)
+
+            # Build frame data
+            if cumulative:
+                subset = data[: idx + 1]
+                pts = np.vstack(subset)
+                c = np.concatenate([np.full(len(d), i) for i, d in enumerate(subset)]) if rainbow else self.config.dot_color
+            else:
+                pts = data[idx]
+                c = np.full(len(pts), idx) if rainbow else self.config.dot_color
+
+            # Single fixed scatter call
+            ax.scatter(
+                pts[:, 0], pts[:, 1],
+                s=scatter_kwargs.get("s", self.config.dot_size),
+                c=c,
+                cmap=self.config.cmap if rainbow else None,
+                vmin=0,
+                vmax=max(1, n_total_gens - 1),
+                **{k: v for k, v in scatter_kwargs.items() if k not in ['c', 's', 'cmap']}
+            )
+
+            # Lock "Camera"
+            ax.set_xlim(x_min - xm, x_max + xm)
+            ax.set_ylim(y_min - ym, y_max + ym)
+            if title: ax.set_title(title.format(gen=idx), fontsize=self.config.title_size)
+            if self.config.grid_on: ax.grid(True, linestyle="--", alpha=0.3)
+
+            # Save frame to memory
+            buf = BytesIO()
+            fig.savefig(buf, format="png")
+            buf.seek(0)
+            frames.append(iio.imread(buf, extension=".png"))
+            plt.close(fig)
+
+        # 3. Export
+        iio.imwrite(filepath, frames, duration=1000 // fps, loop=loop)
+        plt.ion()
+        print(f"Successfully saved GIF: {filepath}")
+
+
+    def set_global_axis_limits(self, xlim=None, ylim=None, padding=0.1):
+        """
+        Set global x and y limits for all axes in the grid.
+
+        Args:
+            xlim: Tuple of (xmin, xmax) or None to auto-calculate from data
+            ylim: Tuple of (ymin, ymax) or None to auto-calculate from data
+            padding: Fraction to expand limits by (default 0.1 = 10%)
+                    Can be a single float or tuple (x_padding, y_padding)
+        """
+        self._refresh()
+
+        # Get all non-empty axes
+        axes = [cell.ax for cell in self._cells.flatten() if cell.ax is not None]
+        if not axes:
+            return self
+
+        # Handle padding as single value or tuple
+        if isinstance(padding, (int, float)):
+            x_padding, y_padding = padding, padding
+        else:
+            x_padding, y_padding = padding
+
+        # Auto-calculate limits if not provided
+        if xlim is None or ylim is None:
+            all_xlims, all_ylims = [], []
+            for ax in axes:
+                if ax.has_data():
+                    all_xlims.append(ax.get_xlim())
+                    all_ylims.append(ax.get_ylim())
+
+            if xlim is None and all_xlims:
+                xmin = min(x[0] for x in all_xlims)
+                xmax = max(x[1] for x in all_xlims)
+                x_range = xmax - xmin
+                xlim = (xmin - x_range * x_padding, xmax + x_range * x_padding)
+
+            if ylim is None and all_ylims:
+                ymin = min(y[0] for y in all_ylims)
+                ymax = max(y[1] for y in all_ylims)
+                y_range = ymax - ymin
+                ylim = (ymin - y_range * y_padding, ymax + y_range * y_padding)
+
+        # Apply limits to all axes
+        if xlim:
+            for ax in axes:
+                ax.set_xlim(xlim)
+        if ylim:
+            for ax in axes:
+                ax.set_ylim(ylim)
+
+        return self
+
+
+    def add_numeric_data(
+        self,
+        data_list: list,
+        global_ids_list: list | None = None,
+        shape: tuple[int, int] | None = None,
+        titles: list | None = None,
+        **kwargs,
+    ):
+        """Handles Scatter (Nx2), Lines ([x,y]), and Heatmaps (MxN). Supports None."""
+        if shape:
+            self._n_data_rows, self._n_data_cols = shape
+            self._init_storage()
+            self._refresh()
+
+        for i, data in enumerate(data_list):
+            if i >= self._n_data_rows * self._n_data_cols:
+                break
+            if data is None:
+                continue
+
+            r, c = divmod(i, self._n_data_cols)
+            ax = self.add_subplot(r, c)
+            cell = self._cells[r, c]
+
+            if titles and i < len(titles):
+                ax.set_title(titles[i], fontsize=self.config.subtitle_size)
+
+            is_scatter_shape = np.ndim(data) == 2 and np.shape(data)[1] == 2
+            is_square = (
+                np.ndim(data) == 2 and np.shape(data)[0] == np.shape(data)[1]
+            )
+
+            if is_scatter_shape and not is_square:
+                ax.axis("on")
+                pts = np.array(data)
+
+                # Get IDs for this cell
+                ids = (
+                    global_ids_list[i]
+                    if global_ids_list is not None and i < len(global_ids_list)
+                    else np.arange(len(pts))
+                )
+
+                # Store IDs for later style application in show()
+                cell.global_ids = np.asarray(ids)
+
+                # Apply style cache if we have it (for immediate render)
+                if self.style_cache:
+                    colors, sizes, alphas = self._apply_style_cache(ids)
+                    cell.artist = ax.scatter(
+                        pts[:, 0], pts[:, 1],
+                        c=colors,
+                        s=sizes,
+                        alpha=alphas,
+                        **kwargs
+                    )
+                else:
+                    # Fallback to config defaults or kwargs
+                    cell.artist = ax.scatter(pts[:, 0], pts[:, 1], **kwargs)
+
+                cell.raw_data = pts
+                cell.cell_type = CellType.SCATTER
+
+            elif (
+                isinstance(data, (list, np.ndarray))
+                and len(data) == 2
+                and np.ndim(data[0]) == 1
+            ):
+                ax.axis("on")
+                cell.artist = ax.plot(data[0], data[1], **kwargs)[0]
+                cell.raw_data = np.array(data)
+                cell.cell_type = CellType.LINE
+
+            elif isinstance(data, np.ndarray) and data.ndim == 2:
+                h, w = data.shape[:2]
+                ext = self._get_img_extent(h, w, h, w)
+                cell.artist = ax.imshow(
+                    data, extent=ext, aspect="auto", **kwargs
+                )
+                cell.raw_data = data
+                cell.cell_type = CellType.HEATMAP
+                ax.set_xlim(0, 1)
+                ax.set_ylim(0, 1)
+
+        return self
 
 
     def add_2D_numeric_data(
         self,
         data_2d: list[list],
+        global_ids_2d: list[list] | None = None,
         titles_2d: list[list[str]] | None = None,
         **kwargs,
     ):
@@ -798,6 +1131,17 @@ class GridPlotter:
             for j in range(n_cols)
         ]
 
+        # Flatten IDs similarly
+        flat_ids = None
+        if global_ids_2d:
+            flat_ids = [
+                global_ids_2d[i][j]
+                if i < len(global_ids_2d) and j < len(global_ids_2d[i])
+                else None
+                for i in range(n_rows)
+                for j in range(n_cols)
+            ]
+
         # Flatten titles similarly
         flat_titles = None
         if titles_2d:
@@ -811,6 +1155,7 @@ class GridPlotter:
 
         return self.add_numeric_data(
             data_list=flat_data,
+            global_ids_list=flat_ids,
             shape=(n_rows, n_cols),
             titles=flat_titles,
             **kwargs,
