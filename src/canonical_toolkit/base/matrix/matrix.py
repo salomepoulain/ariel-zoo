@@ -5,7 +5,9 @@ from __future__ import annotations
 import io
 import json
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any, Self, cast
+import operator
+from copy import deepcopy
 
 import inspect
 import numpy as np
@@ -14,9 +16,9 @@ from rich.console import Console
 from rich.table import Table
 
 if TYPE_CHECKING:
-    from collections.abc import Hashable
+    # from collections.abc import Hashable
 
-    from .matrix_types import InstanceProtocol
+    from .matrix_types import MatrixProtocol
 
 # Default save directories
 console = Console()
@@ -32,18 +34,16 @@ __all__ = [
 ]
 
 
+
 class MatrixInstance:
     """
     Generic matrix wrapper with flexible metadata.
-
-    This base class knows nothing about similarity, trees, or radius.
-    Domain-specific subclasses (like SimilarityMatrix) add typed meaning.
     """
 
     def __init__(
         self,
         matrix: sp.spmatrix | np.ndarray,
-        label: Hashable,
+        label: str,
         tags: dict[str, Any] | None = None,
     ) -> None:
         """
@@ -60,10 +60,10 @@ class MatrixInstance:
 
     @classmethod
     def zeros(
-        cls, 
-        shape: tuple[int, int], 
-        label: Hashable, 
-        sparse: bool = True, 
+        cls,
+        shape: tuple[int, int],
+        label: str,
+        sparse: bool = True,
         **tags: Any
     ) -> Self:
         """Create a zero-filled instance to fill gaps in a series."""
@@ -72,12 +72,28 @@ class MatrixInstance:
         new_tags = tags | {"is_gap": True}
         return cls(matrix=matrix, label=label, tags=new_tags)
 
+    def replace(
+        self,
+        matrix:  sp.spmatrix | np.ndarray | None = None,
+        label: str | None = None,
+        tags: dict[str, Any] | None = None,
+    ) -> Self:
+        """Helper method to create a new instance based on self instance"""
+        new_matrix = self.matrix if matrix is None else matrix
+        new_label = self.label if label is None else label
+        new_tags = self.tags if tags is None else tags
+        return self.__class__(
+            matrix=new_matrix,
+            label=new_label,
+            tags=new_tags
+        )
+
     # --- Protocol Properties ---
 
     @property
     def matrix(self) -> sp.spmatrix | np.ndarray:
-        """Access the underlying matrix data."""
-        return self._matrix
+        """Access the underlying matrix data. (immutable)"""
+        return self._matrix.copy()
 
     @property
     def shape(self) -> tuple[int, int]:
@@ -92,7 +108,7 @@ class MatrixInstance:
     @property
     def tags(self) -> dict[str, Any]:
         """Returns a copy of tags to prevent mutation bugs."""
-        return self._tags.copy()
+        return deepcopy(self._tags)
 
     @property
     def description(self) -> str:
@@ -110,24 +126,49 @@ class MatrixInstance:
         """Delegate indexing to the underlying matrix."""
         return self._matrix[key] # type: ignore
 
-    def __add__(self, other: InstanceProtocol) -> Self:
-        """Add two matrix instances element-wise."""
-        if not isinstance(other, MatrixInstance):
-            return NotImplemented
-        new_matrix = self._matrix + other.matrix
-        return self.replace(matrix=new_matrix)
+    # def __add__(self, other: InstanceProtocol) -> Self:
+    #     """Add two matrix instances element-wise."""
+    #     if not isinstance(other, MatrixInstance):
+    #         return NotImplemented
+    #     new_matrix = self._matrix + other.matrix
+    #     return self.replace(matrix=new_matrix)
 
-    def replace(self, **changes: Any) -> Self:
-        """
-        Returns a new instance with updated fields.
-        Manually constructs new object to ensure validation runs.
-        """
-        new_args = {
-            "matrix": self._matrix,
-            "label": self._label,
-            "tags": self._tags.copy(),
-        } | changes
-        return self.__class__(**new_args)
+    # def replace(self, **changes: Any) -> Self:
+    #     """Generic, subclass-aware replace."""
+    #     # 1. Get the constructor signature of whatever class 'self' is
+    #     sig = inspect.signature(self.__init__)
+
+    #     # 2. Build a dict of current values
+    #     # We assume properties exist with the same name as init arguments
+    #     current_state = {}
+    #     for param in sig.parameters.values():
+    #         if param.name == 'self': continue
+
+    #         # Try to get value from property, then from internal attribute
+    #         val = getattr(self, param.name, getattr(self, f"_{param.name}", None))
+    #         current_state[param.name] = val
+
+    #     # 3. Apply changes and create new instance
+    #     new_args = current_state | changes
+    #     return self.__class__(**new_args)
+
+    # def replace(
+    #     self,
+    #     matrix,
+    #     label,
+    #     tags,
+    #     **changes: Any
+    # ) -> Self:
+    #     """
+    #     Returns a new instance with updated fields.
+    #     Manually constructs new object to ensure validation runs.
+    #     """
+    #     new_args = {
+    #         "matrix": self._matrix,
+    #         "label": self._label,
+    #         "tags": self._tags.copy(),
+    #     } | changes
+    #     return self.__class__(**new_args)
 
     # --- Visualization ---
 
@@ -359,11 +400,17 @@ class MatrixInstance:
             json.dump(meta_payload, f, indent=2)
 
     @classmethod
-    def load(cls, file_path: Path | str) -> Self:
+    def load(
+        cls,
+        file_path: Path | str,
+        subset_indices: list[int] | None = None,
+    ) -> Self:
         """Load instance from disk.
 
         Args:
             file_path: Full path without extension
+            subset_indices: Optional list of row/column indices to keep.
+                            If provided, returns matrix[subset_indices, subset_indices].
 
         Returns
         -------
@@ -390,132 +437,179 @@ class MatrixInstance:
         else:
             matrix = np.load(matrix_path)
 
+        if subset_indices is not None:
+            sliced_matrix = cast(Any, matrix)[np.ix_(subset_indices, subset_indices)]
+            matrix = sliced_matrix
+
+            # Update tags to reflect the modification
+            tags = tags.copy()
+            tags["original_shape"] = info.get("original_shape", matrix.shape)
+            tags["is_subset"] = True
+
         return cls(
             matrix=matrix,
             label=label,
             tags=tags,
         )
 
-    def __add__(self, other: MatrixInstance | float | int) -> Self:
-        """Add matrix with another matrix or scalar (dense only)."""
-        if sp.issparse(self._matrix):
-            raise TypeError("Operation not supported for sparse matrices")
-        
-        if isinstance(other, (int, float)):
-            new_matrix = self._matrix + other
-            return self.replace(matrix=new_matrix)
-        elif isinstance(other, MatrixInstance):
-            if sp.issparse(other.matrix):
-                raise TypeError("Operation not supported for sparse matrices")
-            new_matrix = self._matrix + other.matrix
-            return self.replace(matrix=new_matrix)
-        return NotImplemented
-    
-    def __sub__(self, other: MatrixInstance | float | int) -> Self:
-        """Subtract another matrix or scalar from this matrix (dense only)."""
-        if sp.issparse(self._matrix):
-            raise TypeError("Operation not supported for sparse matrices")
-        
-        if isinstance(other, (int, float)):
-            new_matrix = self._matrix - other
-            return self.replace(matrix=new_matrix)
-        elif isinstance(other, MatrixInstance):
-            if sp.issparse(other.matrix):
-                raise TypeError("Operation not supported for sparse matrices")
-            new_matrix = self._matrix - other.matrix
-            return self.replace(matrix=new_matrix)
-        return NotImplemented
-    
-    def __mul__(self, other: MatrixInstance | float | int) -> Self:
-        """Multiply element-wise with another matrix or scalar (dense only)."""
-        if sp.issparse(self._matrix):
-            raise TypeError("Operation not supported for sparse matrices")
-        
-        if isinstance(other, (int, float)):
-            new_matrix = self._matrix * other
-            return self.replace(matrix=new_matrix)
-        elif isinstance(other, MatrixInstance):
-            if sp.issparse(other.matrix):
-                raise TypeError("Operation not supported for sparse matrices")
-            new_matrix = self._matrix * other.matrix
-            return self.replace(matrix=new_matrix)
-        return NotImplemented
-    
-    def __truediv__(self, other: MatrixInstance | float | int) -> Self:
-        """Divide element-wise by another matrix or scalar (dense only)."""
-        if sp.issparse(self._matrix):
-            raise TypeError("Operation not supported for sparse matrices")
-        
-        if isinstance(other, (int, float)):
-            if other == 0:
-                raise ZeroDivisionError("Division by zero")
-            new_matrix = self._matrix / other
-            return self.replace(matrix=new_matrix)
-        elif isinstance(other, MatrixInstance):
-            if sp.issparse(other.matrix):
-                raise TypeError("Operation not supported for sparse matrices")
-            # Element-wise division
-            new_matrix = self._matrix / other.matrix
-            return self.replace(matrix=new_matrix)
-        return NotImplemented
-    
-    def __floordiv__(self, other: MatrixInstance | float | int) -> Self:
-        """Floor divide element-wise by another matrix or scalar (dense only)."""
-        if sp.issparse(self._matrix):
-            raise TypeError("Operation not supported for sparse matrices")
-        
-        if isinstance(other, (int, float)):
-            if other == 0:
-                raise ZeroDivisionError("Division by zero")
-            new_matrix = self._matrix // other
-            return self.replace(matrix=new_matrix)
-        elif isinstance(other, MatrixInstance):
-            if sp.issparse(other.matrix):
-                raise TypeError("Operation not supported for sparse matrices")
-            new_matrix = self._matrix // other.matrix
-            return self.replace(matrix=new_matrix)
-        return NotImplemented
-    
-    def __mod__(self, other: MatrixInstance | float | int) -> Self:
-        """Modulo element-wise by another matrix or scalar (dense only)."""
-        if sp.issparse(self._matrix):
-            raise TypeError("Operation not supported for sparse matrices")
-        
-        if isinstance(other, (int, float)):
-            if other == 0:
-                raise ZeroDivisionError("Division by zero")
-            new_matrix = self._matrix % other
-            return self.replace(matrix=new_matrix)
-        elif isinstance(other, MatrixInstance):
-            if sp.issparse(other.matrix):
-                raise TypeError("Operation not supported for sparse matrices")
-            new_matrix = self._matrix % other.matrix
-            return self.replace(matrix=new_matrix)
-        return NotImplemented
-    
-    def __pow__(self, exponent: int | float) -> Self:
-        """Element-wise power (exponentiation) (dense only)."""
-        if sp.issparse(self._matrix):
-            raise TypeError("Operation not supported for sparse matrices")
-        
-        if not isinstance(exponent, (int, float)):
-            return NotImplemented
-        new_matrix = self._matrix ** exponent
+    def _apply_op(self, other: Self | float | int, op_name: str) -> Self:
+        """Helper to apply an operation and return a new instance."""
+        other_raw = other.matrix if isinstance(other, self.__class__) else other
+        op = getattr(operator, op_name)
+
+        try:
+            new_matrix = op(self._matrix, other_raw)
+        except Exception as e:
+            raise TypeError(f"Operation {op_name} failed: {e}") from e
+
         return self.replace(matrix=new_matrix)
-    
-    def __matmul__(self, other: MatrixInstance) -> Self:
-        """Matrix multiplication (dot product) (dense only)."""
-        if sp.issparse(self._matrix):
-            raise TypeError("Operation not supported for sparse matrices")
-        
-        if not isinstance(other, MatrixInstance):
-            return NotImplemented
-        
-        if sp.issparse(other.matrix):
-            raise TypeError("Operation not supported for sparse matrices")
-        
-        new_matrix = self._matrix @ other.matrix
-        return self.replace(matrix=new_matrix)
+
+    def __add__(self, other: Self | float | int) -> Self:
+        return self._apply_op(other, "add")
+
+    def __sub__(self, other: Self | float | int) -> Self:
+        return self._apply_op(other, "sub")
+
+    def __mul__(self, other: Self | float | int) -> Self:
+        return self._apply_op(other, "mul")
+
+    def __matmul__(self, other: Self) -> Self:
+        return self._apply_op(other, "matmul")
+
+    def __truediv__(self, other: Self | float | int) -> Self:
+        return self._apply_op(other, "truediv")
+
+
+    # def copy(self) -> Self:
+    #     """Explicitly create a new instance with a deep copy of metadata."""
+    #     import copy
+    #     return self.__class__(
+    #         matrix=copy.deepcopy(self._matrix), # Deep copy of the actual data
+    #         label=self._label,
+    #         tags=copy.deepcopy(self._tags) # Deep copy of metadata to be safe
+    #     )
+
+
+    # def __add__(self, other: MatrixInstance | float | int) -> Self:
+    #     """Add matrix with another matrix or scalar (dense only)."""
+    #     if sp.issparse(self._matrix):
+    #         raise TypeError("Operation not supported for sparse matrices")
+
+    #     if isinstance(other, (int, float)):
+    #         new_matrix = self._matrix + other
+    #         return self.replace(matrix=new_matrix)
+    #     elif isinstance(other, MatrixInstance):
+    #         if sp.issparse(other.matrix):
+    #             raise TypeError("Operation not supported for sparse matrices")
+    #         new_matrix = self._matrix + other.matrix
+    #         return self.replace(matrix=new_matrix)
+    #     return NotImplemented
+
+    # def __sub__(self, other: MatrixInstance | float | int) -> Self:
+    #     """Subtract another matrix or scalar from this matrix (dense only)."""
+    #     if sp.issparse(self._matrix):
+    #         raise TypeError("Operation not supported for sparse matrices")
+
+    #     if isinstance(other, (int, float)):
+    #         new_matrix = self._matrix - other
+    #         return self.replace(matrix=new_matrix)
+    #     elif isinstance(other, MatrixInstance):
+    #         if sp.issparse(other.matrix):
+    #             raise TypeError("Operation not supported for sparse matrices")
+    #         new_matrix = self._matrix - other.matrix
+    #         return self.replace(matrix=new_matrix)
+    #     return NotImplemented
+
+    # def __mul__(self, other: MatrixInstance | float | int) -> Self:
+    #     """Multiply element-wise with another matrix or scalar (dense only)."""
+    #     if sp.issparse(self._matrix):
+    #         raise TypeError("Operation not supported for sparse matrices")
+
+    #     if isinstance(other, (int, float)):
+    #         new_matrix = self._matrix * other
+    #         return self.replace(matrix=new_matrix)
+    #     elif isinstance(other, MatrixInstance):
+    #         if sp.issparse(other.matrix):
+    #             raise TypeError("Operation not supported for sparse matrices")
+    #         new_matrix = self._matrix * other.matrix
+    #         return self.replace(matrix=new_matrix)
+    #     return NotImplemented
+
+    # def __truediv__(self, other: MatrixInstance | float | int) -> Self:
+    #     """Divide element-wise by another matrix or scalar (dense only)."""
+    #     if sp.issparse(self._matrix):
+    #         raise TypeError("Operation not supported for sparse matrices")
+
+    #     if isinstance(other, (int, float)):
+    #         if other == 0:
+    #             raise ZeroDivisionError("Division by zero")
+    #         new_matrix = self._matrix / other
+    #         return self.replace(matrix=new_matrix)
+    #     elif isinstance(other, MatrixInstance):
+    #         if sp.issparse(other.matrix):
+    #             raise TypeError("Operation not supported for sparse matrices")
+    #         # Element-wise division
+    #         new_matrix = self._matrix / other.matrix
+    #         return self.replace(matrix=new_matrix)
+    #     return NotImplemented
+
+    # def __floordiv__(self, other: MatrixInstance | float | int) -> Self:
+    #     """Floor divide element-wise by another matrix or scalar (dense only)."""
+    #     if sp.issparse(self._matrix):
+    #         raise TypeError("Operation not supported for sparse matrices")
+
+    #     if isinstance(other, (int, float)):
+    #         if other == 0:
+    #             raise ZeroDivisionError("Division by zero")
+    #         new_matrix = self._matrix // other
+    #         return self.replace(matrix=new_matrix)
+    #     elif isinstance(other, MatrixInstance):
+    #         if sp.issparse(other.matrix):
+    #             raise TypeError("Operation not supported for sparse matrices")
+    #         new_matrix = self._matrix // other.matrix
+    #         return self.replace(matrix=new_matrix)
+    #     return NotImplemented
+
+    # def __mod__(self, other: MatrixInstance | float | int) -> Self:
+    #     """Modulo element-wise by another matrix or scalar (dense only)."""
+    #     if sp.issparse(self._matrix):
+    #         raise TypeError("Operation not supported for sparse matrices")
+
+    #     if isinstance(other, (int, float)):
+    #         if other == 0:
+    #             raise ZeroDivisionError("Division by zero")
+    #         new_matrix = self._matrix % other
+    #         return self.replace(matrix=new_matrix)
+    #     elif isinstance(other, MatrixInstance):
+    #         if sp.issparse(other.matrix):
+    #             raise TypeError("Operation not supported for sparse matrices")
+    #         new_matrix = self._matrix % other.matrix
+    #         return self.replace(matrix=new_matrix)
+    #     return NotImplemented
+
+    # def __pow__(self, exponent: int | float) -> Self:
+    #     """Element-wise power (exponentiation) (dense only)."""
+    #     if sp.issparse(self._matrix):
+    #         raise TypeError("Operation not supported for sparse matrices")
+
+    #     if not isinstance(exponent, (int, float)):
+    #         return NotImplemented
+    #     new_matrix = self._matrix ** exponent
+    #     return self.replace(matrix=new_matrix)
+
+    # def __matmul__(self, other: MatrixInstance) -> Self:
+    #     """Matrix multiplication (dot product) (dense only)."""
+    #     if sp.issparse(self._matrix):
+    #         raise TypeError("Operation not supported for sparse matrices")
+
+    #     if not isinstance(other, MatrixInstance):
+    #         return NotImplemented
+
+    #     if sp.issparse(other.matrix):
+    #         raise TypeError("Operation not supported for sparse matrices")
+
+    #     new_matrix = self._matrix @ other.matrix
+    #     return self.replace(matrix=new_matrix)
 
 
 

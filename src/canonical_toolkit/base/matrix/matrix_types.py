@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 # --- LEVEL 1: Instance Protocol ---
 
 @runtime_checkable
-class InstanceProtocol(Protocol):
+class MatrixProtocol(Protocol):
     """Protocol for an individual matrix wrapper (the 'Leaf' node)."""
 
     @property
@@ -42,24 +42,33 @@ class InstanceProtocol(Protocol):
         """Flexible metadata dictionary associated with this matrix."""
         ...
 
-    def replace(self, **changes: Any) -> Self:
+    def replace(
+        self,
+        matrix:  sp.spmatrix | np.ndarray | None = None,
+        label: str | None = None,
+        tags: dict[str, Any] | None = None,
+    ) -> Self:
         """Create a new instance of the same type with specific fields updated."""
         ...
 
-    def __add__(self, other: InstanceProtocol) -> Self:
-        """Element-wise addition of two matrix instances."""
-        ...
+    def __add__(self, other: Self | float | int) -> Self: ...
+
+    def __sub__(self, other: Self | float | int) -> Self: ...
+
+    def __mul__(self, other: Self | float | int) -> Self: ...
+
+    def __matmul__(self, other: Self) -> Self: ...
 
 
-# TypeVar for instance types (any class implementing InstanceProtocol)
-I = TypeVar("I", bound=InstanceProtocol)
 
+# TypeVar for instance types (any class implementing MatrixProtocol)
+M = TypeVar("M", bound=MatrixProtocol)
 
 # --- LEVEL 2: Series Protocol ---
 
 @runtime_checkable
-class SeriesProtocol(Protocol[I]):
-    """Protocol for an ordered collection of instances (the 'Column')."""
+class SeriesProtocol(Protocol[M]):
+    """Protocol for an ordered collection of instances with the same label (the 'Column')."""
 
     @property
     def label(self) -> str:
@@ -67,20 +76,20 @@ class SeriesProtocol(Protocol[I]):
         ...
 
     @property
-    def instances(self) -> list[I]:
+    def matrices(self) -> list[M]:
         """Ordered list of actual Instance objects."""
         ...
 
     @property
     def indices(self) -> list[int]:
-        """Sorted list of integer keys (e.g., Radii) representing the sequence."""
+        """Sorted list of integer keys (indexes) representing the order of the labeled matrixes."""
         ...
 
-    def items(self) -> Iterable[tuple[int, I]]:
+    def items(self) -> Iterable[tuple[int, M]]:
         """Dictionary-like iterator yielding (index, InstanceObject) pairs."""
         ...
 
-    def __iter__(self) -> Iterator[I]:
+    def __iter__(self) -> Iterator[M]:
         """Direct iterator yielding InstanceObjects in order."""
         ...
 
@@ -88,17 +97,21 @@ class SeriesProtocol(Protocol[I]):
     def __getitem__(self, key: slice) -> Self: ...
 
     @overload
-    def __getitem__(self, key: int) -> I: ...
+    def __getitem__(self, key: int) -> M: ...
 
-    def __getitem__(self, key: int | slice) -> I | Self:
+    def __getitem__(self, key: int | slice) -> M | Self:
         """Access a specific instance by index or a subset via slicing."""
         ...
 
-    def __setitem__(self, key: int, instance: I) -> None:
+    def __setitem__(self, key: int, matrix: M) -> None:
         """Insert or update an instance at a specific index."""
         ...
 
-    def replace(self, **changes: Any) -> Self:
+    def replace(
+        self,
+        matrices: Iterable[M] | None = None,
+        label: str | None = None
+    ) -> Self:
         """Create a new series of the same type with specific fields updated."""
         ...
 
@@ -111,7 +124,7 @@ S = TypeVar("S", bound=SeriesProtocol[Any])
 
 @runtime_checkable
 class FrameProtocol(Protocol[S]):
-    """Protocol for a collection of matrix series (the 'Grid')."""
+    """Protocol for an ordered collection of matrix series (the 'Grid')."""
 
     @property
     def series(self) -> list[S]:

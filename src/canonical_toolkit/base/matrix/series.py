@@ -1,158 +1,150 @@
-"""MatrixSeries: Generic collection of MatrixInstance objects indexed by index."""
+"""MatrixSeries: Generic collection of Matrixmatrice objects indexed by index."""
 
 from __future__ import annotations
 
+import enum
 import io
 import json
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generic, Self, overload
 
+from numpy import shape
 import scipy.sparse as sp
 from rich.console import Console
 from rich.table import Table
 
 from .matrix import DATA_SERIES, MatrixInstance
-from .matrix_types import I
+from .matrix_types import M
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterator, Iterable
-    import numpy as np
 
 __all__ = ["MatrixSeries"]
 
 
-class MatrixSeries(Generic[I]):
+class MatrixSeries(Generic[M]):
     """Generic collection of matrices sharing the same label."""
 
-    _instance_class = MatrixInstance
+    _matrix_class = MatrixInstance
 
     def __init__(
-        self, instances: Iterable[I], label: str | None = None
+        self,
+        matrices: Iterable[M | None],
+        label: str | None = None
     ) -> None:
-        """Initialize series from a collection of instances."""
-        
-        self._instances: dict[int, I] = {}
+        # 1. Pre-process into a list and find a 'template' matrice
+        raw_list = list(matrices)
+        if not raw_list:
+            raise ValueError("MatrixSeries requires at least one entry.")
 
-        if not instances:
-            msg = "instances cannot be empty or None. MatrixSeries requires at least one instance."
-            raise ValueError(msg)
+        # Find the first non-None matrice to use as a template for zeros
+        template = next((inst for inst in raw_list if inst is not None), None)
+        if template is None:
+            raise ValueError("MatrixSeries must contain at least one actual Matrixmatrice.")
 
-        instances_list = list(instances)
-
-        for i, inst in enumerate(instances_list):
-            idx = inst.tags.get("radius", i)
-            self._instances[int(idx)] = inst
-
-        if label:
+        # 2. Handle Labeling
+        if label is not None:
             self._label = label
-        elif self._instances:
-            self._label = next(iter(self._instances.values())).label
         else:
-            self._label = "unlabeled_series"
+            unique_labels = {inst.label for inst in raw_list if inst is not None}
+            if len(unique_labels) > 1:
+                raise ValueError(f"Inconsistent labels: {unique_labels}. Provide a label to overwrite.")
+            self._label = next(iter(unique_labels))
 
-    def reindex(self, target_indices: Iterable[int], fill_shape: tuple[int, int] | None = None) -> Self:
-        """
-        Ensure the series contains all target_indices. 
-        Missing indices are filled with zero matrices.
-        """
-        if fill_shape is None:
-            # Use the shape of the first existing matrix as a template
-            fill_shape = self.instances[0].shape
+        # 3. Populate and auto-fill gaps
+        self._matrices: list[M] = []
+        fill_shape = template.shape
+        is_sparse = sp.issparse(template.matrix)
+        # Use template tags (excluding radius) to ensure subclasses get required metadata
+        base_tags = {k: v for k, v in template.tags.items() if k != "radius"}
 
-        new_instances = self._instances.copy()
-        is_sparse = sp.issparse(self.instances[0].matrix)
-
-        for idx in target_indices:
-            if idx not in new_instances:
-                new_instances[idx] = self._instance_class.zeros(
+        for idx, inst in enumerate(raw_list):
+            if inst is None:
+                inst = self._matrix_class.zeros(
                     shape=fill_shape,
-                    label=self.label,
-                    sparse=is_sparse
+                    label=self._label,
+                    sparse=is_sparse,
+                    radius=idx,
+                    **base_tags
                 )
-        
-        return self.replace(_instances=new_instances)
+            else:
+                if label and inst.label != label:
+                    inst = inst.replace(label=label)
+
+            self._matrices.append(inst)
+
+    @property
+    def shape(self) -> int:
+        return len(self._matrices)
 
     @property
     def label(self) -> str:
         return self._label
 
     @property
-    def instances(self) -> list[I]:
-        return [self._instances[k] for k in sorted(self._instances)]
+    def matrices(self) -> list[M]:
+        return self._matrices.copy()
 
     @property
     def indices(self) -> list[int]:
-        return sorted(self._instances.keys())
+        return list(range(len(self._matrices)))
 
-    def items(self) -> Iterable[tuple[int, I]]:
-        for k in sorted(self._instances):
-            yield k, self._instances[k]
+    def items(self) -> Iterable[tuple[int, M]]:
+        return enumerate(self._matrices)
 
-    def __iter__(self) -> Iterator[I]:
-        return iter(self.instances)
+    def __iter__(self) -> Iterator[M]:
+        return iter(self._matrices)
 
     @overload
     def __getitem__(self, key: slice) -> Self: ...
 
     @overload
-    def __getitem__(self, key: int) -> I: ...
+    def __getitem__(self, key: list[int]) -> Self: ...
 
+    @overload
+    def __getitem__(self, key: int) -> M: ...
 
-    def __getitem__(self, key: int | slice) -> I | Self:
+    def __getitem__(self, key: int | slice | list[int]) -> M | Self:
         if isinstance(key, slice):
-            all_keys = sorted(self._instances.keys())
-            sliced_keys = all_keys[key]
-            
-            if not sliced_keys:
-                if not self._instances:
-                    raise ValueError("Cannot slice empty series")
-                
-                # Get any instance for template
-                first_key = next(iter(self._instances.keys()))
-                dummy_instance = self._instances[first_key]
-                
-                # Create series with dummy instance
-                new_series = self.__class__(instances=[dummy_instance], label=self.label)
-                new_series._instances = {}
-                return new_series
-            new_series = self.__class__(
-                instances=[self._instances[sliced_keys[0]]], 
-                label=self.label
-            )
-            new_series._instances = {k: self._instances[k] for k in sliced_keys}
-            return new_series
-        
+            sliced_matrices = self._matrices[key]
+            if not sliced_matrices:
+                raise ValueError("Cannot slice empty series")
+            return self.__class__(matrices=sliced_matrices, label=self.label)
+
+        if isinstance(key, list):
+            sliced_matrices = [self._matrices[i] for i in key]
+            # Allow empty selection? Usually yes for consistent slicing logic
+            if not sliced_matrices and key:
+                 # If key was not empty but result is empty (out of bounds? no, that would raise IndexError)
+                 pass
+            return self.__class__(matrices=sliced_matrices, label=self.label)
+
         # Integer case
-        if key not in self._instances:
+        try:
+            return self._matrices[key]
+        except IndexError:
             raise KeyError(
-                f"Index/Radius {key} not found in series '{self.label}'"
+                f"Index {key} out of range for series '{self.label}' with length {len(self._matrices)}"
             )
-        return self._instances[key]
 
-    def __setitem__(self, key: int, instance: I) -> None:
-        self._instances[key] = instance
+    def __setitem__(self, key: int, matrix: M) -> None:
+        self._matrices[key] = matrix
 
-    def replace(self, **changes: Any) -> Self:
-        """Create a new MatrixSeries with updated fields.
-
-        Args:
-            **changes: Fields to update. Can use internal names (_instances)
-                      _instances should be a dict[Hashable, MatrixInstance]
-
-        Returns
-        -------
-            New instance of same type with updated fields
-        """
-        new_instances_dict = changes.get("_instances", self._instances.copy())
-        new_instances_list = list(new_instances_dict.values())
-
-        return self.__class__(instances=new_instances_list)
+    def replace(
+        self,
+        matrices: Iterable[M] | None = None,
+        label: str | None = None
+    ) -> Self:
+        """Create a new MatrixSeries with updated fields."""
+        new_matrices = self._matrices if matrices is None else list(matrices)
+        new_label = self.label if label is None else label
+        return self.__class__(matrices=new_matrices, label=new_label)
 
     @property
     def description(self) -> str:
         class_name = self.__class__.__name__.lower()
-        num_instances = len(self._instances)
-        return f"{class_name}_{self.label}_{num_instances}i".lower()
+        num_matrices = len(self._matrices)
+        return f"{class_name}_{self.label}_{num_matrices}i".lower()
 
     def __repr__(self) -> str:
         label = self.label
@@ -166,8 +158,7 @@ class MatrixSeries(Generic[I]):
         table.add_column("Index", style="cyan", justify="right")
         table.add_column(label, justify="center")
 
-        for idx in sorted(self._instances.keys()):
-            inst = self._instances[idx]
+        for idx, inst in enumerate(self._matrices):
             shape_str = f"{inst.shape[0]}×{inst.shape[1]}"
             storage_abbr = "Sparse" if sp.issparse(inst.matrix) else "Dense"
             tags_str = f" {inst.tags}" if inst.tags else ""
@@ -177,23 +168,26 @@ class MatrixSeries(Generic[I]):
         Console(file=string_buffer, force_terminal=True, width=80).print(table)
         return string_buffer.getvalue().rstrip()
 
-    def map(self, func: Callable[[I], I] | str, *, inplace: bool = True, **kwargs: Any) -> Self:
-        new_data = {}
-        for idx, inst in self._instances.items():
+    def map(self, func: Callable[[M], M] | str, **kwargs: Any) -> Self:
+        new_data = []
+        for inst in self.matrices:
             if isinstance(func, str):
-                new_data[idx] = getattr(inst, func)(**kwargs)
+                new_data.append(getattr(inst, func)(**kwargs))
             else:
-                new_data[idx] = func(inst)
+                new_data.append(func(inst))
 
-        if inplace:
-            self._instances = new_data
+        if kwargs.get('inplace', False):
+            self._matrices = new_data
             return self
-        return self.replace(_instances=new_data)
+        return self.replace(matrices=new_data)
 
-    def __add__(self, other: MatrixSeries[I]) -> Self:
-        common = set(self._instances) & set(other._instances)
-        new_instances = {idx: self[idx] + other[idx] for idx in common}
-        return self.replace(_instances=new_instances)
+    def __add__(self, other: MatrixSeries[M]) -> Self:
+        if len(self._matrices) != len(other.matrices):
+             raise ValueError("Series must have same length to add")
+
+        # Zip lists and add
+        new_matrices = [m1 + m2 for m1, m2 in zip(self._matrices, other.matrices)] # type: ignore
+        return self.replace(matrices=new_matrices)
 
 
     @staticmethod
@@ -230,9 +224,9 @@ class MatrixSeries(Generic[I]):
                           save has no suffix, subsequent saves get _2, _3, etc.
 
         Creates:
-            {folder_path}/series_meta.json - metadata with instance order & files
-            {folder_path}/{instance.description}.json - instance metadata files
-            {folder_path}/{instance.description}.npz - instance data files
+            {folder_path}/series_meta.json - metadata with matrice order & files
+            {folder_path}/{matrice.description}.json - matrice metadata files
+            {folder_path}/{matrice.description}.npz - matrice data files
         """
         if folder_path is None:
             folder_path = DATA_SERIES
@@ -244,20 +238,20 @@ class MatrixSeries(Generic[I]):
         folder_path = self._resolve_save_path(base_path, overwrite, suffix_number)
         folder_path.mkdir(parents=True, exist_ok=True)
 
-        instance_files = {}
+        matrice_files = {}
         used_filenames = set()
 
         for idx in self.indices:
-            base_filename = self._instances[idx].description
+            base_filename = self._matrices[idx].description
             filename = f"{base_filename}_{idx}"
             used_filenames.add(filename)
-            instance_files[str(idx)] = filename  # Store as string for JSON
+            matrice_files[str(idx)] = filename  # Store as string for JSON
 
         meta_payload = {
             "label": self.label,
-            "instance_indices": self.indices,  # Ordered list
-            "num_instances": len(self._instances),
-            "instance_files": instance_files,  # index → filename mapping
+            "matrice_indices": self.indices,  # Ordered list
+            "num_matrices": len(self._matrices),
+            "matrice_files": matrice_files,  # index → filename mapping
         }
 
         with (folder_path / "series_meta.json").open(
@@ -266,14 +260,17 @@ class MatrixSeries(Generic[I]):
             json.dump(meta_payload, f, indent=2)
 
         for idx in self.indices:
-            filename = instance_files[str(idx)]
+            filename = matrice_files[str(idx)]
             file_path = folder_path / filename
-            self._instances[idx].save(file_path, overwrite=True)
+            self._matrices[idx].save(file_path, overwrite=True)
 
     @classmethod
-    def load(cls, folder_path: Path | str, 
-            subset_indices: list[int] | None = None,
-            subset_matrices: list[int] | slice | None = None) -> Self:
+    def load(
+        cls,
+        folder_path: Path | str,
+        subset_indices: list[int] | None = None,
+        subset_matrices: list[int] | slice | None = None
+    ) -> Self:
         """Load series from disk with optional subsetting.
 
         Args:
@@ -298,39 +295,40 @@ class MatrixSeries(Generic[I]):
         with meta_path.open("r", encoding="utf-8") as f:
             metadata = json.load(f)
 
-        instance_indices = metadata.get("instance_indices", [])
-        instance_files = metadata.get("instance_files", {})
+        matrice_indices = metadata.get("matrice_indices", [])
+        matrice_files = metadata.get("matrice_files", {})
 
-        if not instance_files:
-            msg = f"No instance_files mapping found in metadata: {meta_path}"
+        if not matrice_files:
+            msg = f"No matrice_files mapping found in metadata: {meta_path}"
             raise ValueError(msg)
 
         # Filter which matrices to load
         if subset_matrices is not None:
             if isinstance(subset_matrices, slice):
                 # Apply slice to the list of indices
-                instance_indices = instance_indices[subset_matrices]
+                matrice_indices = matrice_indices[subset_matrices]
             else:
                 # Keep only specified indices
-                instance_indices = [idx for idx in instance_indices 
+                matrice_indices = [idx for idx in matrice_indices
                                 if idx in subset_matrices]
 
-        instances_list = []
-        instance_class = cls._instance_class or MatrixInstance
-        for idx in instance_indices:
-            filename = instance_files[str(idx)]
+        matrices_list = []
+        matrice_class = cls._matrix_class
+        for idx in matrice_indices:
+            filename = matrice_files[str(idx)]
             file_path = folder_path / filename
 
-            # Pass subset_indices to instance load
-            inst = instance_class.load(file_path, subset_indices=subset_indices)
-            instances_list.append(inst)
+            # Pass subset_indices to matrice load
+            inst = matrice_class.load(file_path, subset_indices=subset_indices)
+            matrices_list.append(inst)
 
-        if not instances_list:
-            msg = f"No instances found in {folder_path}"
+        if not matrices_list:
+            msg = f"No matrices found in {folder_path}"
             raise ValueError(msg)
 
-        series = cls(instances=instances_list)
-        new_instances = dict(zip(instance_indices, instances_list, strict=True))
-        series._instances = new_instances
 
-        return series
+        return cls(matrices=matrices_list)
+
+    # def copy(self) -> Self:
+    #     """Create a fresh Series container (shallow copy of matrices)."""
+    #     return self.__class__(matrices=self._matrices.copy(), label=self.label)
