@@ -4,7 +4,7 @@ from torch._inductor.pattern_matcher import Arg as Arg, CallFunction as CallFunc
 aten: Incomplete
 prims: Incomplete
 permute_default: Incomplete
-expand_default: Incomplete
+expand_default: Incompletepython -m venv .venv
 clone_default: Incomplete
 view_default: Incomplete
 permute_default_1: Incomplete

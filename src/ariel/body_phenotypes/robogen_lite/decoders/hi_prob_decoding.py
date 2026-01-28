@@ -198,6 +198,9 @@ class HighProbabilityDecoder:
 
             # Ensure no NONE modules are instantiated
             if self.type_dict[to_module] == ModuleType.NONE:
+                print(f"DEBUG: to_module={to_module}, from_module={from_module}, face={conn_face}")
+                print(f"DEBUG: value_at_max={value_at_max}")
+                print(f"DEBUG: type_dict={self.type_dict}")
                 msg = "Cannot instantiate a NONE module.\n"
                 msg += "This indicates an error in decoding."
                 raise ValueError(msg)
@@ -211,6 +214,13 @@ class HighProbabilityDecoder:
             self.edges.append(
                 (from_module, to_module, conn_face),
             )
+
+            # if from_module == IDX_OF_CORE and conn_face == ModuleFaces.BACK.value:
+            #     print(f"DEBUG: Module {to_module} (type={self.type_dict[to_module].name}) attached to CORE BACKSIDE")
+
+            # if from_module == IDX_OF_CORE and conn_face == ModuleFaces.FRONT.value:
+            #     print(f"DEBUG: Module {to_module} (type={self.type_dict[to_module].name}) attached to CORE BACKSIDE")
+
 
             # Update instantiated modules
             pre_nodes[to_module] = 1
@@ -241,13 +251,18 @@ class HighProbabilityDecoder:
         all_possible_rotations = set(ModuleRotationsIdx)
         for module_idx, module_type in self.type_dict.items():
             # Constrain connections based on module type
+
+            if module_type == ModuleType.NONE:
+                self.conn_p_space[module_idx, :, :] = 0.0
+                self.conn_p_space[:, module_idx, :] = 0.0
+
             allowed_faces = set(ALLOWED_FACES[module_type])
             disallowed_faces = all_possible_faces - allowed_faces
             for face in disallowed_faces:
                 # Disable as parent
                 self.conn_p_space[module_idx, :, face.value] = 0.0
-                # Disable as child
-                self.conn_p_space[:, module_idx, face.value] = 0.0
+                # # Disable as child
+                # self.conn_p_space[:, module_idx, face.value] = 0.0
 
             # Constrain rotations based on module type
             allowed_rotations = set(ALLOWED_ROTATIONS[module_type])
