@@ -21,6 +21,8 @@ from ..node import (
     Node,
 )
 
+from ariel.ec.genotypes.nde import NeuralDevelopmentalEncoding
+
 if TYPE_CHECKING:
     from ariel.ec.genotypes.nde.nde import (
         NeuralDevelopmentalEncoding,
@@ -282,7 +284,6 @@ def node_from_string(s: str) -> Node:
 
 def node_from_nde_genotype(
     genotype: list[list[float]],
-    NDE: NeuralDevelopmentalEncoding,
     *,
     num_modules: int = 20,
 ) -> Node:
@@ -298,13 +299,8 @@ def node_from_nde_genotype(
     -------
         Root CanonicalizableNode of the decoded tree
     """
-    try:
-        from torch import no_grad
-    except ImportError as e:
-        raise ImportError("Torch Required") from e
-
-    with no_grad():
-        matrixes = NDE.forward(np.array(genotype))
+    nde = NeuralDevelopmentalEncoding(num_modules)
+    matrixes = nde.forward(np.array(genotype))
 
     hpd = HighProbabilityDecoder(num_modules=num_modules)
     ind_graph = hpd.probability_matrices_to_graph(
@@ -312,5 +308,4 @@ def node_from_nde_genotype(
         matrixes[1],
         matrixes[2],
     )
-
     return node_from_graph(ind_graph)

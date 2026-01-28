@@ -1,4 +1,26 @@
 """
+          _____                _____                    _____
+         /\    \              /\    \                  /\    \
+        /::\    \            /::\    \                /::\____\
+       /::::\    \           \:::\    \              /:::/    /
+      /::::::\    \           \:::\    \            /:::/    /
+     /:::/\:::\    \           \:::\    \          /:::/    /
+    /:::/  \:::\    \           \:::\    \        /:::/____/
+   /:::/    \:::\    \          /::::\    \      /::::\    \
+  /:::/    / \:::\    \        /::::::\    \    /::::::\____\________
+ /:::/    /   \:::\    \      /:::/\:::\    \  /:::/\:::::::::::\    \
+/:::/____/     \:::\____\    /:::/  \:::\____\/:::/  |:::::::::::\____\
+\:::\    \      \::/    /   /:::/    \::/    /\::/   |::|~~~|~~~~~
+ \:::\    \      \/____/   /:::/    / \/____/  \/____|::|   |
+  \:::\    \              /:::/    /                 |::|   |
+   \:::\    \            /:::/    /                  |::|   |
+    \:::\    \           \::/    /                   |::|   |
+     \:::\    \           \/____/                    |::|   |
+      \:::\    \                                     |::|   |
+       \:::\____\                                    \::|   |
+        \::/    /                                     \:|   |
+         \/____/                                       \|___|
+
 CanonicalToolkit - Morphological analysis toolkit for evolutionary robotics.
 
 This toolkit provides:
@@ -16,7 +38,7 @@ Quick start:
     from canonical_toolkit.base.matrix import MatrixInstance
     from canonical_toolkit.morphology.node import Node
     from canonical_toolkit.morphology.similarity import SimilarityMatrix
-    
+
 Author Salomé Poulain 19/01/2026
 """
 

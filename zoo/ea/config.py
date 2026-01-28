@@ -13,20 +13,20 @@ from rich.console import Console
 from rich.table import Table
 
 
-import logging                                                                                                                                          
-from rich.logging import RichHandler                                                                                                                    
-from rich.console import Console                                                                                                                        
-                                                                                                                                                        
-# Create console and logger                                                                                                                             
-console = Console()                                                                                                                                     
-                                                                                                                                                        
-logging.basicConfig(                                                                                                                                    
-    level=logging.INFO,                                                                                                  
-    format="%(message)s",                                                                                                                               
-    datefmt="[%X]",                                                                                                                                     
-    handlers=[RichHandler(console=console, show_path=False)]                                                                                            
-)                                                                                                                                                       
-                                                                                                                                                        
+import logging
+from rich.logging import RichHandler
+from rich.console import Console
+
+# Create console and logger
+console = Console()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(message)s",
+    datefmt="[%X]",
+    handlers=[RichHandler(console=console, show_path=False)]
+)
+
 logger = logging.getLogger("ea")
 
 # Detect if running in notebook/interactive mode
@@ -37,8 +37,20 @@ def _in_notebook():
     except NameError:
         return False
 
-if _in_notebook():
-    # Skip loading animation in notebooks
+def _is_main_process():
+    import sys
+    # On macOS with spawn, worker processes have __spec__.name as "__mp_main__"
+    # or are invoked via multiprocessing.spawn
+    if hasattr(sys.modules.get("__main__", None), "__spec__"):
+        spec = sys.modules["__main__"].__spec__
+        if spec and spec.name == "__mp_main__":
+            return False
+    # Also check process name as fallback
+    import multiprocessing
+    return multiprocessing.current_process().name == "MainProcess"
+
+if _in_notebook() or not _is_main_process():
+    # Skip loading animation in notebooks and worker processes
     from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, field_validator, model_validator
     import ariel.ec.a004 as a004
     from ariel.ec.a004 import EASettings
@@ -55,18 +67,19 @@ else:
         from ariel.utils.optimizers.revde import RevDE
         import canonical_toolkit as ctk
 
-from enum import Enum                                                                                                                                   
-                                                                                                                                                        
-class LogLevel(str, Enum):                                                                                                                              
-    DEBUG = "DEBUG"                                                                                                                                     
-    INFO = "INFO"                                                                                                                                       
-    WARNING = "WARNING"                                                                                                                                 
-    ERROR = "ERROR"                                                                                                                                     
+from enum import Enum
+
+class LogLevel(str, Enum):
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
     CRITICAL = "CRITICAL"
-    
+
 class NoveltyMethod(str, Enum):
     CTK = "ctk"
     FUDA = "fuda"
+    TED = "ted"
 
 class Config(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -80,6 +93,7 @@ class Config(BaseModel):
     LOG_LEVEL: LogLevel = LogLevel.INFO
     STORE_STRING: bool = True
     STORE_IMG: bool = True
+    COPY_ANALYSIS: bool = True
     # ? ------------------------
     NUM_MODULES: int = 20
     GENOTYPE_SIZE: int = 64
@@ -93,7 +107,7 @@ class Config(BaseModel):
     # ? ------------------------
     PENALTY: bool = False
     FITNESS_NOVELTY: bool = True
-    NOVELTY_METHOD: str = NoveltyMethod.CTK.value
+    NOVELTY_METHOD: str = NoveltyMethod.TED.value
     FITNESS_SPEED: bool = True
     STORE_NOVELTY: bool | None = None
     STORE_SPEED: bool | None = None
@@ -104,8 +118,9 @@ class Config(BaseModel):
     K_TOURNAMENT: int = 2
     # ? ------------------------
     SAVE_SPACES: list[ctk.Space] | None = ctk.Space.all_spaces()
-    NOVELTY_SPACES: list[ctk.Space] | None = [ctk.Space.WHOLE, ctk.Space.AXIAL]
-    MAX_HOP_RADIUS: int | None = 
+    NOVELTY_SPACES: list[ctk.Space] | None = ctk.Space.all_spaces()
+    MAX_HOP_RADIUS: int | None = 3
+    SKIP_EMPTY: bool = False
     # ? ------------------------
     K_NOVELTY: int = 1
     ARCHIVE_CHANCE: float = 0.1
@@ -137,9 +152,9 @@ class Config(BaseModel):
             raise ValueError("FITNESS_SPEED requires STORE_SPEED to be True")
         if not set(self.NOVELTY_SPACES).issubset(set(self.SAVE_SPACES)):
             raise ValueError("NOVELTY_SPACES must be a subset of SAVE_SPACES")
-        
-        if not self.STORE_STR:
-            raise ValueError("Current ea relies heavily on string storage") 
+
+        if not self.STORE_STRING:
+            raise ValueError("Current ea relies heavily on string storage")
         return self
 
     def _initialize(self, folder: Path | None = None, output_dir: Path | None = None) -> None:
@@ -151,7 +166,7 @@ class Config(BaseModel):
         """
         np.random.seed(self.SEED)
         torch.manual_seed(self.SEED)
-        torch.use_deterministic_algorithms(True, warn_only=True)
+        # torch.use_deterministic_algorithms(True, warn_only=True)
 
         object.__setattr__(self, "RNG", np.random.default_rng(self.SEED))
 
@@ -178,7 +193,7 @@ class Config(BaseModel):
         object.__setattr__(self, "NDE", NeuralDevelopmentalEncoding(self.NUM_MODULES, self.GENOTYPE_SIZE))
         object.__setattr__(self, "REVDE", RevDE(self.REV_SCALING_FACTOR))
         object.__setattr__(self, "SIM_CONFIGS", [
-            ctk.SimilaritySpaceConfig(space=space, max_hop_radius=self.MAX_HOP_RADIUS)
+            ctk.SimilaritySpaceConfig(space=space, max_hop_radius=self.MAX_HOP_RADIUS, skip_empty=self.SKIP_EMPTY)
             for space in self.SAVE_SPACES
         ])
 
@@ -195,6 +210,12 @@ class Config(BaseModel):
 
         if save_config:
             self.save(folder / "config.json")
+
+            # Copy analysis folder if it exists and flag is set
+            if self.COPY_ANALYSIS:
+                analysis_src = Path.cwd() / "analysis"
+                if analysis_src.exists():
+                    shutil.copytree(analysis_src, folder / "analysis")
 
     @model_validator(mode="after")
     def setup(self) -> "Config":
@@ -304,8 +325,8 @@ def cli_options(func):
     @click.option("-n", "--STORE_NOVELTY", is_flag=True, default=None, help="Store novelty")
     @click.option("-s", "--STORE_SPEED", is_flag=True, default=None, help="Store speed")
     @click.option(
-        "-m", 
-        "--NOVELTY_METHOD", 
+        "-m",
+        "--NOVELTY_METHOD",
         type=click.Choice(["ctk", "fuda"], case_sensitive=False),
         help="Select novelty algorithm: 'ctk' (graph-based) or 'fuda' (morphological)"
     )
@@ -361,5 +382,5 @@ def cli_options(func):
     return wrapper
 
 
-if __name__ == "__main__": 
+if __name__ == "__main__":
     config = Config.load('__data__/run_0001')

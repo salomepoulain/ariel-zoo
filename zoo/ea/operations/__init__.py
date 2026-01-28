@@ -27,6 +27,6 @@ from ea.operations.evaluation import *
 from ea.operations.initial_pop import *
 from ea.operations.revde import *
 from ea.operations.survivor_selection import *
-from ea.operations.store_img import *
-from ea.operations.store_string import *
-from ea.operations.save_features import *
+from ea.operations.misc.store_img import *
+from ea.operations.misc.store_string import *
+from ea.operations.misc.save_features import *

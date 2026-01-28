@@ -27,7 +27,7 @@ def main():
         save_features,
         survivor_selection,
     )
-    
+
     # print(config.STORE_IMG)
     ops = [
         EAStep("children", revde),
@@ -38,11 +38,9 @@ def main():
         EAStep("survivor_selection", survivor_selection),
     ]
     ops = [op for op in ops if op is not None]
-    
-    print(config.NOVELTY_METHOD)
 
     population_list = initial_pop()
-    population_list = store_string(population_list) 
+    population_list = store_string(population_list)
     population_list = save_features(population_list)
     if config.STORE_IMG:
         population_list = store_img(population_list)

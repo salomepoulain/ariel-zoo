@@ -275,3 +275,6 @@ RECYCLE.BIN/
 *.msp
 # Windows shortcuts
 *.lnk
+
+
+run_history.csv
