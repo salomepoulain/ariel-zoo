@@ -85,10 +85,10 @@ class UmapConfig:
     min_dist: float = 0.0
     metric: str = "cosine"  # "precomputed"
     """use 'precomputed' if already cosine was applied"""
-    random_state: int | None = 42
+    random_state: int | None = None #42
     init: str = "random"
-    transform_seed: int | None = 42
-    n_jobs: int = 1
+    transform_seed: int | None = None #42
+    n_jobs: int = -1
 
     extra_params: dict[str, Any] = field(default_factory=dict)
 

@@ -108,7 +108,9 @@ def save_fuda_archive(population: Population):
     archive = np.array(list(documents.values())).T
 
     archive_path = config.OUTPUT_FOLDER / 'archive' / 'fuda'
-    matrix = ctk.SimilarityMatrix(archive, 'fuda_archive', -1)
+
+    tags = {'domain' : 'FEATURES', 'radius': -1}
+    matrix = ctk.SimilarityMatrix(archive, 'fuda_archive', tags)
     try:
         existing = ctk.SimilarityMatrix.load(archive_path)
         combined = matrix | existing

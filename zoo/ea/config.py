@@ -107,7 +107,7 @@ class Config(BaseModel):
     # ? ------------------------
     PENALTY: bool = False
     FITNESS_NOVELTY: bool = True
-    NOVELTY_METHOD: str = NoveltyMethod.TED.value
+    NOVELTY_METHOD: str = NoveltyMethod.FUDA.value
     FITNESS_SPEED: bool = True
     STORE_NOVELTY: bool | None = None
     STORE_SPEED: bool | None = None
@@ -327,7 +327,7 @@ def cli_options(func):
     @click.option(
         "-m",
         "--NOVELTY_METHOD",
-        type=click.Choice(["ctk", "fuda"], case_sensitive=False),
+        type=click.Choice(["ctk", "fuda", "ted"], case_sensitive=False),
         help="Select novelty algorithm: 'ctk' (graph-based) or 'fuda' (morphological)"
     )
     def wrapper(**cli_args):
