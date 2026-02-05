@@ -1,6 +1,0 @@
-trivial_name,fuda_aligned,canonical
-spider,C[4-(HBH2B)],C[4-(HBH2B)]
-gecko,C[fb(H2B)l(HBHB[rl(H2B)])],C[fb(H2B)r(HBHB[rl(H2B)])]
-baby_a,C[f(H2B)b(H2H2BH2B)l(HBHB[rl(H2B)])],C[b(H2B)f(H2H2BH2B)r(HBHB[rl(H2B)])]
-baby_b,C[l(H2B)fbr(HBH2BH2B)],C[f(H2B)brl(HBH2BH2B)]
-snake,C[f(H2BH2BH2BH2BH2BH2BH2BH2)],C[r(H2BH2BH2BH2BH2BH2BH2BH2)]

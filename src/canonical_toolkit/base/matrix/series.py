@@ -329,6 +329,4 @@ class MatrixSeries(Generic[M]):
 
         return cls(matrices=matrices_list)
 
-    # def copy(self) -> Self:
-    #     """Create a fresh Series container (shallow copy of matrices)."""
-    #     return self.__class__(matrices=self._matrices.copy(), label=self.label)
+    

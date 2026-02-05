@@ -11,7 +11,6 @@ import scipy.sparse as sp
 from rich.console import Console
 from rich.table import Table
 
-# from ._indexer import FrameLocIndexer
 from .matrix import DATA_FRAMES, MatrixInstance
 from .series import MatrixSeries
 from .matrix_types import S
@@ -469,20 +468,3 @@ class MatrixFrame(Generic[S]):
 
         # Create frame with loaded series (preserves order!)
         return cls(series=series_list)
-
-    # def copy(self) -> Self:
-    #     """Create a new Frame instance with copies of the underlying series."""
-    #     return self.__class__(series=[s.copy() for s in self._series])
-
-# --- Test Sync ---
-if __name__ == "__main__":
-    # FIXED: Calling constructors with 'instances' instead of 'instances_list'
-    s_a = MatrixSeries(
-        matrices=[MatrixInstance(sp.eye(5), "A")], label="series_A"
-    )
-    s_b = MatrixSeries(
-        matrices=[MatrixInstance(sp.eye(5), "B")], label="series_B"
-    )
-
-    frame = MatrixFrame(series=[s_a, s_b])
-    print(frame)

@@ -82,7 +82,7 @@ class Space(Enum):
 class UmapConfig:
     n_neighbors: int = 15
     n_components: int = 2
-    min_dist: float = 0.0
+    min_dist: float = 0.1
     metric: str = "cosine"  # "precomputed"
     """use 'precomputed' if already cosine was applied"""
     random_state: int | None = None #42

@@ -1,3 +1,12 @@
+"""
+Conceptually good but this class is a big ai slop mess
+needs careful reimplementation
+
+broken:
+- fontsizes and titles very inconsistent and change whenever changing graph dimension
+- add_data methods are messy and might be better to add seperate methods
+"""
+
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
@@ -17,6 +26,9 @@ if TYPE_CHECKING:
 
 else:
     AxesProxy = Any
+
+
+plt.rcParams['lines.solid_capstyle'] = 'round'
 
 
 __all__ = [
@@ -566,7 +578,7 @@ class GridPlotter:
         self._apply_scatter_styles()
         save_params = {
             "dpi": self.config.dpi,
-            "bbox_inches": None,
+            "bbox_inches": "tight",
             "pad_inches": 0,
         }
         save_params.update(kwargs)
@@ -613,6 +625,13 @@ class GridPlotter:
         Returns:
             self for chaining
         """
+        ids = list(ids)
+        if colors is not None:
+            colors = list(colors)
+        if sizes is not None:
+            sizes = list(sizes)
+        if alphas is not None:
+            alphas = list(alphas)
         for i, id_ in enumerate(ids):
             style = self.style_cache.get(id_, {})
             if colors is not None:
@@ -717,36 +736,44 @@ class GridPlotter:
                 cell.cell_type = CellType.IMAGE
         return self
 
-    def add_global_colorbar(self, location: str = "right"):
+    def add_global_colorbar(self, location: str = "right", mappable=None, label: str | None = None):
         """
         Add a shared colorbar for all heatmaps, normalizing them to the same scale.
 
         Scans all cells with CellType.HEATMAP, computes global min/max from raw_data,
         applies set_clim() to normalize all heatmaps, then adds a single colorbar.
 
+        Alternatively, pass a custom ScalarMappable to add a colorbar for
+        non-heatmap plots (e.g. scatter plots with custom colormaps).
+
         Args:
             location: Where to place colorbar - 'right', 'left', 'top', 'bottom'
+            mappable: A ScalarMappable (e.g. from matplotlib.cm.ScalarMappable)
+                to use instead of the heatmap artists.
+            label: Optional label for the colorbar.
         """
-        # 1. Find all heatmap cells
-        heatmap_cells = [
-            cell
-            for cell in self._cells.flatten()
-            if cell.cell_type == CellType.HEATMAP and cell.raw_data is not None
-        ]
+        if mappable is None:
+            # 1. Find all heatmap cells
+            heatmap_cells = [
+                cell
+                for cell in self._cells.flatten()
+                if cell.cell_type == CellType.HEATMAP and cell.raw_data is not None
+            ]
 
-        if not heatmap_cells:
-            return self
+            if not heatmap_cells:
+                return self
 
-        # 2. Compute global min/max
-        global_min = min(cell.raw_data.min() for cell in heatmap_cells)
-        global_max = max(cell.raw_data.max() for cell in heatmap_cells)
+            # 2. Compute global min/max
+            global_min = min(cell.raw_data.min() for cell in heatmap_cells)
+            global_max = max(cell.raw_data.max() for cell in heatmap_cells)
 
-        # 3. Normalize all heatmaps
-        for cell in heatmap_cells:
-            cell.artist.set_clim(global_min, global_max)
+            # 3. Normalize all heatmaps
+            for cell in heatmap_cells:
+                cell.artist.set_clim(global_min, global_max)
 
-        # 4. Add colorbar using one of the heatmap artists
-        # Use the margin area for the colorbar
+            mappable = heatmap_cells[0].artist
+
+        # 4. Add colorbar
         if location == "right":
             cbar_ax = self._fig.add_axes([1, 0.15, 0.01, 0.7])
         elif location == "left":
@@ -762,9 +789,11 @@ class GridPlotter:
         orientation = (
             "horizontal" if location in {"top", "bottom"} else "vertical"
         )
-        self._fig.colorbar(
-            heatmap_cells[0].artist, cax=cbar_ax, orientation=orientation
+        cbar = self._fig.colorbar(
+            mappable, cax=cbar_ax, orientation=orientation
         )
+        if label is not None:
+            cbar.set_label(label)
 
         return self
 
@@ -1026,6 +1055,7 @@ class GridPlotter:
         return self
 
 
+
     def add_numeric_data(
         self,
         data_list: list,
@@ -1080,6 +1110,7 @@ class GridPlotter:
                         c=colors,
                         s=sizes,
                         alpha=alphas,
+                        edgecolors='none',
                         **kwargs
                     )
                 else:

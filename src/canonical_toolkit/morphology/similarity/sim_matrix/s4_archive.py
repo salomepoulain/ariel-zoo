@@ -258,30 +258,6 @@ class SimilarityArchive:
             gen_indices=loaded_gen_indices,
         )
 
-    # @classmethod
-    # def load(
-    #     cls,
-    #     stem_frame_name: str =  "gen_*",
-    #     frame_folder_path: str | Path | None = "__data__/feature_frames/",
-    #     id_mapper: ID_MAPPER | None = None,
-    #     alive_mapper: ALIVE_MAPPER | None = None,
-    #     db_file_path: str | Path | None = "__data__/database.db"
-    # ) -> SimilarityArchive:
-    #     frame_folders = sorted((frame_folder_path).glob(stem_frame_name))
-    #     all_feature_frames = [SimilarityFrame.load(f) for f in frame_folders]
-
-    #     if not id_mapper:
-    #         # try to find the database from the db file path
-
-    #         # load id mapper from databse with pandas
-    #         # load only alive with pandas
-
-    #     return SimilarityArchive(
-    #         frames=all_feature_frames,
-    #         id_mapper=
-    #     )
-
-    # --- Dimension Info ---
 
     # --- Selection Methods ---
 
@@ -460,78 +436,6 @@ class SimilarityArchive:
         msg = f"Invalid gen selector type: {type(key)}"
         raise TypeError(msg)
 
-    # def select(
-    #     self,
-    #     gen: int | slice | list[int] | None = None,
-    #     space: str | list[str] | None = None,
-    #     radius: int | slice | list[int] | None = None,
-    # ) -> SimilarityArchive:
-    #     """
-    #     Select a subset of the archive. Returns a NEW SimilarityArchive object.
-    #     Data is physically subsetted.
-    #     """
-    #     # 1. Determine Generation Indices to Keep (Local Indices)
-    #     # -----------------------------------------------------
-    #     if gen is not None:
-    #         local_gen_indices = self._normalize_gen(gen)
-    #     else:
-    #         local_gen_indices = list(range(len(self._frames)))
-
-    #     # Subset frames list and tracking indices
-    #     # We assume local_gen_indices is a list of ints at this point
-    #     if local_gen_indices is None: # Should be caught above, but for typing
-    #             local_gen_indices = list(range(len(self._frames)))
-
-    #     current_frames = [self._frames[i] for i in local_gen_indices]
-    #     current_gen_indices = [self._gen_indices[i] for i in local_gen_indices]
-
-    #     # 2. Slice Space and Radius (Deep Slice)
-    #     # --------------------------------------
-    #     # We delegate this to SimilarityFrame.__getitem__
-    #     # frame[radius_selector, space_selector]
-
-    #     if space is not None or radius is not None:
-    #         final_frames = []
-
-    #         # Prepare selectors for Frame
-    #         # To ensure we always get a FRAME back (maintaining 3D structure),
-    #         # we must ensure selectors are slices or lists, never single int/str.
-
-    #         # Radius (row)
-    #         if radius is None:
-    #             r_sel = slice(None)
-    #         elif isinstance(radius, int):
-    #             r_sel = [radius] # Force list to keep dimension
-    #         else:
-    #             r_sel = radius
-
-    #         # Space (col)
-    #         if space is None:
-    #             s_sel = slice(None)
-    #         elif isinstance(space, str):
-    #             s_sel = [space] # Force list to keep dimension
-    #         else:
-    #             s_sel = space
-
-    #         for f in current_frames:
-    #             # Frame.__getitem__ supports tuple (row, col)
-    #             subset_frame = f[r_sel, s_sel] # type: ignore
-    #             final_frames.append(subset_frame)
-
-    #         current_frames = final_frames
-
-    #     # 3. Return New Archive
-    #     # ---------------------
-    #     return SimilarityArchive(
-    #         frames=current_frames,
-    #         id_mapper=self._id_mapper,
-    #         alive_mapper=self._alive_mapper,
-    #         gen_indices=current_gen_indices,
-    #         original_shape=self._original_shape,
-    #         ftransformer=self._ftransformer,
-    #         alive_only=self._alive_only,
-    #     )
-
     # TODO; in_place
     def select(
         self,
@@ -628,21 +532,6 @@ class SimilarityArchive:
             return self.select(*key)
 
         return self.select(gen=key)
-
-        # if not isinstance(key, tuple):
-        #     return self.select(gen=key)
-
-        # n = len(key)
-        # gen = key[0] if n > 0 and key[0] is not None else None
-        # space = key[1] if n > 1 and key[1] is not None else None
-        # radius = key[2] if n > 2 and key[2] is not None else None
-
-        # # Handle : (slice(None)) as None
-        # if isinstance(gen, slice) and gen == slice(None): gen = None
-        # if isinstance(space, slice) and space == slice(None): space = None
-        # if isinstance(radius, slice) and radius == slice(None): radius = None
-
-        # return self.select(gen=gen, space=space, radius=radius)
 
     # --- Representation ---
 
@@ -797,12 +686,12 @@ class SimilarityArchive:
                     lines[-(i + 1)] = lines[-(i + 1)] + " " * offset + label
                 if i == len(gen_ranges) - 1:
                     real_end = self.gens[end] if end < len(self.gens) else end
-                    label = f"← gen {real_end} | {self.original_shape[0] - 1}"
+                    label = f"← gen {real_end} | {self.original_shape[-1] - 1}"
                     offset = i * h_spacing
                     lines[-(i + 1)] = lines[-(i + 1)] + " " * offset + label
         else:
             if self.gens:
-                label = f"← gen {self.gens[0]} | {self.original_shape[0] - 1}"
+                label = f"← gen {self.gens[0]} | {self.original_shape[-1] - 1}"
             else:
                 label = "← (empty)"
             lines[-1] = lines[-1] + " " + label

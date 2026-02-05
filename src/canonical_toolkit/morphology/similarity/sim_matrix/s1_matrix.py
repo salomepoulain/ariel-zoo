@@ -250,11 +250,21 @@ class SimilarityMatrix(MatrixInstance):
 
     def get_max_indices(self, amt: int) -> list[tuple[int, int]]:
         assert self.domain == MatrixDomain.SIMILARITY, (
-            "can only get indices from similarity domain"
+            f"can only get indices from similarity domain, current {self.domain}"
         )
 
         flat = self._matrix.ravel()
         indices = np.argsort(flat)[-amt:][::-1]
+        rows, cols = np.unravel_index(indices, self.shape)
+        return list(zip(rows.tolist(), cols.tolist(), strict=False))
+
+    def get_min_indices(self, amt: int) -> list[tuple[int, int]]:
+        assert self.domain == MatrixDomain.SIMILARITY, (
+            f"can only get indices from similarity domain, current {self.domain}"
+        )
+
+        flat = self._matrix.ravel()
+        indices = np.argsort(flat)[:amt]
         rows, cols = np.unravel_index(indices, self.shape)
         return list(zip(rows.tolist(), cols.tolist(), strict=False))
 
@@ -317,203 +327,3 @@ class SimilarityMatrix(MatrixInstance):
 
         msg = f"Unsupported or unknown MatrixDomain: {self.domain}"
         raise ValueError(msg)
-
-    # def __init__(
-    #     self,
-    #     matrix: sp.spmatrix | np.ndarray,
-    #     space: Space | str,
-    #     radius: int,
-    #     domain: MatrixDomain | str = MatrixDomain.FEATURES,
-    #     tags: dict[str, Any] | None = None,
-    # ) -> None:
-    #     """
-    #     Initialize similarity matrix with typed attributes.
-
-    #     Args:
-    #         matrix: Sparse or dense matrix data
-    #         space: VectorSpace enum for morphological space (REQUIRED)
-    #         radius: Neighborhood radius (REQUIRED)
-    #         domain: MatrixDomain enum or string (default: FEATURES)
-    #         tags: Optional extra metadata tags
-    #     """
-    #     final_tags = tags.copy() if tags else {}
-
-    #     domain_str = (
-    #         domain.name if isinstance(domain, MatrixDomain) else str(domain)
-    #     )
-    #     final_tags["domain"] = domain_str
-    #     final_tags["radius"] = radius
-
-    #     super().__init__(
-    #         matrix=matrix,
-    #         label=space,
-    #         tags=final_tags,
-    #     )
-
-    # @classmethod
-    # def zeros(
-    #     cls,
-    #     shape: tuple[int, int],
-    #     space: Space | str,
-    #     radius: int,
-    #     domain: MatrixDomain | str = MatrixDomain.FEATURES,
-    #     sparse: bool = True,
-    #     **tags: Any,
-    # ) -> SimilarityMatrix:
-    #     """
-    #     Create a zero-filled SimilarityMatrix to fill gaps in a Frame.
-
-    #     Args:
-    #         shape: (rows, cols)
-    #         space: The morphological space label
-    #         radius: The neighborhood radius
-    #         domain: The data domain (default: FEATURES)
-    #         sparse: Whether to use a sparse CSR matrix or dense numpy array
-    #         **tags: Additional metadata
-    #     """
-    #     # 1. Create the underlying zero data
-    #     if sparse:
-    #         matrix = sp.csr_matrix(shape)
-    #     else:
-    #         matrix = np.zeros(shape)
-
-    #     # 2. Ensure we mark it as a gap in the tags
-    #     final_tags = tags.copy()
-    #     final_tags["is_gap"] = True
-
-    #     # 3. Return a fully typed SimilarityMatrix
-    #     return cls(
-    #         matrix=matrix,
-    #         space=space,
-    #         radius=radius,
-    #         domain=domain,
-    #         tags=final_tags,
-    #     )
-
-    # --- Similarity Specific Properties ---
-
-    # @property
-    # def space(self) -> str:
-    #     """The morphological space (e.g., 'FRONT')."""
-    #     return self._label
-
-    # @property
-    # def domain(self) -> str:
-    #     """The data domain (FEATURES, SIMILARITY, EMBEDDING)."""
-    #     return self._tags["domain"]
-
-    # @property
-    # def radius(self) -> int:
-    #     """The neighborhood radius."""
-    #     return self._tags["radius"]
-
-    # def replace(self, **changes) -> SimilarityMatrix:
-    #     """
-    #     Returns a new SimilarityMatrix with updated fields.
-    #     Maps generic keys (label) to specific ones (space).
-    #     """
-    #     # Map generic keys to specific ones
-    #     if "label" in changes:
-    #         changes["space"] = changes.pop("label")
-
-    #     new_args = {
-    #         "matrix": self._matrix,
-    #         "space": self.space,
-    #         "radius": self.radius,
-    #         "domain": self.domain,
-    #         "tags": self._tags.copy(),
-    #     } | changes
-    #     valid_keys = {"matrix", "space", "radius", "domain", "tags"}
-    #     filtered_args = {k: v for k, v in new_args.items() if k in valid_keys}
-
-    #     return SimilarityMatrix(**filtered_args)
-
-    # @classmethod
-    # def load(
-    #     cls, file_path: Path | str, subset_indices: list[int] | None = None
-    # ):
-    #     """Load SimilarityMatrix from disk, optionally subsetting.
-
-    #     Overrides base class load() to translate generic format (label, tags)
-    #     to similarity-specific format (space, radius, domain).
-
-    #     Args:
-    #         file_path: Full path without extension
-    #         subset_indices: Optional list of row/column indices to keep.
-    #                     If provided, returns matrix[subset_indices, subset_indices].
-
-    #     Returns
-    #     -------
-    #         Loaded SimilarityMatrix
-    #     """
-    #     import json
-    #     from pathlib import Path
-
-    #     file_path = Path(file_path)
-    #     folder = file_path.parent
-    #     filename_stem = file_path.name
-
-    #     # Load metadata
-    #     json_path = folder / f"{filename_stem}.json"
-    #     if not json_path.exists():
-    #         msg = f"Metadata not found: {json_path}"
-    #         raise FileNotFoundError(msg)
-
-    #     with json_path.open(encoding="utf-8") as f:
-    #         info = json.load(f)
-
-    #     # Extract similarity-specific attributes
-    #     space = info["label"]  # label → space
-    #     tags = info.get("tags", {})
-    #     radius = tags.get("radius", 0)
-    #     domain = tags.get("domain", MatrixDomain.FEATURES.name)
-
-    #     # Load matrix
-    #     matrix_path = folder / info["matrix_file"]
-    #     if info["storage"] == "sparse":
-    #         matrix = sp.load_npz(matrix_path)
-    #     else:
-    #         matrix = np.load(matrix_path)
-
-    #     # Apply subset if requested
-    #     if subset_indices is not None:
-    #         # Use numpy's ix_ for proper row/column subsetting
-    #         matrix = matrix[np.ix_(subset_indices, subset_indices)]
-
-    #         # Update shape in tags/metadata
-    #         tags = tags.copy()  # Don't modify original
-    #         tags["original_shape"] = (
-    #             matrix.shape
-    #         )  # Store original for reference
-    #         # Optional: update radius or other metadata if needed
-
-    #     # Call __init__ with similarity-specific signature
-    #     return cls(
-    #         matrix=matrix,
-    #         space=space,
-    #         radius=radius,
-    #         domain=domain,
-    #         tags=tags,
-    #     )
-
-    # def replace(self, **changes: Any) -> SimilarityMatrix:
-    #     """Returns a new SimilarityMatrix with updated fields."""
-    #     # Map label back to space if necessary
-    #     if "label" in changes:
-    #         changes["space"] = changes.pop("label")
-
-    #     # Extract current state
-    #     new_args = {
-    #         "matrix": self._matrix,
-    #         "space": self.space,
-    #         "radius": self.radius,
-    #         "domain": self.domain,
-    #         "tags": self._tags.copy(),
-    #     } | changes
-
-    #     # Only pass valid SimilarityMatrix __init__ keys
-    #     valid_keys = {"matrix", "space", "radius", "domain", "tags"}
-    #     filtered = {k: v for k, v in new_args.items() if k in valid_keys}
-    #     return self.replace(**filtered)
-
-    # --- Math & Analysis ---

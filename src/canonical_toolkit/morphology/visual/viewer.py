@@ -1,6 +1,7 @@
 """
 Refactored Viewer for Ariel robots.
-Provides a clean interface for rendering and interactive visualization.
+
+Code could be a bit redundant and could be more cleanly integrated directly into ariel
 """
 
 from __future__ import annotations

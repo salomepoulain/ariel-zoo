@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=ctk_penalty
+#SBATCH --job-name=run
 #SBATCH --output=/dev/null
 #SBATCH --error=/dev/null
 #SBATCH --partition=genoa
@@ -74,7 +74,7 @@ echo "Starting EA on local SSD..."
 uv run run.py -r "$RUN_NAME" -p "$POPULATION_SIZE" -g "$NUM_GENERATIONS" -o "$LOCAL_OUTPUT_DIR" --SEED "$SLURM_ARRAY_TASK_ID" $FLAGS
 EXIT_CODE=$?
 
-echo "$(date),--RUN_NAME=$RUN_NAME,...,$FINAL_OUTPUT_DIR" >> run_history.csv 
+echo "$(date),--RUN_NAME=$RUN_NAME,...,$FINAL_OUTPUT_DIR" >> run_history.csv
 
 # --- 6. Copy results back to network storage ---
 echo "Copying results from SSD to network storage..."

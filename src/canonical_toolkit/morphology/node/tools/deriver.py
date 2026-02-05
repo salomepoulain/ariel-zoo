@@ -19,24 +19,6 @@ __all__ = [
 ]
 
 
-# def _calc_highest_priority_child_face(
-#     node: Node,
-# ) -> ModuleFaces | None:
-#     """Return the face where the child is attached with the highest priority."""
-#     raise DeprecationWarning
-#     if not node.has_children or len(node.config.radial_face_order) == 0:
-#         return None
-
-#     max_priority = 0
-#     winning_face = None
-#     for face, child in node.radial_children_items:
-#         if child.full_priority > max_priority:
-#             max_priority = child.full_priority
-#             winning_face = face
-
-#     return winning_face
-
-
 def _calc_highest_priority_child_face(
     node: Node,
 ) -> ModuleFaces | None:

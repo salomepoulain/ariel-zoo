@@ -1,3 +1,8 @@
+"""
+This is broken.
+It was supposed to give formatted warnings whenever a face was indexed for a node that did not have a child
+"""
+
 from __future__ import annotations
 
 raise DeprecationWarning

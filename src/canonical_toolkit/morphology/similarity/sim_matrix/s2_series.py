@@ -80,7 +80,7 @@ class SimilaritySeries(MatrixSeries[SimilarityMatrix]):
             agg_matrix += inst.matrix
 
         tags = SimilarityMatrixTags(
-            domain=f"{self.matrices[0].domain}",
+            domain=self.matrices[0].domain,
             radius=max(self.radii),
             is_gap=False,
         )

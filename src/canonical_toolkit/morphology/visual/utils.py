@@ -1,4 +1,6 @@
-"""Utility functions for visualization and rendering."""
+"""
+Utility functions for visualization and rendering.
+"""
 
 from contextlib import contextmanager
 

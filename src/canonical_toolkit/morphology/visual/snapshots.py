@@ -1,4 +1,6 @@
-"""Image saving, loading, and thumbnail generation utilities."""
+"""
+Image saving, loading, and thumbnail generation utilities.
+"""
 
 from __future__ import annotations
 
