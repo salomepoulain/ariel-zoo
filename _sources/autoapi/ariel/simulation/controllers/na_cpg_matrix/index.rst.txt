@@ -1,0 +1,143 @@
+:py:mod:`na_cpg_matrix`
+====================================================
+
+.. py:module:: ariel.simulation.controllers.na_cpg_matrix
+
+.. autoapi-nested-parse::
+
+   TODO(jmdm): description of script.
+
+   Author:     jmdm
+   Date:       yyyy-mm-dd
+   Py Ver:     3.12
+   OS:         macOS  Sequoia 15.3.1
+   Hardware:   M4 Pro
+
+   Status:     In progress ⚙️
+   Status:     Paused ⏸️
+   Status:     Completed ✅
+   Status:     Incomplete ❌
+   Status:     Broken ⚠️
+   Status:     To Improve ⬆️
+
+   .. admonition:: Notes
+
+      *
+
+   .. admonition:: References
+
+      [1]
+
+   .. todo:: [ ]
+
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   ariel.simulation.controllers.na_cpg_matrix.NA_CPG_Matrix_Form
+
+
+
+
+Attributes
+~~~~~~~~~~
+
+.. autoapisummary::
+
+   ariel.simulation.controllers.na_cpg_matrix.SCRIPT_NAME
+   ariel.simulation.controllers.na_cpg_matrix.CWD
+   ariel.simulation.controllers.na_cpg_matrix.DATA
+   ariel.simulation.controllers.na_cpg_matrix.SEED
+   ariel.simulation.controllers.na_cpg_matrix.RNG
+   ariel.simulation.controllers.na_cpg_matrix.console
+   ariel.simulation.controllers.na_cpg_matrix.n
+
+
+.. py:data:: SCRIPT_NAME
+
+.. py:data:: CWD
+
+.. py:data:: DATA
+
+.. py:data:: SEED
+   :value: 42
+
+
+.. py:data:: RNG
+
+.. py:data:: console
+
+.. py:class:: NA_CPG_Matrix_Form(inherent_params, adjustable_params)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+   .. autoapi-inheritance-diagram:: ariel.simulation.controllers.na_cpg_matrix.NA_CPG_Matrix_Form
+      :parts: 1
+
+
+   Implements the Normalized Asymmetric CPG (NA-CPG) in a matrix form,
+   based on the model described in the paper.
+
+
+   .. py:attribute:: n
+
+
+   .. py:attribute:: alpha
+
+
+   .. py:attribute:: h
+
+
+   .. py:attribute:: dt
+
+
+   .. py:attribute:: omega
+
+
+   .. py:attribute:: A
+
+
+   .. py:attribute:: b
+
+
+   .. py:attribute:: h_a
+
+
+   .. py:attribute:: phase_diffs
+
+
+   .. py:attribute:: x
+
+
+   .. py:attribute:: y
+
+
+   .. py:method:: forward(x_old, y_old, x_old_dot=None)
+
+      Perform a single step of the CPG network update.
+
+      :param x_old: Tensor of old x-states of shape [n, 1].
+      :type x_old: :py:class:`torch.Tensor`
+      :param y_old: Tensor of old y-states of shape [n, 1].
+      :type y_old: :py:class:`torch.Tensor`
+      :param x_old_dot: Optional tensor of old x-dot values for asymmetry.
+      :type x_old_dot: :py:class:`torch.Tensor`
+
+      :returns: **torch.Tensor**
+      :rtype: :class:`The new output angles (theta)` of :class:`shape [n`, :class:`1].`
+
+
+
+   .. py:method:: constraint_function(state_dot_vector)
+
+
+.. py:data:: n
+   :value: 3
+
+
